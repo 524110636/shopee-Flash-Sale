@@ -55,37 +55,59 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isExtracting: true, error: null });
     try {
       const response = await browser.runtime.sendMessage({ type: 'SPC_CDS_REQUEST' });
+
+      // background 返回了结构化错误
+      if (response?.error) {
+        set({
+          error: response.error,
+          isExtracting: false,
+          isConnected: false,
+        });
+        return;
+      }
+
       if (response?.spcCds) {
         set({
           spcCds: response.spcCds,
           spcCdsVer: response.spcCdsVer || '2',
           isConnected: true,
           isExtracting: false,
+          error: null,
         });
       } else {
         set({
-          error: '无法获取 SPC_CDS，请确保已在虾皮卖家中心登录',
+          error: '未能获取到 SPC_CDS（返回值为空），请确认已登录虾皮卖家中心',
           isExtracting: false,
           isConnected: false,
         });
       }
-    } catch (e) {
-      set({
-        error: `SPC_CDS 提取失败: ${e}`,
-        isExtracting: false,
-        isConnected: false,
-      });
+    } catch (e: any) {
+      // runtime.sendMessage 失败（没有 background 监听等）
+      const msg = e?.message || String(e);
+      if (msg.includes('Could not establish connection')) {
+        set({
+          error: 'Background Service Worker 未响应，请重新加载扩展后重试',
+          isExtracting: false,
+          isConnected: false,
+        });
+      } else {
+        set({
+          error: `SPC_CDS 提取失败: ${msg}`,
+          isExtracting: false,
+          isConnected: false,
+        });
+      }
     }
   },
 
   fetchProducts: async () => {
     const { productIds, spcCds } = get();
     if (!spcCds) {
-      set({ error: '请先提取 SPC_CDS' });
+      set({ error: '请先点击右上角"未连接"获取 SPC_CDS' });
       return;
     }
     if (productIds.length === 0) {
-      set({ error: '请先输入商品 ID' });
+      set({ error: '请先在输入框中粘贴商品 ID' });
       return;
     }
 
@@ -95,13 +117,26 @@ export const useAppStore = create<AppState>((set, get) => ({
         type: 'FETCH_PRODUCTS',
         productIds,
       });
-      if (response.type === 'FETCH_PRODUCTS_RESULT') {
-        set({ products: response.products, isLoading: false });
-      } else {
-        set({ error: response.error, isLoading: false });
+
+      if (!response) {
+        set({ error: '扩展未响应（返回为空），请重新加载扩展', isLoading: false });
+        return;
       }
-    } catch (e) {
-      set({ error: `请求失败: ${e}`, isLoading: false });
+
+      if (response.type === 'FETCH_PRODUCTS_RESULT') {
+        set({ products: response.products, isLoading: false, error: null });
+      } else if (response.type === 'FETCH_PRODUCTS_ERROR') {
+        set({ error: response.error || '请求失败（未知错误）', isLoading: false });
+      } else {
+        set({ error: `意外的响应类型: ${response.type}`, isLoading: false });
+      }
+    } catch (e: any) {
+      const msg = e?.message || String(e);
+      if (msg.includes('Could not establish connection')) {
+        set({ error: 'Background 未响应，请重新加载扩展后重试', isLoading: false });
+      } else {
+        set({ error: `请求失败: ${msg}`, isLoading: false });
+      }
     }
   },
 
