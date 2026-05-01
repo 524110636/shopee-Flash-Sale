@@ -1,0 +1,38 @@
+{
+  "name": "limited-time-sale",
+  "version": "1.0.0",
+  "private": true,
+  "description": "虾皮卖家后台限时特卖自动化工具",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "zip": "wxt zip",
+    "compile": "wxt compile",
+    "postinstall": "wxt prepare"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@radix-ui/react-scroll-area": "^1.2.10",
+    "@radix-ui/react-separator": "^1.1.8",
+    "@radix-ui/react-slot": "^1.2.4",
+    "class-variance-authority": "^0.7.1",
+    "lucide-react": "^1.14.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.5.0",
+    "clsx": "^2.1.1",
+    "postcss": "^8.5.13",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^6.0.3",
+    "wxt": "^0.20.25"
+  }
+}
