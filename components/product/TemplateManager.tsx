@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '@/entrypoints/popup/store';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import type { FlashSaleTemplate } from '@/entrypoints/popup/types';
 
 type ViewState = 'idle' | 'saving' | 'loading';
@@ -245,12 +246,14 @@ export function TemplateManager() {
             <span className="text-[10px] text-muted-foreground">
               已保存的模板（{templateNames.length}）
             </span>
-            <button
-              className="text-[10px] text-muted-foreground hover:text-primary underline"
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-5 px-1.5 text-[10px] font-normal"
               onClick={() => setView('idle')}
             >
               关闭
-            </button>
+            </Button>
           </div>
 
           {loadingTemplates ? (
@@ -284,33 +287,41 @@ function TemplateRow({ name, onApply, onDelete }: { name: string; onApply: () =>
       <div className="flex items-center gap-1.5 shrink-0 ml-2">
         {confirmDelete ? (
           <>
-            <button
-              className="text-red-600 hover:text-red-700 underline"
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-5 px-1.5 text-[10px] font-normal text-red-600 border-red-300 hover:bg-red-50"
               onClick={onDelete}
             >
               确认删除
-            </button>
-            <button
-              className="text-muted-foreground hover:text-foreground underline"
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-5 px-1.5 text-[10px] font-normal"
               onClick={() => setConfirmDelete(false)}
             >
               取消
-            </button>
+            </Button>
           </>
         ) : (
           <>
-            <button
-              className="text-green-600 hover:text-green-700 underline font-medium"
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-5 px-1.5 text-[10px] font-normal text-green-700 border-green-300 hover:bg-green-50"
               onClick={onApply}
             >
               应用
-            </button>
-            <button
-              className="text-red-400 hover:text-red-600 underline"
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-5 px-1.5 text-[10px] font-normal text-red-400 border-red-200 hover:bg-red-50 hover:text-red-600"
               onClick={() => setConfirmDelete(true)}
             >
               删除
-            </button>
+            </Button>
           </>
         )}
       </div>

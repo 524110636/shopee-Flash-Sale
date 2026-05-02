@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ShopeeProduct, FlashSale, EnableItem, EnableResult, EnableProgress, SkuOverride, CacheData, FlashSaleTemplate, TemplateProductInfo } from './types';
+import type { ShopeeProduct, FlashSale, EnableItem, EnableResult, EnableProgress, SkuOverride, CacheData, FlashSaleTemplate, TemplateProductInfo, CopyTaskStatus, ScheduledCopyParams, TimeSlot } from './types';
 
 // ===== 注入页面执行 fetch（MAIN world）=====
 async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -148,6 +148,14 @@ interface AppState {
   enableProgress: EnableProgress | null;
   skuOverrides: Record<string, SkuOverride>; // key: `${itemId}-${modelId}`
 
+  // 复制功能状态
+  copyMode: null | 'confirm' | 'result';
+  copySource: { flashSale: FlashSale; itemCount: number | null } | null;
+  copyTaskStatus: CopyTaskStatus | null;
+  isCopying: boolean;
+  savedTemplates: string[];
+  selectedTemplate: string | null;
+
   // Actions
   setSpcCds: (spcCds: string, spcCdsVer: string) => void;
   setConnected: (connected: boolean) => void;
@@ -160,6 +168,8 @@ interface AppState {
   extractSpcCds: () => Promise<void>;
   fetchProducts: () => Promise<void>;
   fetchFlashSaleProducts: () => Promise<void>;
+  fetchTimeSlots: () => Promise<TimeSlot[]>;
+  fetchFlashSaleItemCount: (flashSaleId: number) => Promise<number>;
   setMaxRetries: (n: number) => void;
   setInfiniteRetry: (v: boolean) => void;
   setDiscountRate: (n: number) => void;
@@ -178,6 +188,13 @@ interface AppState {
   loadCache: () => Promise<boolean>;
   clearCache: () => Promise<void>;
   reset: () => void;
+
+  // 复制功能 Actions
+  enterCopyMode: (flashSale: FlashSale) => Promise<void>;
+  executeCopy: (targetTime: number, templateName: string | null) => Promise<void>;
+  exitCopyMode: () => void;
+  checkCopyTaskStatus: () => Promise<void>;
+  setSelectedTemplate: (templateName: string | null) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -203,6 +220,14 @@ export const useAppStore = create<AppState>((set, get) => ({
   isEnabling: false,
   enableProgress: null,
   skuOverrides: {},
+
+  // 复制功能初始值
+  copyMode: null,
+  copySource: null,
+  copyTaskStatus: null,
+  isCopying: false,
+  savedTemplates: [],
+  selectedTemplate: null,
 
   setSpcCds: (spcCds, spcCdsVer) => set({ spcCds, spcCdsVer }),
   setConnected: (isConnected) => set({ isConnected }),
@@ -384,6 +409,40 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
+  // ===== 获取可用时间段 =====
+  fetchTimeSlots: async () => {
+    const { spcCds, spcCdsVer } = get();
+    if (!spcCds) throw new Error('SPC_CDS 不存在');
+
+    const now = Math.floor(Date.now() / 1000);
+    const startTime = now - 1800;
+    const endTime = (() => {
+      const d = new Date();
+      const endOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 1, 0, 0, 0);
+      return Math.floor(endOfMonth.getTime() / 1000) - 1;
+    })();
+
+    const data = await injectedFetch<any>(
+      `${FLASH_SALE_API}/get_time_slot_id/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&start_time=${startTime}&end_time=${endTime}`
+    );
+    const list = Array.isArray(data?.data) ? data.data : [];
+    if (list.length === 0) console.warn('[fetchTimeSlots] 接口返回空列表');
+    return list as TimeSlot[];
+  },
+
+  // ===== 获取活动商品数量 =====
+  fetchFlashSaleItemCount: async (flashSaleId: number) => {
+    const { spcCds, spcCdsVer } = get();
+    if (!spcCds) throw new Error('SPC_CDS 不存在');
+
+    const data = await injectedFetch<any>(
+      `${FLASH_SALE_API}/get_shop_flash_sale_item_id_list/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&flash_sale_id=${flashSaleId}`
+    );
+    const ids = data?.data?.item_ids || [];
+    console.log('[fetchFlashSaleItemCount]', { flashSaleId, count: ids.length });
+    return ids.length;
+  },
+
   // ===== 加载指定限时特卖活动的商品 =====
   loadFlashSaleProducts: async (flashSaleId: number) => {
     const { spcCds, spcCdsVer, flashSaleList } = get();
@@ -403,7 +462,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       );
 
       if (itemResp.code !== 0 || !itemResp.data?.item_ids?.length) {
-        set({ error: `该活动中没有找到商品`, isLoadingFlashSales: false });
+        set({ products: [], productIds: [], inputText: '', error: `该活动中没有找到商品`, isLoadingFlashSales: false });
         return;
       }
 
@@ -523,24 +582,16 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   checkBackgroundStatus: async () => {
     try {
-      const resp = await browser.runtime.sendMessage({ type: 'GET_ENABLE_STATUS' });
-      if (resp?.data) {
-        const { progress, error } = resp.data;
-        if (progress && !progress.isComplete) {
-          set({
-            isEnabling: true,
-            enableProgress: progress,
-            error: error || null,
-          });
-        } else if (progress && progress.isComplete) {
-          set({
-            isEnabling: false,
-            enableProgress: progress,
-            error: error || null,
-          });
-        }
+      const result = await browser.storage.local.get('_enableProgress');
+      const data = result._enableProgress as { progress?: EnableProgress; error?: string; running?: boolean } | undefined;
+      if (data?.progress && !data.progress.isComplete) {
+        set({ isEnabling: true, enableProgress: data.progress, error: data.error || null });
+      } else if (data?.progress && data.progress.isComplete) {
+        set({ isEnabling: false, enableProgress: data.progress, error: data.error || null });
+      } else {
+        set({ isEnabling: false, enableProgress: null, error: null });
       }
-    } catch { /* background not responding */ }
+    } catch { /* storage not accessible */ }
   },
 
   // ===== 模板 =====
@@ -630,7 +681,185 @@ export const useAppStore = create<AppState>((set, get) => ({
     isLoadingFlashSales: false, flashSaleInfo: '', flashSaleId: null,
     flashSaleList: [], isLoadingFlashSaleList: false,
     maxRetries: 10, discountRate: 60, flashSaleStock: 200, purchaseLimit: 5, isEnabling: false, enableProgress: null, skuOverrides: {},
+    copyMode: null, copySource: null, copyTaskStatus: null, isCopying: false, savedTemplates: [], selectedTemplate: null,
   }),
+
+  // ===== 复制功能 =====
+  enterCopyMode: async (flashSale: FlashSale) => {
+    const state = get();
+    set({ copyMode: 'confirm', copySource: { flashSale, itemCount: null } });
+    // 获取该活动的商品数量
+    try {
+      const count = await state.fetchFlashSaleItemCount(flashSale.flash_sale_id);
+      set({ copySource: { flashSale, itemCount: count } });
+    } catch (e: any) {
+      console.error('[enterCopyMode] 获取商品数量失败:', e?.message || e);
+    }
+    // 加载该活动的商品数据（供模板复制使用）
+    try {
+      await state.loadFlashSaleProducts(flashSale.flash_sale_id);
+    } catch (e: any) {
+      console.error('[enterCopyMode] 加载商品数据失败:', e?.message || e);
+    }
+    // 加载模板列表
+    const names = await state.getTemplateNames();
+    set({ savedTemplates: names, selectedTemplate: names.length > 0 ? names[0] : null });
+  },
+
+  executeCopy: async (targetTime: number, templateName: string | null) => {
+    const state = get();
+    if (!state.copySource) return;
+    set({ isCopying: true, error: null });
+
+    // 清除旧的 storage 状态
+    try { await browser.storage.local.remove('_copyTaskStatus'); } catch {}
+
+    // 辅助函数：发消息后用 storage.onChanged 监听结果（代替不可靠的 sendMessage 返回值）
+    const waitForStorage = (message: any, timeoutMs = 60000): Promise<CopyTaskStatus | null> => {
+      return new Promise((resolve) => {
+        const timer = setTimeout(() => {
+          browser.storage.onChanged.removeListener(onChange);
+          resolve(null);
+        }, timeoutMs);
+
+        const onChange = (changes: any, area: string) => {
+          if (area === 'local' && changes._copyTaskStatus?.newValue) {
+            browser.storage.onChanged.removeListener(onChange);
+            clearTimeout(timer);
+            resolve(changes._copyTaskStatus.newValue as CopyTaskStatus);
+          }
+        };
+        browser.storage.onChanged.addListener(onChange);
+
+        // 发消息（fire-and-forget，不依赖返回值）
+        browser.runtime.sendMessage(message).catch(() => {});
+
+        // 也立即检查一次（防止时序问题）
+        browser.storage.local.get('_copyTaskStatus').then((r) => {
+          const st = r._copyTaskStatus as CopyTaskStatus | undefined;
+          if (st) {
+            browser.storage.onChanged.removeListener(onChange);
+            clearTimeout(timer);
+            resolve(st);
+          }
+        }).catch(() => {});
+      });
+    };
+
+    try {
+      const fireTime = targetTime - 300;
+      const now = Math.floor(Date.now() / 1000);
+
+      if (fireTime <= now) {
+        // === 立即执行路径 ===
+        console.log('[executeCopy] 立即执行, targetTime:', targetTime, 'template:', templateName);
+        const status = await waitForStorage({
+          type: 'EXECUTE_COPY',
+          sourceFlashSale: state.copySource.flashSale,
+          targetTime,
+          templateName,
+          products: state.products,
+          spcCds: state.spcCds,
+          spcCdsVer: state.spcCdsVer,
+          skuOverrides: state.skuOverrides,
+        });
+
+        if (status) {
+          console.log('[executeCopy] EXECUTE_COPY storage 状态:', JSON.stringify(status));
+          set({ copyMode: 'result', isCopying: false, copyTaskStatus: status });
+        } else {
+          console.error('[executeCopy] EXECUTE_COPY 无响应');
+          set({
+            copyMode: 'result', isCopying: false,
+            copyTaskStatus: { scheduled: true, executed: true, success: false, error: '后台无响应' },
+          });
+        }
+      } else {
+        // === 定时执行路径 ===
+        let templateItems: EnableItem[] | null = null;
+        if (templateName) {
+          const template = await state.getTemplate(templateName);
+          if (template) {
+            templateItems = state.products.flatMap((p: ShopeeProduct) =>
+              (p.modelList || []).filter(sku => (sku.normalStock || 0) > 0).map(sku => {
+                const key = `${p.itemid}-${sku.modelid}`;
+                const override = state.skuOverrides[key];
+                const usedDiscount = override?.discountRate ?? template.discountRate;
+                const usedStock = Math.min(override?.stock ?? template.flashSaleStock, sku.normalStock || template.flashSaleStock);
+                const usedPurchaseLimit = override?.purchaseLimit ?? template.purchaseLimit;
+                const promoPrice = Math.floor(Number(sku.originPrice || p.originPrice || 0) * usedDiscount / 100);
+                return {
+                  item_id: Number(p.itemid), status: 1, model_id: Number(sku.modelid),
+                  item_display_image: p.images?.[0] || '',
+                  input_promo_price: promoPrice, stock: usedStock, purchase_limit: usedPurchaseLimit,
+                };
+              }),
+            );
+          }
+        }
+
+        const params: ScheduledCopyParams = {
+          sourceFlashSaleId: state.copySource.flashSale.flash_sale_id,
+          sourceFlashSaleName: state.copySource.flashSale.name || '',
+          targetStartTime: targetTime,
+          templateName,
+          templateItems,
+        };
+
+        console.log('[executeCopy] 定时执行, targetTime:', targetTime, 'template:', templateName);
+        const status = await waitForStorage({ type: 'SCHEDULE_COPY', params });
+
+        if (status) {
+          console.log('[executeCopy] SCHEDULE_COPY storage 状态:', JSON.stringify(status));
+          set({ copyMode: 'result', isCopying: false, copyTaskStatus: status });
+        } else {
+          console.error('[executeCopy] SCHEDULE_COPY 无响应');
+          set({
+            copyMode: 'result', isCopying: false,
+            copyTaskStatus: { scheduled: true, executed: true, success: false, error: '后台无响应' },
+          });
+        }
+      }
+    } catch (e: any) {
+      console.error('[executeCopy] 异常:', e);
+      set({
+        copyMode: 'result',
+        isCopying: false,
+        copyTaskStatus: {
+          scheduled: true, executed: true, success: false,
+          error: e.message,
+        },
+      });
+    }
+    // 刷新活动列表
+    get().fetchFlashSaleList();
+    get().saveCache();
+  },
+
+  exitCopyMode: () => {
+    set({
+      copyMode: null,
+      copySource: null,
+      copyTaskStatus: null,
+      isCopying: false,
+      selectedTemplate: null,
+    });
+    browser.storage.local.remove('_copyTaskStatus');
+  },
+
+  checkCopyTaskStatus: async () => {
+    try {
+      const result = await browser.storage.local.get('_copyTaskStatus');
+      const status = result._copyTaskStatus as CopyTaskStatus | undefined;
+      if (status && status.executed) {
+        set({ copyMode: 'result', copyTaskStatus: status });
+      }
+    } catch {}
+  },
+
+  setSelectedTemplate: (templateName: string | null) => {
+    set({ selectedTemplate: templateName });
+  },
 }));
 
 // ===== Background 消息监听（接收进度更新）=====

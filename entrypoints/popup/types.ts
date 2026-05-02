@@ -159,6 +159,31 @@ export interface CacheData {
   infiniteRetry: boolean;
 }
 
+// ===== 复制限时特卖相关类型 =====
+
+export interface TimeSlot {
+  timeslot_id: number;
+  start_time: number;
+  end_time: number;
+}
+
+export interface ScheduledCopyParams {
+  sourceFlashSaleId: number;
+  sourceFlashSaleName: string;
+  targetStartTime: number;
+  templateName: string | null;
+  templateItems: EnableItem[] | null;
+}
+
+export interface CopyTaskStatus {
+  scheduled: boolean;
+  executed: boolean;
+  success: boolean | null;
+  newFlashSaleId?: number;
+  error?: string;
+  warning?: string;
+}
+
 // ===== 模板相关类型 =====
 
 // 模板中保存的商品简要信息（用于比对显示）

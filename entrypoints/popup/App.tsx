@@ -2,8 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { SpcStatus } from '@/components/product/SpcStatus';
+import { Button } from '@/components/ui/button';
 import { ProductList } from '@/components/product/ProductList';
 import { TemplateManager } from '@/components/product/TemplateManager';
+import { CopyConfirmPanel } from '@/components/product/CopyConfirmPanel';
+import { CopyResultPanel } from '@/components/product/CopyResultPanel';
 import { useAppStore, setupBackgroundListener } from './store';
 
 export default function App() {
@@ -22,6 +25,10 @@ export default function App() {
     flashSaleStock, setFlashSaleStock,
     purchaseLimit, setPurchaseLimit,
     isEnabling, enableProgress, enableFlashSaleItems, stopEnabling,
+    copyMode, copySource, copyTaskStatus, isCopying,
+    savedTemplates, selectedTemplate,
+    enterCopyMode, executeCopy, exitCopyMode,
+    checkCopyTaskStatus, setSelectedTemplate, fetchTimeSlots,
     checkBackgroundStatus,
     loadCache, clearCache, reset,
   } = useAppStore();
@@ -36,6 +43,7 @@ export default function App() {
     }
     loadCache();
     checkBackgroundStatus();
+    checkCopyTaskStatus();
   }, []);
 
   // 限时特卖活动列表加载后自动展开
@@ -73,13 +81,35 @@ export default function App() {
 
   return (
     <div className="w-[500px] min-h-[500px] p-4 bg-background">
-      <Card>
+      {copyMode === 'confirm' && copySource ? (
+        <CopyConfirmPanel
+          source={copySource}
+          savedTemplates={savedTemplates}
+          selectedTemplate={selectedTemplate}
+          isCopying={isCopying}
+          onConfirm={(targetTime, templateName) => executeCopy(targetTime, templateName)}
+          onCancel={exitCopyMode}
+          onSelectTemplate={setSelectedTemplate}
+          onFetchTimeSlots={fetchTimeSlots}
+        />
+      ) : copyMode === 'result' && copyTaskStatus ? (
+        <CopyResultPanel
+          status={copyTaskStatus}
+          onBack={exitCopyMode}
+          onRetry={() => {
+            if (copySource) enterCopyMode(copySource.flashSale);
+          }}
+        />
+      ) : (
+        <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">限时特卖助手</CardTitle>
             <div className="flex items-center gap-2">
-              <button
-                className="text-[10px] text-muted-foreground hover:text-primary underline"
+                <Button
+                variant="outline"
+                size="sm"
+                className="h-6 px-2 text-[10px] font-normal"
                 onClick={async () => {
                   await clearCache();
                   reset();
@@ -87,33 +117,37 @@ export default function App() {
                 }}
               >
                 清除缓存
-              </button>
+              </Button>
               <SpcStatus />
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* 商品 ID 输入 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">
-              商品 ID（每行一个，或逗号分隔）
-            </label>
+          {/* 商品 ID（标签展示，不常用） */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-medium text-muted-foreground/60">商品 ID</span>
+                {productIds.length > 0 && (
+                  <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{productIds.length}</span>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-5 px-1.5 text-[10px] font-normal text-muted-foreground/40 border-muted-foreground/20 hover:text-primary hover:border-primary/30"
+                onClick={handlePaste}
+              >
+                粘贴
+              </Button>
+            </div>
             <textarea
               ref={textareaRef}
-              className="w-full h-24 px-3 py-2 text-sm border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="46707018327&#10;51707202143&#10;52257211580"
+              className="w-full h-16 px-2 py-1 text-[11px] border border-dashed border-muted-foreground/20 rounded-md resize-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-solid text-muted-foreground/60 placeholder-muted-foreground/30"
+              placeholder="粘贴商品 ID 后将自动识别"
               value={inputText}
               onChange={handleInputChange}
             />
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{productIds.length > 0 ? `已识别 ${productIds.length} 个商品 ID` : '粘贴商品 ID 后将自动识别'}</span>
-              <button
-                className="text-primary hover:underline"
-                onClick={handlePaste}
-              >
-                从剪贴板粘贴
-              </button>
-            </div>
           </div>
 
           {/* 获取商品按钮 */}
@@ -154,12 +188,14 @@ export default function App() {
                     })()}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      className="text-xs text-primary hover:underline"
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 px-2 text-xs font-normal"
                       onClick={e => { e.stopPropagation(); fetchFlashSaleList(); setFlashSaleListOpen(true); }}
                     >
                       刷新
-                    </button>
+                    </Button>
                     <span className={`text-muted-foreground transition-transform ${flashSaleListOpen ? 'rotate-180' : ''}`}>▼</span>
                   </div>
                 </div>
@@ -188,19 +224,18 @@ export default function App() {
                       };
 
                       return (
-                        <button
+                        <div
                           key={sale.flash_sale_id}
-                          className={`w-full flex items-center justify-between px-3 py-2 text-xs border rounded-md transition-colors ${
+                          className={`w-full flex items-center justify-between px-3 py-2 text-xs border rounded-md transition-colors cursor-pointer ${
                             isSelected
                               ? 'border-primary bg-primary/5'
                               : 'hover:bg-accent/50'
-                          }`}
+                          } ${isLoadingFlashSales ? 'opacity-50 pointer-events-none' : ''}`}
                           onClick={(e) => {
                             e.stopPropagation();
                             loadFlashSaleProducts(sale.flash_sale_id);
                             setFlashSaleListOpen(false);
                           }}
-                          disabled={isLoadingFlashSales}
                         >
                           <div className="flex flex-col items-start min-w-0">
                             <span className={`font-medium truncate w-full text-left ${isSelected ? 'text-primary' : ''}`}>
@@ -210,10 +245,21 @@ export default function App() {
                               {fmtTime(sale.start_time)} ~ {fmtTime(sale.end_time)}
                             </span>
                           </div>
-                          <span className={`shrink-0 ml-2 px-1.5 py-0.5 text-[10px] rounded-full border ${statusClass}`}>
-                            {statusLabel}
-                          </span>
-                        </button>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-5 px-1.5 text-[10px] font-normal text-primary border-primary/30 hover:bg-primary/5"
+                              onClick={(e) => { e.stopPropagation(); enterCopyMode(sale); }}
+                              title="复制此限时特卖"
+                            >
+                              复制
+                            </Button>
+                            <span className={`px-1.5 py-0.5 text-[10px] rounded-full border ${statusClass}`}>
+                              {statusLabel}
+                            </span>
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
@@ -239,12 +285,14 @@ export default function App() {
                   <p className="mt-1 text-red-600">{error}</p>
                   {error.includes('SPC_CDS') && (
                     <div className="mt-2 space-y-1">
-                      <button
-                        className="text-xs text-primary hover:underline"
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 px-2 text-xs font-normal"
                         onClick={() => extractSpcCds()}
                       >
                         重新获取 SPC_CDS
-                      </button>
+                      </Button>
                       <p className="text-xs text-muted-foreground">
                         查看后台日志: chrome://extensions → 点击"Service Worker"
                       </p>
@@ -429,6 +477,7 @@ export default function App() {
           )}
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }
