@@ -143,6 +143,7 @@ interface AppState {
   infiniteRetry: boolean;
   discountRate: number;
   flashSaleStock: number;
+  purchaseLimit: number;
   isEnabling: boolean;
   enableProgress: EnableProgress | null;
   skuOverrides: Record<string, SkuOverride>; // key: `${itemId}-${modelId}`
@@ -167,6 +168,7 @@ interface AppState {
   setPurchaseLimit: (n: number) => void;
   enableFlashSaleItems: () => Promise<void>;
   stopEnabling: () => void;
+  checkBackgroundStatus: () => Promise<void>;
   saveTemplate: (name: string) => Promise<void>;
   deleteTemplate: (name: string) => Promise<void>;
   getTemplateNames: () => Promise<string[]>;
@@ -423,15 +425,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  // ===== 开启限时特卖（带自动重试）=====
+  // ===== 开启限时特卖（popup 只负责启动，循环在 background 中运行）=====
   enableFlashSaleItems: async () => {
-    const { products, flashSaleId, spcCds, spcCdsVer, maxRetries, infiniteRetry, discountRate, flashSaleStock, purchaseLimit, skuOverrides } = get();
+    const state = get();
+    if (state.isEnabling) {
+      console.log('[enable] 已在运行中，忽略重复启动');
+      return;
+    }
+    const { products, flashSaleId, discountRate, flashSaleStock, purchaseLimit, skuOverrides, spcCds, spcCdsVer, maxRetries, infiniteRetry } = state;
 
     if (!flashSaleId) { set({ error: '没有限时特卖活动 ID，请先加载限时特卖' }); return; }
     if (!products.length) { set({ error: '没有商品数据' }); return; }
 
-    // 构建所有 SKU 的提交数据（跳过库存为 0 的 SKU，使用单个覆盖参数）
-    console.log('[enable] skuOverrides 全部:', JSON.stringify(skuOverrides));
+    // 构建所有 SKU 的提交数据（与之前相同）
     const allItems: EnableItem[] = products.flatMap(p =>
       (p.modelList || [])
         .filter(sku => (sku.normalStock || 0) > 0)
@@ -442,17 +448,10 @@ export const useAppStore = create<AppState>((set, get) => ({
           const usedStock = Math.min(override?.stock ?? flashSaleStock, sku.normalStock || flashSaleStock);
           const usedPurchaseLimit = override?.purchaseLimit ?? purchaseLimit;
           const promoPrice = Math.floor(Number(sku.originPrice || p.originPrice || 0) * usedDiscount / 100);
-          if (override) {
-            console.log(`[enable] SKU ${key}: override=${JSON.stringify(override)}, usedDiscount=${usedDiscount}, usedStock=${usedStock}, usedPurchaseLimit=${usedPurchaseLimit}, promoPrice=${promoPrice}`);
-          }
           return {
-            item_id: Number(p.itemid),
-            status: 1,
-            model_id: Number(sku.modelid),
-            item_display_image: p.images?.[0] || '',
-            input_promo_price: promoPrice,
-            stock: usedStock,
-            purchase_limit: usedPurchaseLimit,
+            item_id: Number(p.itemid), status: 1, model_id: Number(sku.modelid),
+            item_display_image: p.images?.[0] || '', input_promo_price: promoPrice,
+            stock: usedStock, purchase_limit: usedPurchaseLimit,
           };
         })
     );
@@ -465,194 +464,83 @@ export const useAppStore = create<AppState>((set, get) => ({
       return;
     }
 
-    console.log(`[enable] 开始提交 ${allItems.length} 个 SKU${skippedCount > 0 ? `（${skippedCount} 个 SKU 因库存为 0 已跳过）` : ''}, 最多重试 ${maxRetries} 次`);
-    console.log("[enable] 首个 SKU 示例:", JSON.stringify(allItems[0]));
-    console.log("[enable] 请求体样本:", JSON.stringify({ flash_sale_id: flashSaleId, items: allItems.slice(0, 3), totalItems: allItems.length }));
+    // 保存参数到 storage，background 会读取
+    try {
+      await browser.storage.local.set({
+        _enableParams: {
+          products, flashSaleId, spcCds, spcCdsVer, maxRetries, infiniteRetry,
+          discountRate, flashSaleStock, purchaseLimit, skuOverrides,
+        },
+      });
+    } catch (e: any) {
+      set({ error: `保存启动参数失败: ${e?.message || '未知错误'}` });
+      return;
+    }
+
+    // 乐观更新 UI：立即显示为"正在执行"状态
     set({ isEnabling: true, error: null, enableProgress: null });
 
-    let currentItems = [...allItems];
-    let successCount = 0;
-    let failedResults: EnableResult[] = [];
-    let lastRawResponse: string = '';
-    let round = 0;
-
-    for (round = 1; ; round++) {
-      if (!infiniteRetry && round > maxRetries) break;
-      // 用户取消检测
-      if (!get().isEnabling) {
-        console.log('[enable] ⏹ 用户取消');
-        break;
-      }
+    // 通知 background 启动循环（带重试）
+    let succeeded = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        console.log(`[enable] === 第 ${round} 轮提交开始 ===`);
-        console.log(`[enable] 提交 ${currentItems.length} 个 SKU`);
-
-        const response = await injectedFetch<any>(
-          `${FLASH_SALE_API}/set_shop_flash_sale_items/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`,
-          'POST',
-          {
-            flash_sale_id: flashSaleId,
-            items: currentItems,
-            use_global_category: true,
-          },
-        );
-
-        // 记录原始响应
-        lastRawResponse = JSON.stringify(response).slice(0, 2000);
-        console.log('[enable] 原始响应:', JSON.stringify(response, null, 2).slice(0, 3000));
-
-        // 检查顶层 API 错误（非 0 表示整批失败）
-        if (response?.code !== undefined && response.code !== 0) {
-          const errMsg = response.message || `API error (code=${response.code})`;
-          console.log(`[enable] ❌ API 顶层错误: ${errMsg}`);
-          failedResults = currentItems.map(item => ({
-            item_id: item.item_id,
-            model_id: item.model_id,
-            err_msg: errMsg,
-          }));
-
-          set({
-            error: `API 返回错误 (code=${response.code}): ${errMsg}${response.code === 1001 ? '\n可能原因：SPC_CDS 失效、请求参数错误、或需要刷新页面' : ''}`,
-            enableProgress: {
-              totalSkus: allItems.length,
-              successSkus: successCount,
-              failedSkus: currentItems.length,
-              currentRound: round,
-              maxRetries,
-              nextRetryItems: failedResults,
-              isComplete: true,
-              lastResponsePreview: lastRawResponse.slice(0, 500),
-            },
-          });
-          break; // 顶层错误不需要重试
-        }
-
-        // 从 response.data.failed_items 读取失败列表
-        // 成功项不会出现在返回中，不在 failed_items 里的就是成功
-        const failedItemsFromResponse: EnableResult[] = Array.isArray(response?.data?.failed_items)
-          ? response.data.failed_items
-          : Array.isArray(response?.data)
-            ? response.data  // 兼容旧格式（直接数组）
-            : [];
-
-        console.log(`[enable] 返回 ${failedItemsFromResponse.length} 个失败项`);
-
-        // 记录每条失败信息及 unqualified_conditions
-        failedItemsFromResponse.forEach((r, i) => {
-          const uq = r.unqualified_conditions?.length
-            ? r.unqualified_conditions.map(u => `[code=${u.unqualified_code} params=${u.params.join(',')} value=${u.value}]`).join(' ')
-            : '';
-          console.log(`[enable] 失败[${i}]: item=${r.item_id}, model=${r.model_id}, err=${r.err_msg?.slice(0, 80)}${uq ? ` unqualified: ${uq}` : ''}`);
-        });
-
-        // 已提交但不在 failed_items 里的 = 成功
-        const failKeys = new Set(failedItemsFromResponse.map(r => `${r.item_id}-${r.model_id}`));
-        const successInThisRound = currentItems.filter(
-          i => !failKeys.has(`${i.item_id}-${i.model_id}`)
-        );
-        successCount += successInThisRound.length;
-        failedResults = failedItemsFromResponse;
-
-        console.log(`[enable] 本轮成功: ${successInThisRound.length}, 失败: ${failedItemsFromResponse.length}`);
-
-        const progress: EnableProgress = {
-          totalSkus: allItems.length,
-          successSkus: successCount,
-          failedSkus: failedItemsFromResponse.length,
-          currentRound: round,
-          maxRetries,
-          nextRetryItems: failedItemsFromResponse,
-          isComplete: failedItemsFromResponse.length === 0,
-          lastResponsePreview: lastRawResponse.slice(0, 500),
-        };
-
-        set({ enableProgress: progress });
-        get().saveCache();
-
-        if (failedItemsFromResponse.length === 0) {
-          console.log('[enable] ✅ 全部成功！');
+        if (attempt > 0) await new Promise(r => setTimeout(r, 500));
+        const resp = await browser.runtime.sendMessage({ type: 'START_ENABLE' });
+        console.log('[enable] START_ENABLE 响应:', JSON.stringify(resp));
+        if (resp?.success) {
+          succeeded = true;
+          console.log(`[enable] 已通知 background 启动，共 ${allItems.length} 个 SKU${skippedCount > 0 ? `，${skippedCount} 个跳过` : ''}`);
           break;
         }
-
-        // 只重试失败的
-        currentItems = currentItems.filter(i => failKeys.has(`${i.item_id}-${i.model_id}`));
-        console.log(`[enable] 第 ${round} 轮结束, 剩余 ${currentItems.length} 个需要重试`);
-
-        // 诊断：查询剩余商品的当前状态
-        if (currentItems.length > 0 && currentItems.length <= 10) {
-          try {
-            const diagItemIds = [...new Set(currentItems.map(i => String(i.item_id)))];
-            console.log(`[enable] 🔍 诊断查询 ${diagItemIds.length} 个商品的当前状态`);
-            const diagData = await injectedFetch<any>(
-              `${GRAPHQL_URL}?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`,
-              'POST',
-              { query: PRODUCTS_QUERY, variables: { productIds: diagItemIds, statusType: 0 } },
-            );
-            const liveItems = diagData?.data?.products?.items || [];
-            // 构建失败 SKU 的查询 map
-            const failSkuMap = new Map(currentItems.map(i => [`${i.item_id}-${i.model_id}`, i]));
-            for (const item of liveItems) {
-              const orig = products.find(p => p.itemid === item.itemid);
-              for (const sku of item.modelList || []) {
-                const key = `${item.itemid}-${sku.modelid}`;
-                // 显示失败 SKU 的具体库存数据
-                if (failSkuMap.has(key)) {
-                  const req = failSkuMap.get(key)!;
-                  console.log(`[enable] 🔍 失败 SKU ${sku.modelid}: 当前库存=${sku.normalStock}, 请求活动库存=${req.stock}, 原价=${sku.originPrice}`);
-                }
-                // 记录其他 SKU 的变化（作为上下文参考）
-                const origSku = orig?.modelList?.find(m => m.modelid === sku.modelid);
-                if (origSku && (Number(sku.originPrice) !== Number(origSku.originPrice) || sku.normalStock !== origSku.normalStock)) {
-                  console.log(`[enable] ⚠ SKU ${sku.modelid} 数据变化: 价格 ${origSku.originPrice}→${sku.originPrice}, 库存 ${origSku.normalStock}→${sku.normalStock}`);
-                }
-              }
-            }
-            if (liveItems.length > 0) console.log('[enable] ✅ 诊断完成');
-          } catch (diagErr: any) {
-            console.log('[enable] 诊断查询失败:', diagErr.message);
-          }
-        }
-
-        // 自适应库存：对 NOT_ENOUGH_STOCK 的 SKU 逐步降低活动库存
-        const hasStockErrors = failedItemsFromResponse.some(r => r.err_msg?.includes('NOT_ENOUGH_STOCK'));
-        if (hasStockErrors && currentItems.length > 0) {
-          const stockErrorKeys = new Set(
-            failedItemsFromResponse
-              .filter(r => r.err_msg?.includes('NOT_ENOUGH_STOCK'))
-              .map(r => `${r.item_id}-${r.model_id}`)
-          );
-          currentItems = currentItems.map(item => {
-            const key = `${item.item_id}-${item.model_id}`;
-            if (stockErrorKeys.has(key)) {
-              const newStock = Math.max(1, Math.floor(item.stock / 2));
-              console.log(`[enable] 📉 库存不足，降低 SKU ${item.model_id} 活动库存: ${item.stock}→${newStock}`);
-              return { ...item, stock: newStock };
-            }
-            return item;
-          });
-        }
+        console.log(`[enable] START_ENABLE 失败 (第${attempt + 1}次):`, JSON.stringify(resp));
+        if (attempt === 2) set({ error: resp?.error || '后台启动失败' });
       } catch (e: any) {
-        console.log(`[enable] 第 ${round} 轮异常:`, e.message);
-        const progress: EnableProgress = {
-          totalSkus: allItems.length,
-          successSkus: successCount,
-          failedSkus: currentItems.length,
-          currentRound: round,
-          maxRetries,
-          nextRetryItems: [],
-          isComplete: false,
-          lastResponsePreview: `异常: ${e.message}`,
-        };
-        set({ error: `第 ${round} 轮请求异常: ${e.message}`, enableProgress: progress });
+        console.log(`[enable] START_ENABLE 异常 (第${attempt + 1}次):`, e?.message);
+        if (attempt === 2) set({ error: `无法连接到后台: ${e?.message || '未知错误'}` });
       }
     }
 
-    console.log(`[enable] 完成: 共 ${round} 轮, 成功 ${successCount}, 失败 ${failedResults.length}${skippedCount > 0 ? `, 跳过 ${skippedCount}（库存为 0）` : ''}`);
+    // 如果 START_ENABLE 返回失败，但循环可能已启动，主动查询状态确认
+    if (!succeeded) {
+      try {
+        await new Promise(r => setTimeout(r, 1000));
+        const status = await browser.runtime.sendMessage({ type: 'GET_ENABLE_STATUS' });
+        console.log('[enable] 查询后台状态:', JSON.stringify(status));
+        if (status?.data?.progress && !status.data.progress.isComplete) {
+          // 循环确实在运行，清除错误提示
+          set({ error: null });
+        }
+      } catch {}
+    }
+  },
+
+  stopEnabling: async () => {
+    try {
+      await browser.runtime.sendMessage({ type: 'STOP_ENABLE' });
+    } catch { /* background may be inactive */ }
     set({ isEnabling: false });
   },
 
-  stopEnabling: () => {
-    set({ isEnabling: false });
+  checkBackgroundStatus: async () => {
+    try {
+      const resp = await browser.runtime.sendMessage({ type: 'GET_ENABLE_STATUS' });
+      if (resp?.data) {
+        const { progress, error } = resp.data;
+        if (progress && !progress.isComplete) {
+          set({
+            isEnabling: true,
+            enableProgress: progress,
+            error: error || null,
+          });
+        } else if (progress && progress.isComplete) {
+          set({
+            isEnabling: false,
+            enableProgress: progress,
+            error: error || null,
+          });
+        }
+      }
+    } catch { /* background not responding */ }
   },
 
   // ===== 模板 =====
@@ -744,3 +632,31 @@ export const useAppStore = create<AppState>((set, get) => ({
     maxRetries: 10, discountRate: 60, flashSaleStock: 200, purchaseLimit: 5, isEnabling: false, enableProgress: null, skuOverrides: {},
   }),
 }));
+
+// ===== Background 消息监听（接收进度更新）=====
+export function setupBackgroundListener() {
+  browser.runtime.onMessage.addListener((msg: any) => {
+    const type = msg?.type;
+
+    if (type === 'ENABLE_PROGRESS') {
+      console.log('[store] 收到进度更新:', msg.progress);
+      useAppStore.setState({
+        enableProgress: msg.progress,
+        error: msg.error || null,
+      });
+    }
+
+    if (type === 'ENABLE_COMPLETE') {
+      console.log('[store] 收到完成通知:', msg.progress);
+      useAppStore.setState({
+        isEnabling: false,
+        enableProgress: msg.progress,
+        error: msg.error || null,
+      });
+      const state = useAppStore.getState();
+      state.saveCache();
+    }
+
+    return false;
+  });
+}

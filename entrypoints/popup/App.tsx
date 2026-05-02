@@ -4,7 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import { SpcStatus } from '@/components/product/SpcStatus';
 import { ProductList } from '@/components/product/ProductList';
 import { TemplateManager } from '@/components/product/TemplateManager';
-import { useAppStore } from './store';
+import { useAppStore, setupBackgroundListener } from './store';
 
 export default function App() {
   const {
@@ -22,17 +22,20 @@ export default function App() {
     flashSaleStock, setFlashSaleStock,
     purchaseLimit, setPurchaseLimit,
     isEnabling, enableProgress, enableFlashSaleItems, stopEnabling,
+    checkBackgroundStatus,
     loadCache, clearCache, reset,
   } = useAppStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [flashSaleListOpen, setFlashSaleListOpen] = useState(true);
 
-  // 进入时如果已有上次的 SPC_CDS，尝试连接；并加载缓存
+  // 进入时如果已有上次的 SPC_CDS，尝试连接；加载缓存；检查后台状态
   useEffect(() => {
+    setupBackgroundListener();
     if (!isConnected && !spcCds) {
       extractSpcCds();
     }
     loadCache();
+    checkBackgroundStatus();
   }, []);
 
   // 限时特卖活动列表加载后自动展开

@@ -28,20 +28,28 @@ Chrome extension (MV3) for automating Shopee Taiwan seller center flash sale ope
 
 ### Entrypoints (WXT convention)
 - **`entrypoints/popup/`** — Popup UI: App.tsx (layout), store.ts (Zustand + all business logic), types.ts, api.ts (GraphQL fetch)
-- **`entrypoints/background.ts`** — Service Worker: SPC_CDS cookie extraction + FETCH_PRODUCTS relay (minimal, most logic is in popup)
+- **`entrypoints/background.ts`** — Service Worker: SPC_CDS cookie extraction, flash sale enable loop (`runEnableLoop` with `injectedFetch`), message relay (START_ENABLE/STOP_ENABLE/GET_ENABLE_STATUS/ENABLE_PROGRESS/ENABLE_COMPLETE)
 - **`entrypoints/content.ts`** — Content script: currently a no-op placeholder
 
 ### Critical Design Decisions
-1. **Popup handles all API calls directly** — bypasses background SW via `browser.scripting.executeScript({ world: 'MAIN' })` to avoid MV3 message loss and TLS/CORS issues
-2. **SPC_CDS cookie extraction** — `browser.cookies.get()` with multi-domain fallback chain: `seller.shopee.tw` → `shopee.tw` → `www.shopee.tw` → `cookies.getAll({ domain: '.shopee.tw' })`
-3. **All business logic in Zustand store** — `store.ts` is the single source of truth; React components are thin wrappers
-4. **`injectedFetch<T>()`** — Core abstraction that executes fetch in MAIN world via `scripting.executeScript`, including `sc-fe-session` CSRF token extraction from the seller center page
+1. **Enable loop runs in background Service Worker** — `enableFlashSaleItems` loop is in `background.ts`, not popup. Popup sends params via `storage.local` and triggers `START_ENABLE` message. Background sends `ENABLE_PROGRESS`/`ENABLE_COMPLETE` messages back. This allows the loop to continue running after popup closes.
+2. **Data loading still in popup** — `fetchProducts`, `fetchFlashSaleList`, `loadFlashSaleProducts` use `browser.scripting.executeScript({ world: 'MAIN' })` directly from popup via `injectedFetch()`
+3. **SPC_CDS cookie extraction** — `browser.cookies.get()` with multi-domain fallback chain: `seller.shopee.tw` → `shopee.tw` → `www.shopee.tw` → `cookies.getAll({ domain: '.shopee.tw' })`
+4. **All business logic in Zustand store** — `store.ts` is the single source of truth; React components are thin wrappers
+5. **`injectedFetch<T>()`** — Core abstraction that executes fetch in MAIN world via `scripting.executeScript`, including `sc-fe-session` CSRF token extraction from the seller center page
 
 ### Data Flow
 ```
-User Input → App.tsx → store.ts actions → injectedFetch() → 
-  scripting.executeScript(MAIN world) → fetch() → 
-  response → store state update → React re-render
+Data loading (popup):
+  User Input → App.tsx → store.ts actions → injectedFetch() → 
+    scripting.executeScript(MAIN world) → fetch() → 
+    response → store state update → React re-render
+
+Enable loop (background):
+  Popup: build items → storage.local(params) → START_ENABLE message
+  Background: read params → loop(injectedFetch) → storage.local(progress) → ENABLE_PROGRESS message
+  Popup: receives progress → setState → re-render
+  (Popup can close; loop continues in background; reopen checks GET_ENABLE_STATUS)
 ```
 
 ### Key API Endpoints
