@@ -82,6 +82,13 @@ export interface FlashSaleItemIdListData {
 
 // ===== 开启限时特卖相关类型 =====
 
+// 单个 SKU 的限时参数覆盖
+export interface SkuOverride {
+  discountRate?: number;  // 折扣率（百分比），不填则使用全局默认
+  stock?: number;         // 活动库存，不填则使用全局默认
+  purchaseLimit?: number; // 限购数量，不填则使用全局默认（0=不限购）
+}
+
 // 提交到 set_shop_flash_sale_items 的单条 item
 export interface EnableItem {
   item_id: number;
@@ -134,4 +141,40 @@ export type MessagePayload =
 export interface InjectionPayload {
   type: 'GET_SPC_CDS' | 'SPC_CDS_FROM_PAGE';
   data?: { spcCds: string; spcCdsVer: string };
+}
+
+// 缓存数据（30 分钟有效）
+export interface CacheData {
+  timestamp: number;
+  products: ShopeeProduct[];
+  flashSaleList: FlashSale[];
+  flashSaleId: number | null;
+  flashSaleInfo: string;
+  enableProgress: EnableProgress | null;
+  skuOverrides: Record<string, SkuOverride>;
+  discountRate: number;
+  flashSaleStock: number;
+  purchaseLimit: number;
+  maxRetries: number;
+  infiniteRetry: boolean;
+}
+
+// ===== 模板相关类型 =====
+
+// 模板中保存的商品简要信息（用于比对显示）
+export interface TemplateProductInfo {
+  itemId: string;
+  name: string;
+}
+
+// 单个命名模板
+export interface FlashSaleTemplate {
+  name: string;
+  createdAt: number;
+  updatedAt: number;
+  discountRate: number;
+  flashSaleStock: number;
+  purchaseLimit: number;
+  skuOverrides: Record<string, SkuOverride>;
+  productInfo: TemplateProductInfo[];
 }

@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { SpcStatus } from '@/components/product/SpcStatus';
 import { ProductList } from '@/components/product/ProductList';
+import { TemplateManager } from '@/components/product/TemplateManager';
 import { useAppStore } from './store';
 
 export default function App() {
@@ -16,18 +17,30 @@ export default function App() {
     spcCds, productIds,
     isLoadingFlashSales, flashSaleInfo,
     flashSaleId, maxRetries, setMaxRetries,
+    infiniteRetry, setInfiniteRetry,
     discountRate, setDiscountRate,
     flashSaleStock, setFlashSaleStock,
-    isEnabling, enableProgress, enableFlashSaleItems,
+    purchaseLimit, setPurchaseLimit,
+    isEnabling, enableProgress, enableFlashSaleItems, stopEnabling,
+    loadCache, clearCache, reset,
   } = useAppStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [flashSaleListOpen, setFlashSaleListOpen] = useState(true);
 
-  // 进入时如果已有上次的 SPC_CDS，尝试连接
+  // 进入时如果已有上次的 SPC_CDS，尝试连接；并加载缓存
   useEffect(() => {
     if (!isConnected && !spcCds) {
       extractSpcCds();
     }
+    loadCache();
   }, []);
+
+  // 限时特卖活动列表加载后自动展开
+  useEffect(() => {
+    if (flashSaleList.length > 0) {
+      setFlashSaleListOpen(true);
+    }
+  }, [flashSaleList.length]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
@@ -56,12 +69,24 @@ export default function App() {
   };
 
   return (
-    <div className="w-[420px] min-h-[500px] p-4 bg-background">
+    <div className="w-[500px] min-h-[500px] p-4 bg-background">
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">限时特卖助手</CardTitle>
-            <SpcStatus />
+            <div className="flex items-center gap-2">
+              <button
+                className="text-[10px] text-muted-foreground hover:text-primary underline"
+                onClick={async () => {
+                  await clearCache();
+                  reset();
+                  extractSpcCds();
+                }}
+              >
+                清除缓存
+              </button>
+              <SpcStatus />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -109,66 +134,87 @@ export default function App() {
               </button>
             )}
 
-            {/* 限时特卖活动列表 */}
+            {/* 限时特卖活动列表（可折叠） */}
             {flashSaleList.length > 0 && (
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-muted-foreground">选择限时特卖活动</label>
-                  <button
-                    className="text-xs text-primary hover:underline"
-                    onClick={() => fetchFlashSaleList()}
-                  >
-                    刷新
-                  </button>
+                <div
+                  className="flex items-center justify-between cursor-pointer select-none"
+                  onClick={() => setFlashSaleListOpen(!flashSaleListOpen)}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <label className="text-xs font-medium text-muted-foreground shrink-0">限时特卖活动</label>
+                    {flashSaleId && !flashSaleListOpen && (() => {
+                      const sel = flashSaleList.find(s => s.flash_sale_id === flashSaleId);
+                      return sel ? (
+                        <span className="text-xs text-primary truncate">{sel.name || `活动 #${sel.flash_sale_id}`}</span>
+                      ) : null;
+                    })()}
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      className="text-xs text-primary hover:underline"
+                      onClick={e => { e.stopPropagation(); fetchFlashSaleList(); setFlashSaleListOpen(true); }}
+                    >
+                      刷新
+                    </button>
+                    <span className={`text-muted-foreground transition-transform ${flashSaleListOpen ? 'rotate-180' : ''}`}>▼</span>
+                  </div>
                 </div>
-                <div className="max-h-40 overflow-y-auto space-y-1">
-                  {flashSaleList.map(sale => {
-                    const now = Math.floor(Date.now() / 1000);
-                    const isActive = now >= sale.start_time && now < sale.end_time;
-                    const isUpcoming = sale.start_time > now;
-                    const isEnded = now >= sale.end_time;
-                    const isSelected = flashSaleId === sale.flash_sale_id;
 
-                    let statusLabel = '已结束';
-                    let statusClass = 'text-gray-500 bg-gray-50 border-gray-200';
-                    if (isActive) { statusLabel = '进行中'; statusClass = 'text-green-600 bg-green-50 border-green-200'; }
-                    else if (isUpcoming) { statusLabel = '即将开始'; statusClass = 'text-blue-600 bg-blue-50 border-blue-200'; }
+                {flashSaleListOpen && (
+                  <div className="max-h-40 overflow-y-auto space-y-1">
+                    {flashSaleList.map(sale => {
+                      const now = Math.floor(Date.now() / 1000);
+                      const isActive = now >= sale.start_time && now < sale.end_time;
+                      const isUpcoming = sale.start_time > now;
+                      const isEnded = now >= sale.end_time;
+                      const isSelected = flashSaleId === sale.flash_sale_id;
 
-                    const fmtTime = (ts: number) => {
-                      const d = new Date(ts * 1000);
-                      const mm = String(d.getMonth() + 1).padStart(2, '0');
-                      const dd = String(d.getDate()).padStart(2, '0');
-                      const hh = String(d.getHours()).padStart(2, '0');
-                      const mi = String(d.getMinutes()).padStart(2, '0');
-                      return `${mm}/${dd} ${hh}:${mi}`;
-                    };
+                      let statusLabel = '已结束';
+                      let statusClass = 'text-gray-500 bg-gray-50 border-gray-200';
+                      if (isActive) { statusLabel = '进行中'; statusClass = 'text-green-600 bg-green-50 border-green-200'; }
+                      else if (isUpcoming) { statusLabel = '即将开始'; statusClass = 'text-blue-600 bg-blue-50 border-blue-200'; }
 
-                    return (
-                      <button
-                        key={sale.flash_sale_id}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-xs border rounded-md transition-colors ${
-                          isSelected
-                            ? 'border-primary bg-primary/5'
-                            : 'hover:bg-accent/50'
-                        }`}
-                        onClick={() => loadFlashSaleProducts(sale.flash_sale_id)}
-                        disabled={isLoadingFlashSales}
-                      >
-                        <div className="flex flex-col items-start min-w-0">
-                          <span className={`font-medium truncate w-full text-left ${isSelected ? 'text-primary' : ''}`}>
-                            {sale.name || `活动 #${sale.flash_sale_id}`}
+                      const fmtTime = (ts: number) => {
+                        const d = new Date(ts * 1000);
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        const hh = String(d.getHours()).padStart(2, '0');
+                        const mi = String(d.getMinutes()).padStart(2, '0');
+                        return `${mm}/${dd} ${hh}:${mi}`;
+                      };
+
+                      return (
+                        <button
+                          key={sale.flash_sale_id}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-xs border rounded-md transition-colors ${
+                            isSelected
+                              ? 'border-primary bg-primary/5'
+                              : 'hover:bg-accent/50'
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            loadFlashSaleProducts(sale.flash_sale_id);
+                            setFlashSaleListOpen(false);
+                          }}
+                          disabled={isLoadingFlashSales}
+                        >
+                          <div className="flex flex-col items-start min-w-0">
+                            <span className={`font-medium truncate w-full text-left ${isSelected ? 'text-primary' : ''}`}>
+                              {sale.name || `活动 #${sale.flash_sale_id}`}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground mt-0.5">
+                              {fmtTime(sale.start_time)} ~ {fmtTime(sale.end_time)}
+                            </span>
+                          </div>
+                          <span className={`shrink-0 ml-2 px-1.5 py-0.5 text-[10px] rounded-full border ${statusClass}`}>
+                            {statusLabel}
                           </span>
-                          <span className="text-[10px] text-muted-foreground mt-0.5">
-                            {fmtTime(sale.start_time)} ~ {fmtTime(sale.end_time)}
-                          </span>
-                        </div>
-                        <span className={`shrink-0 ml-2 px-1.5 py-0.5 text-[10px] rounded-full border ${statusClass}`}>
-                          {statusLabel}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
@@ -213,8 +259,15 @@ export default function App() {
 
           <Separator />
 
-          {/* 商品列表 */}
-          {products.length > 0 && <ProductList products={products} />}
+          {/* 商品列表（可滚动） */}
+          {products.length > 0 && (
+            <div className="max-h-48 overflow-y-auto space-y-1">
+              <ProductList products={products} />
+            </div>
+          )}
+
+          {/* 模板 */}
+          {products.length > 0 && <TemplateManager />}
 
           {/* 开启限时特卖（需要已加载商品且已选活动） */}
           {products.length > 0 && flashSaleId && (
@@ -222,31 +275,42 @@ export default function App() {
               <Separator />
               <div className="text-sm font-medium">开启限时特卖</div>
 
-              {/* 折扣率设置 */}
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span>折扣率 (%)</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={discountRate}
-                  onChange={e => setDiscountRate(Math.max(1, Math.min(100, Number(e.target.value) || 60)))}
-                  className="w-16 px-2 py-1 border rounded text-center"
-                  disabled={isEnabling}
-                />
-              </div>
-
-              {/* 活动库存设置 */}
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span>活动库存</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={flashSaleStock}
-                  onChange={e => setFlashSaleStock(Math.max(1, Number(e.target.value) || 200))}
-                  className="w-16 px-2 py-1 border rounded text-center"
-                  disabled={isEnabling}
-                />
+              {/* 折扣率 + 活动库存 + 限购数量（同一行） */}
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                  <span className="whitespace-nowrap">折扣率 (%)</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={discountRate}
+                    onChange={e => setDiscountRate(Math.max(1, Math.min(100, Number(e.target.value) || 60)))}
+                    className="w-14 px-1.5 py-1 border rounded text-center"
+                    disabled={isEnabling}
+                  />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="whitespace-nowrap">活动库存</span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={flashSaleStock}
+                    onChange={e => setFlashSaleStock(Math.max(1, Number(e.target.value) || 200))}
+                    className="w-14 px-1.5 py-1 border rounded text-center"
+                    disabled={isEnabling}
+                  />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="whitespace-nowrap">限购数量</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={purchaseLimit}
+                    onChange={e => setPurchaseLimit(Math.max(0, Number(e.target.value) || 0))}
+                    className="w-14 px-1.5 py-1 border rounded text-center"
+                    disabled={isEnabling}
+                  />
+                </div>
               </div>
 
               {/* 重试次数设置 */}
@@ -259,24 +323,43 @@ export default function App() {
                   value={maxRetries}
                   onChange={e => setMaxRetries(Math.max(1, Number(e.target.value) || 1))}
                   className="w-16 px-2 py-1 border rounded text-center"
-                  disabled={isEnabling}
+                  disabled={isEnabling || infiniteRetry}
                 />
+                <label className="flex items-center gap-1 ml-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={infiniteRetry}
+                    onChange={e => setInfiniteRetry(e.target.checked)}
+                    disabled={isEnabling}
+                    className="cursor-pointer"
+                  />
+                  <span>无限重试</span>
+                </label>
               </div>
 
-              {/* 开启按钮 */}
-              <button
-                className="w-full py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isEnabling}
-                onClick={() => enableFlashSaleItems()}
-              >
-                {isEnabling ? '开启中...' : '🚀 开启限时特卖'}
-              </button>
+              {/* 开启 / 停止按钮 */}
+              {!isEnabling ? (
+                <button
+                  className="w-full py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isEnabling}
+                  onClick={() => enableFlashSaleItems()}
+                >
+                  🚀 开启限时特卖
+                </button>
+              ) : (
+                <button
+                  className="w-full py-2 text-sm font-medium text-white bg-red-500 rounded-md hover:bg-red-600"
+                  onClick={() => stopEnabling()}
+                >
+                  ⏹ 停止
+                </button>
+              )}
 
               {/* 进度显示 */}
               {enableProgress && (
                 <div className="space-y-1 text-xs">
                   <div className="flex justify-between text-muted-foreground">
-                    <span>第 {enableProgress.currentRound}/{enableProgress.maxRetries} 轮</span>
+                    <span>第 {enableProgress.currentRound}/{infiniteRetry ? '∞' : enableProgress.maxRetries} 轮</span>
                     <span>成功 {enableProgress.successSkus} / 失败 {enableProgress.failedSkus} / 共 {enableProgress.totalSkus}</span>
                   </div>
                   <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">

@@ -1,19 +1,29 @@
 import { create } from 'zustand';
-import type { ShopeeProduct, FlashSale, EnableItem, EnableResult, EnableProgress } from './types';
+import type { ShopeeProduct, FlashSale, EnableItem, EnableResult, EnableProgress, SkuOverride, CacheData, FlashSaleTemplate, TemplateProductInfo } from './types';
 
 // ===== 注入页面执行 fetch（MAIN world）=====
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`${label} 超时 (${ms}ms)`)), ms)),
+  ]);
+}
+
 async function injectedFetch<T>(
   url: string,
   method: 'GET' | 'POST' = 'GET',
   body?: object,
 ): Promise<T> {
+  console.log('[injectedFetch] 开始', { url, method, hasBody: !!body });
   const tabs = await browser.tabs.query({ active: true, currentWindow: true });
   const tab = tabs?.[0];
+  console.log('[injectedFetch] 活跃标签页:', { tabId: tab?.id, url: tab?.url });
   if (!tab?.id) throw new Error('没有找到活跃的标签页');
   if (!tab.url?.includes('seller.shopee.tw')) throw new Error('请在 seller.shopee.tw 页面使用此扩展');
 
   // 尝试从页面获取 sc-fe-session（虾皮 API 需要的 CSRF 令牌）
-  const sessionInfo = await browser.scripting.executeScript({
+  console.log('[injectedFetch] 开始获取 sc-fe-session...');
+  const sessionInfo = await withTimeout(browser.scripting.executeScript({
     target: { tabId: tab.id },
     world: 'MAIN',
     func: () => {
@@ -45,11 +55,12 @@ async function injectedFetch<T>(
         return '';
       }
     },
-  });
+  }), 10000, 'sc-fe-session 获取');
   const scFeSession = (sessionInfo?.[0]?.result as string) || '';
   console.log('[injectedFetch] sc-fe-session 最终值:', scFeSession || '(空)');
 
-  const results = await browser.scripting.executeScript({
+  console.log('[injectedFetch] 开始执行 API 请求脚本...');
+  const results = await withTimeout(browser.scripting.executeScript({
     target: { tabId: tab.id },
     world: 'MAIN',
     func: async (fetchUrl: string, fetchMethod: string, fetchBody: string | null, scFeSession: string) => {
@@ -65,24 +76,31 @@ async function injectedFetch<T>(
           headers,
         };
         if (fetchBody) opts.body = fetchBody;
+        console.log('[injectedFetch] 页面内 fetch 开始', { url: fetchUrl, method: fetchMethod });
         const resp = await fetch(fetchUrl, opts);
         const bodyText = await resp.text();
+        console.log('[injectedFetch] 页面内 fetch 完成', { status: resp.status, bodyLength: bodyText.length });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText || bodyText.slice(0, 200)}`);
         return JSON.parse(bodyText);
       } catch (e: any) {
+        console.log('[injectedFetch] 页面内 fetch 异常:', e.message);
         return { _error: e.message } as any;
       }
     },
     args: [url, method, body ? JSON.stringify(body) : null, scFeSession],
-  });
+  }), 30000, 'API 请求');
 
+  console.log('[injectedFetch] 脚本执行结果:', results);
   const result = results?.[0]?.result as any;
   if (!result) throw new Error('页面脚本执行返回为空，请刷新页面后重试');
   if (result._error) throw new Error(`API 请求失败: ${result._error}`);
+  console.log('[injectedFetch] 成功返回数据');
   return result as T;
 }
 
 const FLASH_SALE_API = 'https://seller.shopee.tw/api/marketing/v4/shop_flash_sale';
+
+const STORAGE_TEMPLATES_KEY = 'flashSaleTemplates';
 
 // ===== GraphQL 查询常量 =====
 const GRAPHQL_URL = 'https://seller.shopee.tw/api/marketing/v4/graphql/query/';
@@ -122,10 +140,12 @@ interface AppState {
 
   // 开启限时特卖状态
   maxRetries: number;
+  infiniteRetry: boolean;
   discountRate: number;
   flashSaleStock: number;
   isEnabling: boolean;
   enableProgress: EnableProgress | null;
+  skuOverrides: Record<string, SkuOverride>; // key: `${itemId}-${modelId}`
 
   // Actions
   setSpcCds: (spcCds: string, spcCdsVer: string) => void;
@@ -140,9 +160,21 @@ interface AppState {
   fetchProducts: () => Promise<void>;
   fetchFlashSaleProducts: () => Promise<void>;
   setMaxRetries: (n: number) => void;
+  setInfiniteRetry: (v: boolean) => void;
   setDiscountRate: (n: number) => void;
   setFlashSaleStock: (n: number) => void;
+  setSkuOverride: (itemId: string, modelId: string, override: SkuOverride) => void;
+  setPurchaseLimit: (n: number) => void;
   enableFlashSaleItems: () => Promise<void>;
+  stopEnabling: () => void;
+  saveTemplate: (name: string) => Promise<void>;
+  deleteTemplate: (name: string) => Promise<void>;
+  getTemplateNames: () => Promise<string[]>;
+  getTemplate: (name: string) => Promise<FlashSaleTemplate | null>;
+  applyTemplate: (template: FlashSaleTemplate) => void;
+  saveCache: () => Promise<void>;
+  loadCache: () => Promise<boolean>;
+  clearCache: () => Promise<void>;
   reset: () => void;
 }
 
@@ -162,10 +194,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   flashSaleList: [],
   isLoadingFlashSaleList: false,
   maxRetries: 10,
+  infiniteRetry: false,
   discountRate: 60,
   flashSaleStock: 200,
+  purchaseLimit: 5,
   isEnabling: false,
   enableProgress: null,
+  skuOverrides: {},
 
   setSpcCds: (spcCds, spcCdsVer) => set({ spcCds, spcCdsVer }),
   setConnected: (isConnected) => set({ isConnected }),
@@ -176,10 +211,67 @@ export const useAppStore = create<AppState>((set, get) => ({
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
   setMaxRetries: (maxRetries) => set({ maxRetries }),
+  setInfiniteRetry: (infiniteRetry) => set({ infiniteRetry }),
   setDiscountRate: (discountRate) => set({ discountRate }),
   setFlashSaleStock: (flashSaleStock) => set({ flashSaleStock }),
+  setSkuOverride: (itemId, modelId, override) => set(state => {
+    const key = `${itemId}-${modelId}`;
+    const next = { ...state.skuOverrides };
+    if (override.discountRate === undefined && override.stock === undefined && override.purchaseLimit === undefined) {
+      delete next[key];
+    } else {
+      next[key] = override;
+    }
+    return { skuOverrides: next };
+  }),
+  setPurchaseLimit: (purchaseLimit) => set({ purchaseLimit }),
+
+  // ===== 缓存持久化 =====
+  saveCache: async () => {
+    const { products, flashSaleList, flashSaleId, flashSaleInfo, enableProgress, skuOverrides, discountRate, flashSaleStock, purchaseLimit, maxRetries, infiniteRetry } = get();
+    const cache: CacheData = {
+      timestamp: Date.now(),
+      products, flashSaleList, flashSaleId, flashSaleInfo, enableProgress, skuOverrides,
+      discountRate, flashSaleStock, purchaseLimit, maxRetries, infiniteRetry,
+    };
+    try { await browser.storage.local.set({ flashSaleCache: cache }); } catch {}
+  },
+  loadCache: async () => {
+    try {
+      const result = await browser.storage.local.get('flashSaleCache');
+      const cache = result.flashSaleCache as CacheData | undefined;
+      if (!cache) return false;
+      if (Date.now() - cache.timestamp > 30 * 60 * 1000) {
+        await browser.storage.local.remove('flashSaleCache');
+        return false;
+      }
+      set({
+        products: cache.products || [],
+        flashSaleList: cache.flashSaleList || [],
+        flashSaleId: cache.flashSaleId ?? null,
+        flashSaleInfo: cache.flashSaleInfo || '',
+        enableProgress: cache.enableProgress || null,
+        skuOverrides: cache.skuOverrides || {},
+        discountRate: cache.discountRate ?? 60,
+        flashSaleStock: cache.flashSaleStock ?? 200,
+        purchaseLimit: cache.purchaseLimit ?? 5,
+        maxRetries: cache.maxRetries ?? 10,
+        infiniteRetry: cache.infiniteRetry ?? false,
+        isConnected: true,
+        inputText: (cache.products?.[0] ? cache.products.map(p => p.itemid).join('\n') : ''),
+        productIds: cache.products?.map(p => p.itemid) || [],
+      });
+      return true;
+    } catch { return false; }
+  },
+  clearCache: async () => {
+    try {
+      await browser.storage.local.remove('flashSaleCache');
+    } catch {}
+  },
 
   extractSpcCds: async () => {
+    console.log('[extractSpcCds] 开始获取 SPC_CDS...');
     set({ isExtracting: true, error: null });
     try {
       const urls = ['https://seller.shopee.tw', 'https://shopee.tw', 'https://www.shopee.tw'];
@@ -193,30 +285,36 @@ export const useAppStore = create<AppState>((set, get) => ({
             const verCookie = await browser.cookies.get({ url, name: 'SPC_CDS_VER' });
             spcCds = cookie.value;
             spcCdsVer = verCookie?.value || '2';
+            console.log('[extractSpcCds] 从', url, '获取到 SPC_CDS');
             break;
           }
         } catch { /* next */ }
       }
 
       if (!spcCds) {
+        console.log('[extractSpcCds] 尝试 cookies.getAll 回退...');
         const allCookies = await browser.cookies.getAll({ domain: '.shopee.tw' });
         const spc = allCookies.find(c => c.name === 'SPC_CDS');
         const ver = allCookies.find(c => c.name === 'SPC_CDS_VER');
         if (spc?.value) {
           spcCds = spc.value;
           spcCdsVer = ver?.value || '2';
+          console.log('[extractSpcCds] 通过 getAll 获取到 SPC_CDS');
         }
       }
 
       if (spcCds) {
+        console.log('[extractSpcCds] 成功, isConnected = true');
         set({ spcCds, spcCdsVer, isConnected: true, isExtracting: false, error: null });
       } else {
+        console.log('[extractSpcCds] 未找到 SPC_CDS');
         set({
           error: 'SPC_CDS 不存在，请确认：\n1. 已登录虾皮卖家中心 (seller.shopee.tw)\n2. 刷新页面后再试',
           isExtracting: false, isConnected: false,
         });
       }
     } catch (e: any) {
+      console.log('[extractSpcCds] 异常:', e);
       set({
         error: `读取 Cookie 失败: ${e?.message || '未知错误'}`,
         isExtracting: false, isConnected: false,
@@ -246,6 +344,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
 
       set({ products: items, isLoading: false, error: null });
+      get().saveCache();
     } catch (e: any) {
       set({ error: `请求失败: ${e?.message || String(e)}`, isLoading: false });
     }
@@ -254,23 +353,28 @@ export const useAppStore = create<AppState>((set, get) => ({
   // ===== 获取限时特卖活动列表 =====
   fetchFlashSaleList: async () => {
     const { spcCds, spcCdsVer } = get();
+    console.log('[fetchFlashSaleList] 开始', { spcCds: !!spcCds, spcCdsVer });
     if (!spcCds) { set({ error: '请先获取 SPC_CDS' }); return; }
 
     set({ isLoadingFlashSaleList: true, error: null, flashSaleList: [] });
 
     try {
-      const listResp = await injectedFetch<{ code: number; data?: { flash_sale_list?: FlashSale[] } }>(
-        `${FLASH_SALE_API}/get_shop_flash_sale_list/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&offset=0&limit=50&type=0`,
-      );
+      const url = `${FLASH_SALE_API}/get_shop_flash_sale_list/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&offset=0&limit=50&type=0`;
+      console.log('[fetchFlashSaleList] 请求 URL:', url);
+      const listResp = await injectedFetch<{ code: number; data?: { flash_sale_list?: FlashSale[] } }>(url);
+      console.log('[fetchFlashSaleList] 响应:', JSON.stringify(listResp).slice(0, 500));
 
       if (listResp.code !== 0 || !listResp.data?.flash_sale_list?.length) {
-        set({ error: '未找到限时特卖活动', isLoadingFlashSaleList: false });
+        console.log('[fetchFlashSaleList] 无数据', { code: listResp.code, data: listResp.data });
+        set({ error: `未找到限时特卖活动 (code=${listResp.code})`, isLoadingFlashSaleList: false });
         return;
       }
 
       set({ flashSaleList: listResp.data.flash_sale_list, isLoadingFlashSaleList: false });
-      console.log("[enable] 限时特卖列表详情:", JSON.stringify(listResp.data.flash_sale_list, null, 2));
+      get().saveCache();
+      console.log('[fetchFlashSaleList] 成功, 共', listResp.data.flash_sale_list.length, '个活动');
     } catch (e: any) {
+      console.log('[fetchFlashSaleList] 异常:', e);
       set({
         error: `获取限时特卖列表失败: ${e?.message || '未知错误'}`,
         isLoadingFlashSaleList: false,
@@ -321,24 +425,36 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // ===== 开启限时特卖（带自动重试）=====
   enableFlashSaleItems: async () => {
-    const { products, flashSaleId, spcCds, spcCdsVer, maxRetries, discountRate, flashSaleStock } = get();
+    const { products, flashSaleId, spcCds, spcCdsVer, maxRetries, infiniteRetry, discountRate, flashSaleStock, purchaseLimit, skuOverrides } = get();
 
     if (!flashSaleId) { set({ error: '没有限时特卖活动 ID，请先加载限时特卖' }); return; }
     if (!products.length) { set({ error: '没有商品数据' }); return; }
 
-    // 构建所有 SKU 的提交数据（跳过库存为 0 的 SKU）
+    // 构建所有 SKU 的提交数据（跳过库存为 0 的 SKU，使用单个覆盖参数）
+    console.log('[enable] skuOverrides 全部:', JSON.stringify(skuOverrides));
     const allItems: EnableItem[] = products.flatMap(p =>
       (p.modelList || [])
         .filter(sku => (sku.normalStock || 0) > 0)
-        .map(sku => ({
-          item_id: Number(p.itemid),
-          status: 1,
-          model_id: Number(sku.modelid),
-          item_display_image: p.images?.[0] || '',
-          input_promo_price: Math.floor(Number(sku.originPrice || p.originPrice || 0) * discountRate / 100),
-          stock: Math.min(flashSaleStock, sku.normalStock || flashSaleStock),
-          purchase_limit: 5,
-        }))
+        .map(sku => {
+          const key = `${p.itemid}-${sku.modelid}`;
+          const override = skuOverrides[key];
+          const usedDiscount = override?.discountRate ?? discountRate;
+          const usedStock = Math.min(override?.stock ?? flashSaleStock, sku.normalStock || flashSaleStock);
+          const usedPurchaseLimit = override?.purchaseLimit ?? purchaseLimit;
+          const promoPrice = Math.floor(Number(sku.originPrice || p.originPrice || 0) * usedDiscount / 100);
+          if (override) {
+            console.log(`[enable] SKU ${key}: override=${JSON.stringify(override)}, usedDiscount=${usedDiscount}, usedStock=${usedStock}, usedPurchaseLimit=${usedPurchaseLimit}, promoPrice=${promoPrice}`);
+          }
+          return {
+            item_id: Number(p.itemid),
+            status: 1,
+            model_id: Number(sku.modelid),
+            item_display_image: p.images?.[0] || '',
+            input_promo_price: promoPrice,
+            stock: usedStock,
+            purchase_limit: usedPurchaseLimit,
+          };
+        })
     );
     const skippedCount = products.reduce((sum, p) =>
       sum + (p.modelList || []).filter(sku => !sku.normalStock || sku.normalStock <= 0).length, 0
@@ -360,7 +476,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     let lastRawResponse: string = '';
     let round = 0;
 
-    for (round = 1; round <= maxRetries; round++) {
+    for (round = 1; ; round++) {
+      if (!infiniteRetry && round > maxRetries) break;
+      // 用户取消检测
+      if (!get().isEnabling) {
+        console.log('[enable] ⏹ 用户取消');
+        break;
+      }
       try {
         console.log(`[enable] === 第 ${round} 轮提交开始 ===`);
         console.log(`[enable] 提交 ${currentItems.length} 个 SKU`);
@@ -445,6 +567,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         };
 
         set({ enableProgress: progress });
+        get().saveCache();
 
         if (failedItemsFromResponse.length === 0) {
           console.log('[enable] ✅ 全部成功！');
@@ -528,12 +651,96 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isEnabling: false });
   },
 
+  stopEnabling: () => {
+    set({ isEnabling: false });
+  },
+
+  // ===== 模板 =====
+  getTemplateNames: async () => {
+    try {
+      const result = await browser.storage.local.get('flashSaleTemplates');
+      const templates: Record<string, FlashSaleTemplate> = result.flashSaleTemplates || {};
+      return Object.keys(templates).sort();
+    } catch {
+      return [];
+    }
+  },
+
+  getTemplate: async (name: string) => {
+    try {
+      const result = await browser.storage.local.get('flashSaleTemplates');
+      const templates: Record<string, FlashSaleTemplate> = result.flashSaleTemplates || {};
+      return templates[name] || null;
+    } catch {
+      return null;
+    }
+  },
+
+  saveTemplate: async (name: string) => {
+    const { products, skuOverrides, discountRate, flashSaleStock, purchaseLimit } = get();
+    try {
+      const result = await browser.storage.local.get('flashSaleTemplates');
+      const templates: Record<string, FlashSaleTemplate> = result.flashSaleTemplates || {};
+      const existing = templates[name];
+      const productInfo: TemplateProductInfo[] = products.map(p => ({
+        itemId: p.itemid,
+        name: p.name,
+      }));
+      const template: FlashSaleTemplate = {
+        name,
+        createdAt: existing?.createdAt ?? Date.now(),
+        updatedAt: Date.now(),
+        discountRate,
+        flashSaleStock,
+        purchaseLimit,
+        skuOverrides: { ...skuOverrides },
+        productInfo,
+      };
+      templates[name] = template;
+      await browser.storage.local.set({ flashSaleTemplates: templates });
+    } catch (e) {
+      console.error('[saveTemplate] 保存失败:', e);
+      throw e;
+    }
+  },
+
+  deleteTemplate: async (name: string) => {
+    try {
+      const result = await browser.storage.local.get('flashSaleTemplates');
+      const templates: Record<string, FlashSaleTemplate> = result.flashSaleTemplates || {};
+      delete templates[name];
+      await browser.storage.local.set({ flashSaleTemplates: templates });
+    } catch (e) {
+      console.error('[deleteTemplate] 删除失败:', e);
+      throw e;
+    }
+  },
+
+  applyTemplate: (template: FlashSaleTemplate) => {
+    const currentProductIds = new Set(get().products.map(p => p.itemid));
+    // 只保留模板中当前仍然存在的商品的覆盖参数
+    const filteredOverrides: Record<string, SkuOverride> = {};
+    for (const [key, override] of Object.entries(template.skuOverrides)) {
+      const itemId = key.split('-')[0];
+      if (currentProductIds.has(itemId)) {
+        filteredOverrides[key] = override;
+      }
+    }
+    set({
+      discountRate: template.discountRate,
+      flashSaleStock: template.flashSaleStock,
+      purchaseLimit: template.purchaseLimit,
+      skuOverrides: filteredOverrides,
+    });
+    get().saveCache();
+  },
+
   // ===== 重置 =====
   reset: () => set({
     spcCds: '', spcCdsVer: '2', isConnected: false,
     productIds: [], products: [], isLoading: false, error: null, inputText: '',
     isLoadingFlashSales: false, flashSaleInfo: '', flashSaleId: null,
     flashSaleList: [], isLoadingFlashSaleList: false,
-    maxRetries: 10, discountRate: 60, flashSaleStock: 200, isEnabling: false, enableProgress: null,
+    maxRetries: 10, discountRate: 60, flashSaleStock: 200, purchaseLimit: 5, isEnabling: false, enableProgress: null, skuOverrides: {},
   }),
 }));

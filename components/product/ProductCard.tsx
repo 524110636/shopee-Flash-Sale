@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useAppStore } from '@/entrypoints/popup/store';
 import type { ShopeeProduct } from '@/entrypoints/popup/types';
 
 interface ProductCardProps {
@@ -9,13 +10,19 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onViewSkus }: ProductCardProps) {
+  const skuOverrides = useAppStore(s => s.skuOverrides);
+  const hasOverrides = product.modelList.some(m => `${product.itemid}-${m.modelid}` in skuOverrides);
+
   const formatPrice = (price: string) => {
     const num = parseInt(price);
     return isNaN(num) ? price : `NT$${num.toLocaleString()}`;
   };
 
   return (
-    <Card className="hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => onViewSkus(product)}>
+    <Card
+      className={`hover:bg-accent/50 transition-colors cursor-pointer ${hasOverrides ? 'border-l-4 border-l-blue-500' : ''}`}
+      onClick={() => onViewSkus(product)}
+    >
       <CardContent className="p-3">
         <div className="flex items-start gap-3">
           {/* 商品图片 */}
@@ -40,6 +47,11 @@ export function ProductCard({ product, onViewSkus }: ProductCardProps) {
               <Badge variant="secondary" className="text-xs">
                 {product.modelList.length} SKU
               </Badge>
+              {hasOverrides && (
+                <Badge variant="outline" className="text-[10px] text-blue-600 border-blue-300 bg-blue-50">
+                  已编辑
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
               <span>价格: {formatPrice(product.inputOriginPrice)}</span>
