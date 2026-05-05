@@ -28,7 +28,6 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
     startAutoMode, stopAutoMode,
     flashSaleList, fetchFlashSaleList, isLoadingFlashSaleList,
     loadFlashSaleProducts, products, isLoadingFlashSales,
-    skuOverrides,
   } = useAppStore();
 
   const [mode, setMode] = useState<'rounds' | 'days'>('rounds');
@@ -55,14 +54,14 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
 
   useEffect(() => {
     if (flashSaleList.length === 0) fetchFlashSaleList();
-  }, []);
+  }, [flashSaleList.length, fetchFlashSaleList]);
 
   useEffect(() => {
     if (autoModeStatus?.sourceFlashSaleId && flashSaleList.length > 0) {
       const found = flashSaleList.find(s => s.flash_sale_id === autoModeStatus.sourceFlashSaleId);
       if (found && !selectedTemplate) setSelectedTemplate(found);
     }
-  }, [autoModeStatus?.sourceFlashSaleId, flashSaleList]);
+  }, [autoModeStatus?.sourceFlashSaleId, flashSaleList, selectedTemplate]);
 
   const isRunning = autoModeStatus?.isRunning ?? false;
 

@@ -1,0 +1,11 @@
+node_modules
+.wxt
+dist
+.output
+backup
+docs
+.joycode
+.codex
+.trae
+*.zip
+*.md

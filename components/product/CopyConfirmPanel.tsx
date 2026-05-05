@@ -51,7 +51,7 @@ export function CopyConfirmPanel({
         setLoadingSlots(false);
       }
     })();
-  }, []);
+  }, [onFetchTimeSlots]);
 
   const fmtTime = (ts: number) => {
     const d = new Date(ts * 1000);

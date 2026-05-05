@@ -23,7 +23,6 @@ interface FailedItemDetail {
 let container: HTMLDivElement | null = null;
 let panelContainer: HTMLDivElement | null = null;
 let autoSectionEl: HTMLElement | null = null;
-let autoBodyEl: HTMLElement | null = null;
 let progressSectionEl: HTMLElement | null = null;
 let copySectionEl: HTMLElement | null = null;
 let successEl: HTMLElement | null = null;
@@ -300,21 +299,7 @@ function showComplete(data: ProgressData, failedDetails?: FailedItemDetail[]) {
   }, 3000);
 }
 
-function destroyProgress() {
-  if (removeTimer) clearTimeout(removeTimer);
-  if (container?.parentNode) container.parentNode.removeChild(container);
-  container = null;
-  successEl = null;
-  failedEl = null;
-  metaEl = null;
-  barEl = null;
-  headerEl = null;
-  stopBtnEl = null;
-  toggleBtnEl = null;
-  detailsContainerEl = null;
-  failedDetailItems = [];
-  detailsExpanded = false;
-}
+
 
 // ===== Copy Progress UI =====
 let copyContainer: HTMLDivElement | null = null;

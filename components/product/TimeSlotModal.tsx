@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/entrypoints/popup/store';
 import type { TimeSlot } from '@/entrypoints/popup/types';
 
@@ -26,7 +25,7 @@ export function TimeSlotModal({ onSelect, onClose }: TimeSlotModalProps) {
         setError(e?.message || '获取场次失败');
         setLoading(false);
       });
-  }, []);
+  }, [fetchTimeSlots]);
 
   const nowSec = Math.floor(Date.now() / 1000);
 

@@ -1,5 +1,5 @@
 import { defineBackground } from 'wxt/utils/define-background';
-import type { ShopeeProduct, EnableItem, EnableResult, EnableProgress, SkuOverride, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, ScheduledTaskStatus, AutoModeConfig, AutoModeStatus, AutoModeLog, TimeSlot } from './popup/types';
+import type { ShopeeProduct, EnableItem, EnableResult, EnableProgress, SkuOverride, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, ScheduledTaskStatus, AutoModeStatus, AutoModeLog, TimeSlot } from './popup/types';
 
 // ===== Constants =====
 const GRAPHQL_URL = 'https://seller.shopee.tw/api/marketing/v4/graphql/query/';
@@ -606,117 +606,7 @@ async function runEnableLoop(params: EnableParams) {
   }
 }
 
-// ===== 复制流程重试辅助函数 =====
-async function submitItemsWithRetry(
-  items: EnableItem[],
-  flashSaleId: number,
-  spcCds: string,
-  spcCdsVer: string,
-  maxRetries: number,
-  logPrefix: string,
-  copyStep: number = 4,
-  copyTotalSteps: number = 4,
-): Promise<{ totalItems: number; successCount: number; failures: EnableResult[]; rounds: number }> {
-  let currentItems = [...items];
-  let successCount = 0;
-  let failedResults: EnableResult[] = [];
-  let round = 0;
 
-  for (round = 1; round <= maxRetries; round++) {
-    try {
-      const roundDesc = `复制商品配置中...第${round}轮, ${currentItems.length}个SKU`;
-      console.log(`${logPrefix} 第${round}轮请求开始... (${currentItems.length}个SKU)`);
-      sendCopyMessage('COPY_PROGRESS', { currentStep: copyStep, totalSteps: copyTotalSteps, description: roundDesc });
-      const response = await injectedFetch<any>(
-        `${FLASH_SALE_API}/set_shop_flash_sale_items/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`,
-        'POST',
-        { flash_sale_id: flashSaleId, items: currentItems, use_global_category: true },
-      );
-
-      if (response?.code !== undefined && response.code !== 0) {
-        const errMsg = response.message || `API error (code=${response.code})`;
-        console.log(`${logPrefix} 致命API错误 (code=${response.code}): ${errMsg}`);
-        failedResults = currentItems.map(item => ({
-          item_id: item.item_id, model_id: item.model_id, err_msg: errMsg,
-        }));
-        break;
-      }
-
-      const failedItemsFromResponse: EnableResult[] = Array.isArray(response?.data?.failed_items)
-        ? response.data.failed_items
-        : Array.isArray(response?.data) ? response.data : [];
-
-      const failKeys = new Set(failedItemsFromResponse.map(r => `${r.item_id}-${r.model_id}`));
-      const successInThisRound = currentItems.filter(i => !failKeys.has(`${i.item_id}-${i.model_id}`));
-      successCount += successInThisRound.length;
-      failedResults = failedItemsFromResponse;
-
-      console.log(`${logPrefix} 第 ${round} 轮: 成功 ${successInThisRound.length}, 失败 ${failedItemsFromResponse.length}`);
-
-      if (failedItemsFromResponse.length === 0) {
-        console.log(`${logPrefix} ✅ 全部成功`);
-        break;
-      }
-
-      currentItems = currentItems.filter(i => failKeys.has(`${i.item_id}-${i.model_id}`));
-
-      if (failedItemsFromResponse.some(r => r.err_msg?.includes('NOT_ENOUGH_STOCK'))) {
-        const stockErrorKeys = new Set(
-          failedItemsFromResponse.filter(r => r.err_msg?.includes('NOT_ENOUGH_STOCK')).map(r => `${r.item_id}-${r.model_id}`)
-        );
-        currentItems = currentItems.map(item => {
-          const key = `${item.item_id}-${item.model_id}`;
-          if (stockErrorKeys.has(key)) {
-            const newStock = Math.max(1, Math.floor(item.stock / 2));
-            console.log(`${logPrefix} 📉 降低 SKU ${item.model_id} 库存: ${item.stock}→${newStock}`);
-            return { ...item, stock: newStock };
-          }
-          return item;
-        });
-      }
-
-      console.log(`${logPrefix} 剩余 ${currentItems.length} 个需要重试`);
-    } catch (e: any) {
-      console.log(`${logPrefix} 第 ${round} 轮异常:`, e.message);
-      if (e.message?.includes('seller.shopee.tw 标签页')) {
-        failedResults = currentItems.map(item => ({
-          item_id: item.item_id, model_id: item.model_id, err_msg: e.message,
-        }));
-        break;
-      }
-    }
-  }
-
-  console.log(`${logPrefix} 重试完成: ${round}轮, ${successCount}/${items.length} 成功`);
-  return { totalItems: items.length, successCount, failures: failedResults, rounds: round };
-}
-
-// ===== 构建 EnableItem 数组（用于自动提交） =====
-function buildEnableItems(
-  products: ShopeeProduct[],
-  discountRate: number,
-  flashSaleStock: number,
-  purchaseLimit: number,
-  skuOverrides: Record<string, SkuOverride>,
-): EnableItem[] {
-  return products.flatMap(p =>
-    (p.modelList || [])
-      .filter(sku => (sku.normalStock || 0) > 0)
-      .map(sku => {
-        const key = `${p.itemid}-${sku.modelid}`;
-        const override = skuOverrides[key];
-        const usedDiscount = override?.discountRate ?? discountRate;
-        const usedStock = Math.min(override?.stock ?? flashSaleStock, sku.normalStock || flashSaleStock);
-        const usedPurchaseLimit = override?.purchaseLimit ?? purchaseLimit;
-        const promoPrice = override?.promoPrice ?? Math.floor(Number(sku.originPrice || p.originPrice || 0) * usedDiscount / 100);
-        return {
-          item_id: Number(p.itemid), status: 1, model_id: Number(sku.modelid),
-          item_display_image: p.images?.[0] || '', input_promo_price: promoPrice,
-          stock: usedStock, purchase_limit: usedPurchaseLimit,
-        };
-      })
-  );
-}
 
 // ===== 定时复制流程（创建活动 + 保存数据，返回 enableParams 供调用方启动 runEnableLoop）=====
 async function executeScheduledCopyFlow(
@@ -780,7 +670,7 @@ async function executeScheduledCopyFlow(
         purchaseLimit: params.purchaseLimit ?? 5,
       });
     } catch (saveErr: any) {
-      throw new Error(`活动已创建 (ID: ${newId})，但商品数据保存失败: ${saveErr.message}`);
+      throw new Error(`活动已创建 (ID: ${newId})，但商品数据保存失败: ${saveErr.message}`, { cause: saveErr });
     }
   }
 
@@ -1385,7 +1275,7 @@ export default defineBackground({
           );
           const ids = data?.data?.item_ids || [];
           return { itemCount: ids.length };
-        } catch (e: any) {
+        } catch (_e: any) {
           return { itemCount: 0 };
         }
       }
@@ -1519,7 +1409,7 @@ export default defineBackground({
             alarmScheduledTime,
             remainingSeconds,
           } as ScheduledTaskStatus;
-        } catch (e: any) {
+        } catch (_e: any) {
           return { exists: false, alarmActive: false, params: null } as ScheduledTaskStatus;
         }
       }
@@ -1527,7 +1417,7 @@ export default defineBackground({
       // ===== EXECUTE_COPY: 一站式复制执行 =====
       if (type === 'EXECUTE_COPY') {
         try {
-          const { sourceFlashSale, targetTime, templateName, products, spcCds: cds, spcCdsVer: cdsVer, skuOverrides } = msg;
+          const { sourceFlashSale, targetTime, products, spcCds: cds, spcCdsVer: cdsVer, skuOverrides } = msg;
           let finalCds = cds;
           let finalVer = cdsVer || '2';
           if (!finalCds) {

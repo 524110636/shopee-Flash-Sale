@@ -84,9 +84,9 @@ export interface FlashSaleItemIdListData {
 
 // 单个 SKU 的限时参数覆盖
 export interface SkuOverride {
-  discountRate?: number;  // 折扣率（百分比），不填则使用全局默认
-  promoPrice?: number;    // 限时价（直接指定价格，优先级高于 discountRate）
-  stock?: number;         // 活动库存，不填则使用全局默认
+  discountRate?: number; // 折扣率（百分比），不填则使用全局默认
+  promoPrice?: number; // 限时价（直接指定价格，优先级高于 discountRate）
+  stock?: number; // 活动库存，不填则使用全局默认
   purchaseLimit?: number; // 限购数量，不填则使用全局默认（0=不限购）
 }
 

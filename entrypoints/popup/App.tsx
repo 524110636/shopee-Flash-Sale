@@ -112,7 +112,7 @@ export default function App() {
     checkCopyTaskStatus();
     checkScheduledCopy();
     loadAutoModeStatus();
-  }, []);
+  }, [isConnected, spcCds, extractSpcCds, loadCache, checkBackgroundStatus, checkCopyTaskStatus, checkScheduledCopy, loadAutoModeStatus]);
 
   useEffect(() => {
     if (flashSaleList.length > 0) {

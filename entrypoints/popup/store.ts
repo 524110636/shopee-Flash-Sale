@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ShopeeProduct, FlashSale, EnableItem, EnableResult, EnableProgress, SkuOverride, CacheData, FlashSaleTemplate, TemplateProductInfo, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, TimeSlot, ScheduledTaskStatus, AutoModeConfig, AutoModeStatus, AutoModeLog } from './types';
+import type { ShopeeProduct, FlashSale, EnableItem, EnableProgress, SkuOverride, CacheData, FlashSaleTemplate, TemplateProductInfo, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, TimeSlot, ScheduledTaskStatus, AutoModeConfig, AutoModeStatus, AutoModeLog } from './types';
 
 // ===== 注入页面执行 fetch（MAIN world）=====
 async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -60,8 +60,6 @@ async function injectedFetch<T>(
 }
 
 const FLASH_SALE_API = 'https://seller.shopee.tw/api/marketing/v4/shop_flash_sale';
-
-const STORAGE_TEMPLATES_KEY = 'flashSaleTemplates';
 
 // ===== GraphQL 查询常量 =====
 const GRAPHQL_URL = 'https://seller.shopee.tw/api/marketing/v4/graphql/query/';
@@ -537,8 +535,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         const label = sale?.name || `活动 #${flashSaleId}`;
         const loadedOverrides = copiedData.skuOverrides ?? {};
         let computedDiscountRate = copiedData.discountRate ?? get().discountRate;
-        let computedStock = copiedData.flashSaleStock ?? get().flashSaleStock;
-        let computedPurchaseLimit = copiedData.purchaseLimit ?? get().purchaseLimit;
+        const computedStock = copiedData.flashSaleStock ?? get().flashSaleStock;
+        const computedPurchaseLimit = copiedData.purchaseLimit ?? get().purchaseLimit;
 
         // 从 SKU 覆盖参数反推每个 SKU 的 discountRate 及全局显示值
         const enrichedOverrides: Record<string, SkuOverride> = { ...loadedOverrides };
@@ -649,7 +647,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           // model_info_str 实际格式: { itemId: [{ modelid, price }, ...] } (数组)
           // 构建 price lookup: { itemId: { modelId: price } }
           const rawModelInfo: Record<string, Array<{ modelid: number; price: number }>> = {};
-          try { Object.assign(rawModelInfo, JSON.parse(modelInfoStr)); } catch (e) { console.warn(`[loadFlashSaleProducts] model_info_str JSON解析失败`); }
+          try { Object.assign(rawModelInfo, JSON.parse(modelInfoStr)); } catch (_e) { console.warn(`[loadFlashSaleProducts] model_info_str JSON解析失败`); }
           const priceLookup: Record<string, Record<string, number>> = {};
           for (const [itemId, models] of Object.entries(rawModelInfo)) {
             if (Array.isArray(models)) {

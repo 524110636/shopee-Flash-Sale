@@ -83,7 +83,6 @@ export function TemplateManager() {
     if (!template) return;
 
     const currentProductIds = new Set(products.map(p => p.itemid));
-    const currentProductMap = new Map(products.map(p => [p.itemid, p.name]));
 
     const missingInCurrent = template.productInfo.filter(
       pi => !currentProductIds.has(pi.itemId)
@@ -172,10 +171,7 @@ export function TemplateManager() {
     e.target.value = '';
   };
 
-  const formatDate = (ts: number) => {
-    const d = new Date(ts);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  };
+
 
   if (!hasProducts) return null;
 

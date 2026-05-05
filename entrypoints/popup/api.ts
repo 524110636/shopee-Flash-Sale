@@ -40,7 +40,7 @@ export async function fetchProducts(options: FetchProductsOptions): Promise<Shop
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      'accept': 'application/json, text/plain, */*',
+      accept: 'application/json, text/plain, */*',
       'content-type': 'application/json',
     },
     credentials: 'include',
