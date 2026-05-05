@@ -1,8 +1,8 @@
 {
   "name": "limited-time-sale",
-  "version": "1.0.0",
+  "version": "1.6.1",
   "private": true,
-  "description": "虾皮卖家后台限时特卖自动化工具",
+  "description": "唐先生的限时特卖工具",
   "scripts": {
     "dev": "wxt",
     "build": "wxt build",

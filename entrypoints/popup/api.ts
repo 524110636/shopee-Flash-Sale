@@ -41,12 +41,7 @@ export async function fetchProducts(options: FetchProductsOptions): Promise<Shop
     method: 'POST',
     headers: {
       'accept': 'application/json, text/plain, */*',
-      'accept-language': 'zh-CN,zh;q=0.9',
       'content-type': 'application/json',
-      'priority': 'u=1, i',
-      'x-sz-sdk-version': '1.12.33-sc.3',
-      'sc-fe-session': 'BFFB5DB1CB99D05E',
-      'sc-fe-ver': '21.146220',
     },
     credentials: 'include',
     body: JSON.stringify({

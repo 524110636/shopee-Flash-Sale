@@ -6,23 +6,28 @@ import type { ShopeeProduct } from '@/entrypoints/popup/types';
 interface SkuTableProps {
   product: ShopeeProduct;
   onClose: () => void;
+  onEdit?: (itemId: string) => void;
 }
 
-export function SkuTable({ product, onClose }: SkuTableProps) {
+export function SkuTable({ product, onClose, onEdit }: SkuTableProps) {
   const { skuOverrides, setSkuOverride, discountRate: globalDiscount, flashSaleStock: globalStock, purchaseLimit: globalPurchaseLimit } = useAppStore();
   const [priceEditValues, setPriceEditValues] = useState<Record<string, string>>({});
+  const [batchDiscount, setBatchDiscount] = useState('');
+  const [batchStock, setBatchStock] = useState('');
+  const [batchPromoPrice, setBatchPromoPrice] = useState('');
+  const [batchPurchaseLimit, setBatchPurchaseLimit] = useState('');
 
   const formatPrice = (price: string) => {
     const num = parseInt(price);
     return isNaN(num) ? price : `NT$${num.toLocaleString()}`;
   };
 
-  const calcPromoPrice = (originPrice: string, overrideDiscount?: number) => {
-    const rate = overrideDiscount ?? globalDiscount;
+  const calcPromoPrice = (originPrice: string, override?: { discountRate?: number; promoPrice?: number }) => {
+    if (override?.promoPrice !== undefined) return override.promoPrice;
+    const rate = override?.discountRate ?? globalDiscount;
     return Math.floor(Number(originPrice || 0) * rate / 100);
   };
 
-  // 计算商品级汇总
   const totalStock = product.modelList.reduce((sum, m) => sum + (m.totalNormalStock || 0), 0);
   const totalSkuOverrideStock = product.modelList.reduce((sum, m) => {
     const key = `${product.itemid}-${m.modelid}`;
@@ -30,12 +35,85 @@ export function SkuTable({ product, onClose }: SkuTableProps) {
     return sum + (ov?.stock ?? globalStock);
   }, 0);
 
+  const applyBatchDiscount = () => {
+    const v = batchDiscount.trim();
+    if (v === '') return;
+    const n = Math.max(1, Math.min(100, Number(v) || 1));
+    for (const m of product.modelList) {
+      const key = `${product.itemid}-${m.modelid}`;
+      const ov = skuOverrides[key];
+      setSkuOverride(product.itemid, m.modelid, {
+        discountRate: n,
+        stock: ov?.stock,
+        purchaseLimit: ov?.purchaseLimit,
+        promoPrice: undefined,
+      });
+    }
+    setBatchDiscount('');
+    onEdit?.(product.itemid);
+  };
+
+  const applyBatchStock = () => {
+    const v = batchStock.trim();
+    if (v === '') return;
+    const n = Math.max(1, Number(v) || 1);
+    for (const m of product.modelList) {
+      const key = `${product.itemid}-${m.modelid}`;
+      const ov = skuOverrides[key];
+      setSkuOverride(product.itemid, m.modelid, {
+        stock: n,
+        discountRate: ov?.discountRate,
+        purchaseLimit: ov?.purchaseLimit,
+        promoPrice: ov?.promoPrice,
+      });
+    }
+    setBatchStock('');
+    onEdit?.(product.itemid);
+  };
+
+  const applyBatchPromoPrice = () => {
+    const v = batchPromoPrice.trim();
+    if (v === '') return;
+    const price = Math.max(1, Number(v) || 1);
+    for (const m of product.modelList) {
+      const key = `${product.itemid}-${m.modelid}`;
+      const ov = skuOverrides[key];
+      setSkuOverride(product.itemid, m.modelid, {
+        promoPrice: price,
+        stock: ov?.stock,
+        purchaseLimit: ov?.purchaseLimit,
+      });
+    }
+    setBatchPromoPrice('');
+    onEdit?.(product.itemid);
+  };
+
+  const applyBatchPurchaseLimit = () => {
+    const v = batchPurchaseLimit.trim();
+    if (v === '') return;
+    const n = Math.max(0, Number(v) || 0);
+    for (const m of product.modelList) {
+      const key = `${product.itemid}-${m.modelid}`;
+      const ov = skuOverrides[key];
+      setSkuOverride(product.itemid, m.modelid, {
+        purchaseLimit: n,
+        discountRate: ov?.discountRate,
+        stock: ov?.stock,
+        promoPrice: ov?.promoPrice,
+      });
+    }
+    setBatchPurchaseLimit('');
+    onEdit?.(product.itemid);
+  };
+
+  const onBatchKeyDown = (e: React.KeyboardEvent, apply: () => void) => {
+    if (e.key === 'Enter') apply();
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-lg shadow-xl w-[680px] max-w-[95vw] flex flex-col max-h-[85vh]">
-        {/* 头部：商品图片 + 摘要信息 */}
         <div className="flex items-start gap-4 p-4 border-b shrink-0">
-          {/* 商品图片 */}
           <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0 border">
             {product.images[0] ? (
               <img
@@ -49,7 +127,6 @@ export function SkuTable({ product, onClose }: SkuTableProps) {
             )}
           </div>
 
-          {/* 商品信息 */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
@@ -64,7 +141,6 @@ export function SkuTable({ product, onClose }: SkuTableProps) {
               </button>
             </div>
 
-            {/* 价格摘要 */}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs">
               <span className="text-muted-foreground">
                 原价: <span className="text-foreground">{formatPrice(product.inputOriginPrice)}</span>
@@ -85,8 +161,62 @@ export function SkuTable({ product, onClose }: SkuTableProps) {
           </div>
         </div>
 
-        {/* SKU 列表 */}
         <div className="flex-1 min-h-0 overflow-y-auto p-3">
+          {/* 批量编辑行 */}
+          <div className="flex items-center gap-1.5 mb-2 px-0.5">
+            <span className="text-[10px] text-muted-foreground shrink-0 w-[18%]">批量:</span>
+            <span className="w-[10%]" />
+            <span className="w-[8%]" />
+            <div className="w-[14%]">
+              <input
+                type="number"
+                min={1} max={100}
+                placeholder="折扣%"
+                value={batchDiscount}
+                onChange={e => setBatchDiscount(e.target.value)}
+                onBlur={applyBatchDiscount}
+                onKeyDown={e => onBatchKeyDown(e, applyBatchDiscount)}
+                className="w-full px-1 py-0.5 text-[10px] border rounded text-center focus:outline-none focus:ring-1 focus:ring-blue-400 bg-blue-50/30"
+              />
+            </div>
+            <div className="w-[14%]">
+              <input
+                type="number"
+                min={1}
+                placeholder="活动库存"
+                value={batchStock}
+                onChange={e => setBatchStock(e.target.value)}
+                onBlur={applyBatchStock}
+                onKeyDown={e => onBatchKeyDown(e, applyBatchStock)}
+                className="w-full px-1 py-0.5 text-[10px] border rounded text-center focus:outline-none focus:ring-1 focus:ring-blue-400 bg-blue-50/30"
+              />
+            </div>
+            <div className="w-[16%]">
+              <input
+                type="number"
+                min={1}
+                placeholder="限时价"
+                value={batchPromoPrice}
+                onChange={e => setBatchPromoPrice(e.target.value)}
+                onBlur={applyBatchPromoPrice}
+                onKeyDown={e => onBatchKeyDown(e, applyBatchPromoPrice)}
+                className="w-full px-1 py-0.5 text-[10px] border rounded text-center focus:outline-none focus:ring-1 focus:ring-blue-400 bg-blue-50/30"
+              />
+            </div>
+            <div className="w-[20%]">
+              <input
+                type="number"
+                min={0}
+                placeholder="限购数量"
+                value={batchPurchaseLimit}
+                onChange={e => setBatchPurchaseLimit(e.target.value)}
+                onBlur={applyBatchPurchaseLimit}
+                onKeyDown={e => onBatchKeyDown(e, applyBatchPurchaseLimit)}
+                className="w-full px-1 py-0.5 text-[10px] border rounded text-center focus:outline-none focus:ring-1 focus:ring-blue-400 bg-blue-50/30"
+              />
+            </div>
+          </div>
+
           <Table>
             <TableHeader>
               <TableRow>
@@ -106,7 +236,7 @@ export function SkuTable({ product, onClose }: SkuTableProps) {
                 const discountVal = override?.discountRate?.toString() ?? '';
                 const stockVal = override?.stock?.toString() ?? '';
                 const purchaseLimitVal = override?.purchaseLimit?.toString() ?? '';
-                const promoPrice = calcPromoPrice(model.originPrice, override?.discountRate);
+                const promoPrice = calcPromoPrice(model.originPrice, override);
 
                 return (
                   <TableRow key={model.modelid}>
@@ -128,6 +258,7 @@ export function SkuTable({ product, onClose }: SkuTableProps) {
                             setSkuOverride(product.itemid, model.modelid, {
                               stock: override?.stock,
                               purchaseLimit: override?.purchaseLimit,
+                              promoPrice: undefined,
                             });
                           } else {
                             const n = Math.max(1, Math.min(100, Number(v) || 1));
@@ -135,8 +266,10 @@ export function SkuTable({ product, onClose }: SkuTableProps) {
                               discountRate: n,
                               stock: override?.stock,
                               purchaseLimit: override?.purchaseLimit,
+                              promoPrice: undefined,
                             });
                           }
+                          onEdit?.(product.itemid);
                         }}
                         className="w-full px-1 py-0.5 text-[10px] border rounded text-center focus:outline-none focus:ring-1 focus:ring-primary"
                       />
@@ -153,6 +286,7 @@ export function SkuTable({ product, onClose }: SkuTableProps) {
                             setSkuOverride(product.itemid, model.modelid, {
                               discountRate: override?.discountRate,
                               purchaseLimit: override?.purchaseLimit,
+                              promoPrice: override?.promoPrice,
                             });
                           } else {
                             const n = Math.max(1, Number(v) || 1);
@@ -160,8 +294,10 @@ export function SkuTable({ product, onClose }: SkuTableProps) {
                               stock: n,
                               discountRate: override?.discountRate,
                               purchaseLimit: override?.purchaseLimit,
+                              promoPrice: override?.promoPrice,
                             });
                           }
+                          onEdit?.(product.itemid);
                         }}
                         className="w-full px-1 py-0.5 text-[10px] border rounded text-center focus:outline-none focus:ring-1 focus:ring-primary"
                       />
@@ -170,8 +306,8 @@ export function SkuTable({ product, onClose }: SkuTableProps) {
                       <input
                         type="number"
                         min={1}
-                        placeholder={String(calcPromoPrice(model.originPrice))}
-                        value={priceEditValues[model.modelid] ?? (promoPrice > 0 ? String(promoPrice) : '')}
+                        placeholder={String(calcPromoPrice(model.originPrice, override))}
+                        value={priceEditValues[model.modelid] ?? (override?.promoPrice !== undefined ? String(override.promoPrice) : (promoPrice > 0 ? String(promoPrice) : ''))}
                         onChange={e => {
                           setPriceEditValues(prev => ({ ...prev, [model.modelid]: e.target.value }));
                         }}
@@ -187,15 +323,14 @@ export function SkuTable({ product, onClose }: SkuTableProps) {
                               purchaseLimit: override?.purchaseLimit,
                             });
                           } else {
-                            const origin = Number(model.originPrice || 0);
                             const price = Math.max(1, Number(v) || 1);
-                            const rate = origin > 0 ? Math.max(1, Math.min(100, Math.round(price / origin * 100))) : globalDiscount;
                             setSkuOverride(product.itemid, model.modelid, {
-                              discountRate: rate,
+                              promoPrice: price,
                               stock: override?.stock,
                               purchaseLimit: override?.purchaseLimit,
                             });
                           }
+                          onEdit?.(product.itemid);
                         }}
                         className="w-full px-1 py-0.5 text-[10px] border rounded text-center focus:outline-none focus:ring-1 focus:ring-primary"
                       />
@@ -212,6 +347,7 @@ export function SkuTable({ product, onClose }: SkuTableProps) {
                             setSkuOverride(product.itemid, model.modelid, {
                               discountRate: override?.discountRate,
                               stock: override?.stock,
+                              promoPrice: override?.promoPrice,
                             });
                           } else {
                             const n = Math.max(0, Number(v) || 0);
@@ -219,8 +355,10 @@ export function SkuTable({ product, onClose }: SkuTableProps) {
                               purchaseLimit: n,
                               discountRate: override?.discountRate,
                               stock: override?.stock,
+                              promoPrice: override?.promoPrice,
                             });
                           }
+                          onEdit?.(product.itemid);
                         }}
                         className="w-full px-1 py-0.5 text-[10px] border rounded text-center focus:outline-none focus:ring-1 focus:ring-primary"
                       />
@@ -232,7 +370,6 @@ export function SkuTable({ product, onClose }: SkuTableProps) {
           </Table>
         </div>
 
-        {/* 底部统计 */}
         <div className="p-3 border-t text-[10px] text-muted-foreground space-y-0.5 shrink-0">
           <div>共 {product.modelList.length} 个 SKU / 总计原库存 {totalStock} / 活动库存 {totalSkuOverrideStock}</div>
           <div>留空 = 使用全局默认值（折扣 {globalDiscount}% / 库存 {globalStock} / 限购 {globalPurchaseLimit}）</div>

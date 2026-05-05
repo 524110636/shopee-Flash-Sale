@@ -3,3 +3,11 @@ dist/
 .output/
 .wxt/
 *.local
+backup/
+docs/
+.joycode/
+.codex/
+.trae/
+CLAUDE.md
+AGENTS.md
+*.zip

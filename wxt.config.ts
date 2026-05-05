@@ -9,8 +9,8 @@ export default defineConfig({
   manifest: {
     name: '限时特卖助手',
     description: '虾皮卖家后台限时特卖自动化工具',
-    version: '0.1.0',
-    permissions: ['storage', 'cookies', 'scripting', 'alarms'],
+    version: '1.6.1',
+    permissions: ['storage', 'cookies', 'scripting', 'alarms', 'unlimitedStorage'],
     host_permissions: ['https://*.shopee.tw/*'],
   },
   vite: () => ({

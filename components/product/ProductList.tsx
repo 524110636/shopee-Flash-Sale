@@ -49,6 +49,7 @@ export function ProductList({ products }: ProductListProps) {
       {/* SKU 弹窗 */}
       {selectedProduct && (
         <SkuTable
+          key={selectedProduct.itemid}
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
         />

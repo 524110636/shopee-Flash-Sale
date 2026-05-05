@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { SpcStatus } from '@/components/product/SpcStatus';
@@ -7,7 +7,10 @@ import { ProductList } from '@/components/product/ProductList';
 import { TemplateManager } from '@/components/product/TemplateManager';
 import { CopyConfirmPanel } from '@/components/product/CopyConfirmPanel';
 import { CopyResultPanel } from '@/components/product/CopyResultPanel';
+import { AutoModePanel } from '@/components/product/AutoModePanel';
+import { SkuTable } from '@/components/product/SkuTable';
 import { useAppStore, setupBackgroundListener } from './store';
+import type { ShopeeProduct } from './types';
 
 export default function App() {
   const {
@@ -24,18 +27,81 @@ export default function App() {
     discountRate, setDiscountRate,
     flashSaleStock, setFlashSaleStock,
     purchaseLimit, setPurchaseLimit,
-    isEnabling, enableProgress, enableFlashSaleItems, stopEnabling,
+    skuOverrides,
+    isEnabling, isExtracting, enableProgress, enableFlashSaleItems, stopEnabling,
     copyMode, copySource, copyTaskStatus, isCopying,
     savedTemplates, selectedTemplate,
     enterCopyMode, executeCopy, exitCopyMode,
     checkCopyTaskStatus, setSelectedTemplate, fetchTimeSlots,
     checkBackgroundStatus,
     loadCache, clearCache, reset,
+    hasScheduledCopy, checkScheduledCopy, triggerScheduledCopyNow, scheduledTaskStatus,
+    autoModeActive, enterAutoMode, exitAutoMode,
+    loadAutoModeStatus,
   } = useAppStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [flashSaleListOpen, setFlashSaleListOpen] = useState(true);
+  const [selectedFailedProduct, setSelectedFailedProduct] = useState<ShopeeProduct | null>(null);
+  const [overrideDetailOpen, setOverrideDetailOpen] = useState(false);
+  const [overrideSearchInput, setOverrideSearchInput] = useState('');
+  const [overrideSearchQuery, setOverrideSearchQuery] = useState('');
+  const [isClearingCache, setIsClearingCache] = useState(false);
+  const [isTriggeringScheduled, setIsTriggeringScheduled] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
 
-  // 进入时如果已有上次的 SPC_CDS，尝试连接；加载缓存；检查后台状态
+  const fmtTime = (ts: number) => {
+    const d = new Date(ts * 1000);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    return `${mm}/${dd} ${hh}:${mi}`;
+  };
+
+  const overrideSummary = useMemo(() => {
+    const productMap = new Map<string, { product: ShopeeProduct; skus: Array<{ modelid: string; name: string }> }>();
+    let skuCount = 0;
+
+    for (const product of products) {
+      for (const model of product.modelList || []) {
+        const key = `${product.itemid}-${model.modelid}`;
+        if (!(key in skuOverrides)) continue;
+
+        skuCount++;
+        const entry = productMap.get(product.itemid) || { product, skus: [] };
+        entry.skus.push({ modelid: model.modelid, name: model.name });
+        productMap.set(product.itemid, entry);
+      }
+    }
+
+    return {
+      productCount: productMap.size,
+      skuCount,
+      products: Array.from(productMap.values()),
+    };
+  }, [products, skuOverrides]);
+
+  const filteredOverrideProducts = useMemo(() => {
+    const query = overrideSearchQuery.trim().toLowerCase();
+    if (!query) return overrideSummary.products;
+
+    return overrideSummary.products
+      .map(({ product, skus }) => {
+        const productMatched =
+          product.itemid.includes(query) ||
+          product.name.toLowerCase().includes(query);
+        const matchedSkus = productMatched
+          ? skus
+          : skus.filter(sku =>
+              sku.modelid.includes(query) ||
+              sku.name.toLowerCase().includes(query)
+            );
+
+        return { product, skus: matchedSkus };
+      })
+      .filter(({ skus }) => skus.length > 0);
+  }, [overrideSearchQuery, overrideSummary.products]);
+
   useEffect(() => {
     setupBackgroundListener();
     if (!isConnected && !spcCds) {
@@ -44,9 +110,10 @@ export default function App() {
     loadCache();
     checkBackgroundStatus();
     checkCopyTaskStatus();
+    checkScheduledCopy();
+    loadAutoModeStatus();
   }, []);
 
-  // 限时特卖活动列表加载后自动展开
   useEffect(() => {
     if (flashSaleList.length > 0) {
       setFlashSaleListOpen(true);
@@ -68,7 +135,6 @@ export default function App() {
       const text = await navigator.clipboard.readText();
       handleInputChange({ target: { value: text } } as any);
     } catch {
-      // 粘贴失败时聚焦输入框让用户手动粘贴
       textareaRef.current?.focus();
     }
   };
@@ -80,202 +146,106 @@ export default function App() {
   };
 
   return (
-    <div className="w-[500px] min-h-[500px] p-4 bg-background">
-      {copyMode === 'confirm' && copySource ? (
-        <CopyConfirmPanel
-          source={copySource}
-          savedTemplates={savedTemplates}
-          selectedTemplate={selectedTemplate}
-          isCopying={isCopying}
-          onConfirm={(targetTime, templateName) => executeCopy(targetTime, templateName)}
-          onCancel={exitCopyMode}
-          onSelectTemplate={setSelectedTemplate}
-          onFetchTimeSlots={fetchTimeSlots}
-        />
-      ) : copyMode === 'result' && copyTaskStatus ? (
-        <CopyResultPanel
-          status={copyTaskStatus}
-          onBack={exitCopyMode}
-          onRetry={() => {
-            if (copySource) enterCopyMode(copySource.flashSale);
-          }}
-        />
-      ) : (
-        <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">限时特卖助手</CardTitle>
-            <div className="flex items-center gap-2">
-                <Button
-                variant="outline"
-                size="sm"
-                className="h-6 px-2 text-[10px] font-normal"
-                onClick={async () => {
-                  await clearCache();
-                  reset();
-                  extractSpcCds();
-                }}
-              >
-                清除缓存
-              </Button>
-              <SpcStatus />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* 商品 ID（标签展示，不常用） */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-medium text-muted-foreground/60">商品 ID</span>
-                {productIds.length > 0 && (
-                  <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{productIds.length}</span>
-                )}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-5 px-1.5 text-[10px] font-normal text-muted-foreground/40 border-muted-foreground/20 hover:text-primary hover:border-primary/30"
-                onClick={handlePaste}
-              >
-                粘贴
-              </Button>
-            </div>
-            <textarea
-              ref={textareaRef}
-              className="w-full h-16 px-2 py-1 text-[11px] border border-dashed border-muted-foreground/20 rounded-md resize-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-solid text-muted-foreground/60 placeholder-muted-foreground/30"
-              placeholder="粘贴商品 ID 后将自动识别"
-              value={inputText}
-              onChange={handleInputChange}
+    <div className="w-[500px] min-h-[500px] p-4 bg-background" style={{ perspective: '1000px' }}>
+      <div
+        className="relative"
+        style={{
+          transformStyle: 'preserve-3d',
+          transition: 'transform 0.6s ease-in-out',
+          transform: autoModeActive ? 'rotateY(180deg)' : 'rotateY(0deg)',
+        }}
+      >
+        <div style={{ backfaceVisibility: 'hidden' }}>
+          {copyMode === 'confirm' && copySource ? (
+            <CopyConfirmPanel
+              source={copySource}
+              savedTemplates={savedTemplates}
+              selectedTemplate={selectedTemplate}
+              isCopying={isCopying}
+              onConfirm={(targetTime, templateName) => executeCopy(targetTime, templateName)}
+              onCancel={exitCopyMode}
+              onSelectTemplate={setSelectedTemplate}
+              onFetchTimeSlots={fetchTimeSlots}
             />
-          </div>
-
-          {/* 获取商品按钮 */}
-          <div className="space-y-2">
-            <button
-              className="w-full py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!isConnected || isLoading || inputText.trim().length === 0}
-              onClick={handleFetch}
-            >
-              {isLoading ? '加载中...' : '获取商品信息'}
-            </button>
-
-            {/* 加载限时特卖列表 */}
-            {isConnected && flashSaleList.length === 0 && (
-              <button
-                className="w-full py-1.5 text-sm font-medium border border-primary text-primary rounded-md hover:bg-primary/5 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isLoadingFlashSaleList || isLoading}
-                onClick={() => fetchFlashSaleList()}
-              >
-                {isLoadingFlashSaleList ? '加载中...' : '加载限时特卖列表'}
-              </button>
-            )}
-
-            {/* 限时特卖活动列表（可折叠） */}
-            {flashSaleList.length > 0 && (
-              <div className="space-y-1.5">
-                <div
-                  className="flex items-center justify-between cursor-pointer select-none"
-                  onClick={() => setFlashSaleListOpen(!flashSaleListOpen)}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <label className="text-xs font-medium text-muted-foreground shrink-0">限时特卖活动</label>
-                    {flashSaleId && !flashSaleListOpen && (() => {
-                      const sel = flashSaleList.find(s => s.flash_sale_id === flashSaleId);
-                      return sel ? (
-                        <span className="text-xs text-primary truncate">{sel.name || `活动 #${sel.flash_sale_id}`}</span>
-                      ) : null;
-                    })()}
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-6 px-2 text-xs font-normal"
-                      onClick={e => { e.stopPropagation(); fetchFlashSaleList(); setFlashSaleListOpen(true); }}
-                    >
-                      刷新
-                    </Button>
-                    <span className={`text-muted-foreground transition-transform ${flashSaleListOpen ? 'rotate-180' : ''}`}>▼</span>
-                  </div>
+          ) : copyMode === 'result' && copyTaskStatus ? (
+            <CopyResultPanel
+              status={copyTaskStatus}
+              onBack={exitCopyMode}
+              onRetry={() => {
+                if (copySource) enterCopyMode(copySource.flashSale);
+              }}
+            />
+          ) : (
+            <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">限时特卖助手</CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs font-normal border-blue-300 text-blue-600"
+                    onClick={() => enterAutoMode()}
+                  >
+                    🤖 自动模式
+                  </Button>
                 </div>
+                <SpcStatus />
+              </div>
+            </CardHeader>
+        <CardContent className="space-y-3">
+          {/* ===== P0: 当前活动上下文 — 首屏第一眼 ===== */}
+          {flashSaleId && !copyMode && (() => {
+            const currentSale = flashSaleList.find(s => s.flash_sale_id === flashSaleId);
+            if (!currentSale) return null;
+            const now = Math.floor(Date.now() / 1000);
+            const isActive = now >= currentSale.start_time && now < currentSale.end_time;
+            const isUpcoming = currentSale.start_time > now;
+            const statusText = isActive ? '进行中' : isUpcoming ? '即将开始' : '已结束';
+            return (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-700">
+                当前活动：{currentSale.name || `活动 #${currentSale.flash_sale_id}`} · {fmtTime(currentSale.start_time)} ~ {fmtTime(currentSale.end_time)} · {statusText} · {products.length} 个商品
+              </div>
+            );
+          })()}
 
-                {flashSaleListOpen && (
-                  <div className="max-h-40 overflow-y-auto space-y-1">
-                    {flashSaleList.map(sale => {
-                      const now = Math.floor(Date.now() / 1000);
-                      const isActive = now >= sale.start_time && now < sale.end_time;
-                      const isUpcoming = sale.start_time > now;
-                      const isEnded = now >= sale.end_time;
-                      const isSelected = flashSaleId === sale.flash_sale_id;
-
-                      let statusLabel = '已结束';
-                      let statusClass = 'text-gray-500 bg-gray-50 border-gray-200';
-                      if (isActive) { statusLabel = '进行中'; statusClass = 'text-green-600 bg-green-50 border-green-200'; }
-                      else if (isUpcoming) { statusLabel = '即将开始'; statusClass = 'text-blue-600 bg-blue-50 border-blue-200'; }
-
-                      const fmtTime = (ts: number) => {
-                        const d = new Date(ts * 1000);
-                        const mm = String(d.getMonth() + 1).padStart(2, '0');
-                        const dd = String(d.getDate()).padStart(2, '0');
-                        const hh = String(d.getHours()).padStart(2, '0');
-                        const mi = String(d.getMinutes()).padStart(2, '0');
-                        return `${mm}/${dd} ${hh}:${mi}`;
-                      };
-
-                      return (
-                        <div
-                          key={sale.flash_sale_id}
-                          className={`w-full flex items-center justify-between px-3 py-2 text-xs border rounded-md transition-colors cursor-pointer ${
-                            isSelected
-                              ? 'border-primary bg-primary/5'
-                              : 'hover:bg-accent/50'
-                          } ${isLoadingFlashSales ? 'opacity-50 pointer-events-none' : ''}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            loadFlashSaleProducts(sale.flash_sale_id);
-                            setFlashSaleListOpen(false);
-                          }}
-                        >
-                          <div className="flex flex-col items-start min-w-0">
-                            <span className={`font-medium truncate w-full text-left ${isSelected ? 'text-primary' : ''}`}>
-                              {sale.name || `活动 #${sale.flash_sale_id}`}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground mt-0.5">
-                              {fmtTime(sale.start_time)} ~ {fmtTime(sale.end_time)}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-5 px-1.5 text-[10px] font-normal text-primary border-primary/30 hover:bg-primary/5"
-                              onClick={(e) => { e.stopPropagation(); enterCopyMode(sale); }}
-                              title="复制此限时特卖"
-                            >
-                              复制
-                            </Button>
-                            <span className={`px-1.5 py-0.5 text-[10px] rounded-full border ${statusClass}`}>
-                              {statusLabel}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+          {/* ===== P0: 定时任务状态 — 紧跟活动条 ===== */}
+          {hasScheduledCopy && scheduledTaskStatus && scheduledTaskStatus.exists && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm">
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-medium text-amber-800">📋 定时复制任务</span>
+                <button
+                  className="text-[10px] text-amber-600 hover:text-amber-800 underline"
+                  onClick={() => checkScheduledCopy()}
+                >
+                  刷新状态
+                </button>
+              </div>
+              <div className="text-xs text-amber-700 space-y-0.5">
+                {scheduledTaskStatus.params && (
+                  <>
+                    <div>源活动：{scheduledTaskStatus.params.sourceFlashSaleName || `活动 #${scheduledTaskStatus.params.sourceFlashSaleId}`}</div>
+                    <div>目标时间：{fmtTime(scheduledTaskStatus.params.targetStartTime)}</div>
+                  </>
                 )}
+                <div>
+                  定时器状态：
+                  {scheduledTaskStatus.alarmActive ? (
+                    <span className="text-green-700 font-medium">✅ 存活</span>
+                  ) : (
+                    <span className="text-red-600 font-medium">⚠️ 未注册（可能已被清除）</span>
+                  )}
+                  {scheduledTaskStatus.remainingSeconds !== undefined && scheduledTaskStatus.alarmActive && (
+                    <span className="ml-1 text-amber-600">
+                      （{Math.floor(scheduledTaskStatus.remainingSeconds / 3600) > 0 ? `${Math.floor(scheduledTaskStatus.remainingSeconds / 3600)}时` : ''}{Math.floor((scheduledTaskStatus.remainingSeconds % 3600) / 60)}分钟后执行）
+                    </span>
+                  )}
+                </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* 限时特卖信息 */}
-            {flashSaleInfo && (
-              <div className="px-2 py-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded-md">
-                {flashSaleInfo}
-              </div>
-            )}
-          </div>
-
-          {/* 错误提示 */}
+          {/* ===== 错误提示 — 紧跟上下文（有错误时这是最高优先级信息）===== */}
           {error && (
             <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md whitespace-pre-line">
               <div className="flex items-start gap-2">
@@ -289,9 +259,10 @@ export default function App() {
                         variant="outline"
                         size="sm"
                         className="h-6 px-2 text-xs font-normal"
+                        disabled={isExtracting}
                         onClick={() => extractSpcCds()}
                       >
-                        重新获取 SPC_CDS
+                        {isExtracting ? '获取中...' : '重新获取 SPC_CDS'}
                       </Button>
                       <p className="text-xs text-muted-foreground">
                         查看后台日志: chrome://extensions → 点击"Service Worker"
@@ -308,25 +279,159 @@ export default function App() {
             </div>
           )}
 
-          <Separator />
+          {/* ===== 限时特卖活动列表（紧凑）===== */}
+          {flashSaleList.length > 0 && (
+            <div className="space-y-1.5">
+              <div
+                className="flex items-center justify-between cursor-pointer select-none"
+                onClick={() => setFlashSaleListOpen(!flashSaleListOpen)}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <label className="text-xs font-medium text-muted-foreground shrink-0">限时特卖活动</label>
+                  {flashSaleId && !flashSaleListOpen && (() => {
+                    const sel = flashSaleList.find(s => s.flash_sale_id === flashSaleId);
+                    return sel ? (
+                      <span className="text-xs text-blue-600 truncate font-medium">{sel.name || `活动 #${sel.flash_sale_id}`}</span>
+                    ) : null;
+                  })()}
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-xs font-normal"
+                    disabled={isLoadingFlashSaleList}
+                    onClick={e => { e.stopPropagation(); fetchFlashSaleList(); setFlashSaleListOpen(true); }}
+                  >
+                    <span className={isLoadingFlashSaleList ? 'inline-block animate-spin mr-1' : 'mr-1'}>↻</span>
+                    {isLoadingFlashSaleList ? '刷新中' : '刷新'}
+                  </Button>
+                  <span className={`text-muted-foreground transition-transform ${flashSaleListOpen ? 'rotate-180' : ''}`}>▼</span>
+                </div>
+              </div>
 
-          {/* 商品列表（可滚动） */}
+              {flashSaleListOpen && (
+                <div className="max-h-40 overflow-y-auto space-y-1">
+                  {flashSaleList.map(sale => {
+                    const now = Math.floor(Date.now() / 1000);
+                    const isActive = now >= sale.start_time && now < sale.end_time;
+                    const isUpcoming = sale.start_time > now;
+                    const isSelected = flashSaleId === sale.flash_sale_id;
+
+                    let statusLabel = '已结束';
+                    let statusClass = 'text-gray-500 bg-gray-50 border-gray-200';
+                    if (isActive) { statusLabel = '进行中'; statusClass = 'text-green-600 bg-green-50 border-green-200'; }
+                    else if (isUpcoming) { statusLabel = '即将开始'; statusClass = 'text-blue-600 bg-blue-50 border-blue-200'; }
+
+                    return (
+                      <div
+                        key={sale.flash_sale_id}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-xs border rounded-md transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'border-l-4 border-l-blue-500 bg-blue-50/50'
+                            : 'hover:bg-accent/50'
+                        } ${isLoadingFlashSales ? 'opacity-50 pointer-events-none' : ''}`}
+                        aria-current={isSelected ? 'true' : undefined}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          loadFlashSaleProducts(sale.flash_sale_id);
+                          setFlashSaleListOpen(false);
+                        }}
+                      >
+                        <div className="flex flex-col items-start min-w-0">
+                          <span className={`font-medium truncate w-full text-left ${isSelected ? 'text-blue-600' : ''}`}>
+                            {sale.name || `活动 #${sale.flash_sale_id}`}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground mt-0.5">
+                            {fmtTime(sale.start_time)} ~ {fmtTime(sale.end_time)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {isSelected && (
+                            <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full border border-blue-300 bg-blue-50 text-blue-600">
+                              当前选中
+                            </span>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-5 px-1.5 text-[10px] font-normal text-blue-600 border-blue-300 hover:bg-blue-50"
+                            onClick={(e) => { e.stopPropagation(); enterCopyMode(sale); }}
+                            title="复制此限时特卖"
+                          >
+                            复制
+                          </Button>
+                          <span className={`px-1.5 py-0.5 text-[10px] rounded-full border ${statusClass}`}>
+                            {statusLabel}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 限时特卖信息 */}
+          {flashSaleInfo && (
+            <div className="px-2 py-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded-md">
+              {flashSaleInfo}
+            </div>
+          )}
+
+          {/* ===== P1: 连贯操作区 — 商品列表 + 开启 ===== */}
+          {/* 商品列表 */}
           {products.length > 0 && (
             <div className="max-h-48 overflow-y-auto space-y-1">
+              {overrideSummary.skuCount > 0 && (
+                <div className="flex items-center justify-between text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1.5 mb-1">
+                  <span>已手动编辑 {overrideSummary.productCount} 个商品 / {overrideSummary.skuCount} 个 SKU</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-5 px-1.5 text-[10px] font-normal border-blue-300 text-blue-600 hover:bg-blue-100"
+                    onClick={() => setOverrideDetailOpen(true)}
+                  >
+                    查看详情
+                  </Button>
+                </div>
+              )}
               <ProductList products={products} />
             </div>
           )}
 
-          {/* 模板 */}
-          {products.length > 0 && <TemplateManager />}
+          {/* 空状态 */}
+          {!isLoading && !error && products.length === 0 && isConnected && (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              <p>输入商品 ID 并点击"加载限时特卖列表"</p>
+              <p className="mt-1 text-xs">或在下方「更多」中手动输入商品 ID</p>
+            </div>
+          )}
 
-          {/* 开启限时特卖（需要已加载商品且已选活动） */}
+          {/* ===== 开启限时特卖 — 紧连商品列表 ===== */}
           {products.length > 0 && flashSaleId && (
             <div className="space-y-3 pt-1">
               <Separator />
               <div className="text-sm font-medium">开启限时特卖</div>
 
-              {/* 折扣率 + 活动库存 + 限购数量（同一行） */}
+              {overrideSummary.skuCount > 0 && (
+                <div className="flex items-center justify-between gap-2 rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 text-xs text-blue-800">
+                  <span>
+                    已有 {overrideSummary.productCount} 个商品 / {overrideSummary.skuCount} 个 SKU 手动修改过，不会使用下列折扣
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-xs font-normal border-blue-300 bg-white text-blue-700 hover:bg-blue-100"
+                    onClick={() => setOverrideDetailOpen(true)}
+                  >
+                    查看
+                  </Button>
+                </div>
+              )}
+
+              {/* 折扣率 + 活动库存 + 限购数量 */}
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <span className="whitespace-nowrap">折扣率 (%)</span>
@@ -364,7 +469,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 重试次数设置 */}
+              {/* 重试次数 */}
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>最大重试次数</span>
                 <input
@@ -388,7 +493,7 @@ export default function App() {
                 </label>
               </div>
 
-              {/* 开启 / 停止按钮 */}
+              {/* 开启 / 停止 */}
               {!isEnabling ? (
                 <button
                   className="w-full py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -399,14 +504,19 @@ export default function App() {
                 </button>
               ) : (
                 <button
-                  className="w-full py-2 text-sm font-medium text-white bg-red-500 rounded-md hover:bg-red-600"
-                  onClick={() => stopEnabling()}
+                  className="w-full py-2 text-sm font-medium border-2 border-red-400 text-red-600 bg-white rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isStopping}
+                  onClick={async () => {
+                    setIsStopping(true);
+                    await stopEnabling();
+                    setIsStopping(false);
+                  }}
                 >
-                  ⏹ 停止
+                  {isStopping ? '⏳ 停止中...' : '⏹ 停止'}
                 </button>
               )}
 
-              {/* 进度显示 */}
+              {/* 进度 */}
               {enableProgress && (
                 <div className="space-y-1 text-xs">
                   <div className="flex justify-between text-muted-foreground">
@@ -426,7 +536,6 @@ export default function App() {
                         : `⚠️ 已完成，剩余 ${enableProgress.failedSkus} 个 SKU 无法开启`}
                     </p>
                   )}
-                  {/* 失败详情（调试用） */}
                   {enableProgress.nextRetryItems.length > 0 && (
                     <details className="mt-1">
                       <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
@@ -452,12 +561,51 @@ export default function App() {
                       </div>
                     </details>
                   )}
-                  {/* 原始响应预览 */}
+                  {enableProgress.hardFailedSkus && enableProgress.hardFailedSkus.length > 0 && (
+                    <div className="mt-2 p-2 text-xs bg-orange-50 border border-orange-200 rounded-md">
+                      <div className="flex items-start gap-1.5">
+                        <span className="mt-0.5 shrink-0">⚠️</span>
+                        <div>
+                          <p className="font-medium text-orange-800">价格超出限时特卖上限</p>
+                          <p className="mt-0.5 text-orange-700">
+                            {enableProgress.hardFailedSkus.length} 个 SKU 促销价过高，已自动排除。
+                          </p>
+                        </div>
+                      </div>
+                      <details className="mt-1">
+                        <summary className="cursor-pointer text-orange-700 hover:text-orange-800">
+                          查看详情 ({enableProgress.hardFailedSkus.length} 个 SKU)
+                        </summary>
+                        <div className="mt-1 max-h-24 overflow-y-auto space-y-1">
+                          {enableProgress.hardFailedSkus.slice(0, 20).map((item, i) => {
+                            const priceCond = item.unqualified_conditions?.find(c => c.unqualified_code === 10010);
+                            const promoPrice = priceCond ? Math.floor(Number(priceCond.value) / 100000) : 0;
+                            const floorPrice = priceCond ? Math.floor(Number(priceCond.params?.[0] || 0) / 100000) : 0;
+                            return (
+                              <div
+                                key={i}
+                                className="p-1.5 text-[10px] bg-white border border-orange-100 rounded cursor-pointer hover:bg-orange-50/50 transition-colors"
+                                onClick={() => {
+                                  const product = products.find(p => p.itemid === String(item.item_id));
+                                  if (product) setSelectedFailedProduct(product);
+                                }}
+                              >
+                                <div className="font-medium text-orange-800">item {item.item_id} / model {item.model_id}</div>
+                                {priceCond && (
+                                  <div className="text-orange-600">
+                                    促销价: {promoPrice} &gt; 最低价: {floorPrice}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </details>
+                    </div>
+                  )}
                   {enableProgress.lastResponsePreview && (
                     <details className="mt-1">
-                      <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                        API 响应预览
-                      </summary>
+                      <summary className="cursor-pointer text-muted-foreground hover:text-foreground">API 响应预览</summary>
                       <pre className="mt-1 p-2 text-[10px] bg-gray-50 border rounded max-h-32 overflow-auto whitespace-pre-wrap break-all">
                         {enableProgress.lastResponsePreview}
                       </pre>
@@ -468,16 +616,204 @@ export default function App() {
             </div>
           )}
 
-          {/* 空状态 */}
-          {!isLoading && !error && products.length === 0 && isConnected && (
-            <div className="py-8 text-center text-sm text-muted-foreground">
-              <p>输入商品 ID 并点击"获取商品信息"</p>
-              <p className="mt-1 text-xs">商品 ID 可从虾皮后台商品列表页获取</p>
+          {/* ===== P2: 更多（低频功能折叠）===== */}
+          <details className="-mb-1">
+            <summary className="cursor-pointer text-xs text-gray-400 hover:text-gray-600 select-none">
+              更多
+            </summary>
+            <div className="mt-2 space-y-3">
+              {/* 商品 ID 输入 */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-medium text-muted-foreground/60">商品 ID</span>
+                    {productIds.length > 0 && (
+                      <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">{productIds.length}</span>
+                    )}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-5 px-1.5 text-[10px] font-normal text-muted-foreground/40 border-muted-foreground/20 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300"
+                    onClick={handlePaste}
+                  >
+                    粘贴
+                  </Button>
+                </div>
+                <textarea
+                  ref={textareaRef}
+                  className="w-full h-16 px-2 py-1 text-[11px] border border-dashed border-muted-foreground/20 rounded-md resize-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-solid text-muted-foreground/60 placeholder-muted-foreground/30"
+                  placeholder="粘贴商品 ID 后将自动识别"
+                  value={inputText}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              {/* 获取商品信息 */}
+              <button
+                className="w-full py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!isConnected || isLoading || inputText.trim().length === 0}
+                onClick={handleFetch}
+              >
+                {isLoading ? '加载中...' : '获取商品信息'}
+              </button>
+
+              {/* 加载限时特卖列表（无列表时） */}
+              {isConnected && flashSaleList.length === 0 && (
+                <button
+                  className="w-full py-1.5 text-sm font-medium border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isLoadingFlashSaleList || isLoading}
+                  onClick={() => fetchFlashSaleList()}
+                >
+                  {isLoadingFlashSaleList ? '加载中...' : '加载限时特卖列表'}
+                </button>
+              )}
+
+              {/* 模板（仅在有商品时） */}
+              {products.length > 0 && <TemplateManager />}
+
+              {/* 高级操作 */}
+              <div className="pt-1 space-y-2">
+                <button
+                  className="w-full py-2 text-sm font-medium border border-dashed border-muted-foreground/30 text-muted-foreground/60 rounded-md hover:border-primary/30 hover:text-primary hover:bg-primary/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  disabled={!hasScheduledCopy || isEnabling || isTriggeringScheduled}
+                  onClick={async () => {
+                    setIsTriggeringScheduled(true);
+                    try {
+                      await triggerScheduledCopyNow();
+                    } finally {
+                      setIsTriggeringScheduled(false);
+                    }
+                  }}
+                >
+                  {isTriggeringScheduled ? '执行中...' : (isEnabling ? '限时特卖进行中...' : '手动触发定时任务')}
+                </button>
+                <button
+                  className="w-full py-2 text-sm font-medium border border-red-300 text-red-500 bg-white rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  disabled={isClearingCache}
+                  onClick={async () => {
+                    setIsClearingCache(true);
+                    try {
+                      await clearCache();
+                      reset();
+                      extractSpcCds();
+                    } finally {
+                      setIsClearingCache(false);
+                    }
+                  }}
+                >
+                  {isClearingCache ? '清除中...' : '清除缓存'}
+                </button>
+              </div>
             </div>
-          )}
+          </details>
         </CardContent>
       </Card>
       )}
+        </div>
+
+        <div style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0 }}>
+          <AutoModePanel onBack={exitAutoMode} />
+        </div>
+      </div>
+
+      {/* 弹窗 */}
+      {selectedFailedProduct && (
+        <SkuTable
+          key={selectedFailedProduct.itemid}
+          product={selectedFailedProduct}
+          onClose={() => setSelectedFailedProduct(null)}
+        />
+      )}
+
+      {overrideDetailOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg shadow-xl w-[460px] max-w-[95vw] max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between gap-3 p-3 border-b">
+              <div>
+                <h3 className="text-sm font-medium">手动修改的商品和 SKU</h3>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  共 {overrideSummary.productCount} 个商品 / {overrideSummary.skuCount} 个 SKU
+                </p>
+              </div>
+              <button
+                className="text-lg leading-none text-muted-foreground hover:text-foreground"
+                onClick={() => setOverrideDetailOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="flex items-center gap-2 p-3 border-b">
+              <input
+                type="text"
+                placeholder="搜索商品标题、商品 ID、SKU、SKU ID"
+                value={overrideSearchInput}
+                onChange={e => setOverrideSearchInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') setOverrideSearchQuery(overrideSearchInput);
+                }}
+                className="flex-1 min-w-0 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs font-normal shrink-0"
+                onClick={() => setOverrideSearchQuery(overrideSearchInput)}
+              >
+                搜索
+              </Button>
+              {overrideSearchQuery.trim() && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs font-normal shrink-0"
+                  onClick={() => {
+                    setOverrideSearchInput('');
+                    setOverrideSearchQuery('');
+                  }}
+                >
+                  清除
+                </Button>
+              )}
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
+              {filteredOverrideProducts.map(({ product, skus }) => (
+                <div key={product.itemid} className="rounded-md border p-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-xs font-medium truncate">{product.name}</div>
+                      <div className="mt-0.5 text-[10px] text-muted-foreground">ID: {product.itemid}</div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 px-2 text-xs font-normal shrink-0"
+                      onClick={() => setSelectedFailedProduct(product)}
+                    >
+                      查看 SKU
+                    </Button>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {skus.map(sku => (
+                      <span
+                        key={sku.modelid}
+                        className="max-w-full truncate rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700"
+                        title={`${sku.name || '默认规格'} / ${sku.modelid}`}
+                      >
+                        {sku.name || '默认规格'} ({sku.modelid})
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {filteredOverrideProducts.length === 0 && (
+                <p className="py-6 text-center text-xs text-muted-foreground">无匹配商品或 SKU</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

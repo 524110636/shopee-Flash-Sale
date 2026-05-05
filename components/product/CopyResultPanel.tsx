@@ -19,8 +19,13 @@ export function CopyResultPanel({ status, onBack, onRetry }: CopyResultPanelProp
         <CardContent className="space-y-3">
           <div className="text-sm space-y-1">
             <p>新活动 ID: <span className="font-mono">{status.newFlashSaleId}</span></p>
+            {status.warning && (
+              <div className="mt-2 p-2 text-xs text-yellow-800 bg-yellow-50 border border-yellow-200 rounded-md whitespace-pre-wrap break-all">
+                <span className="font-medium">⚠ 警告：</span>{status.warning}
+              </div>
+            )}
             <p className="text-muted-foreground mt-2">
-              提示: 活动开始后，可手动点击「开启限时特卖」处理失败 SKU
+              商品已自动提交到虾皮，可在活动列表中查看。
             </p>
           </div>
           <Button className="w-full" onClick={onBack}>返回活动列表</Button>
@@ -56,9 +61,9 @@ export function CopyResultPanel({ status, onBack, onRetry }: CopyResultPanelProp
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="text-sm space-y-1">
-          <p>系统将在活动开始前 5 分钟自动执行复制。</p>
+          <p>系统将在活动开始前 5 分钟自动创建场次。</p>
           <p className="text-muted-foreground mt-2">
-            请保持 seller.shopee.tw 页面打开，执行完成后会显示结果。
+            场次创建后，需要手动点击「开启限时特卖」来提交商品到虾皮。
           </p>
         </div>
         <Button className="w-full" onClick={onBack}>返回活动列表</Button>

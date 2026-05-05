@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '@/entrypoints/popup/store';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { TemplateEditDialog } from '@/components/product/TemplateEditDialog';
 import type { FlashSaleTemplate } from '@/entrypoints/popup/types';
 
 type ViewState = 'idle' | 'saving' | 'loading';
 
 export function TemplateManager() {
-  const { products, saveTemplate, deleteTemplate, getTemplateNames, getTemplate, applyTemplate } = useAppStore();
+  const { products, saveTemplate, importTemplate, deleteTemplate, getTemplateNames, getTemplate, applyTemplate } = useAppStore();
 
   const [view, setView] = useState<ViewState>('idle');
   const [templateNameInput, setTemplateNameInput] = useState('');
@@ -16,6 +17,8 @@ export function TemplateManager() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [applyMessage, setApplyMessage] = useState('');
+  const [importMessage, setImportMessage] = useState('');
+  const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
 
   // Comparison dialog state
   const [compareDialog, setCompareDialog] = useState<{
@@ -25,6 +28,7 @@ export function TemplateManager() {
   } | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const hasProducts = products.length > 0;
 
   useEffect(() => {
@@ -113,6 +117,61 @@ export function TemplateManager() {
     await refreshTemplateList();
   };
 
+  const handleExport = async (name: string) => {
+    const template = await getTemplate(name);
+    if (!template) return;
+    const exportData = {
+      version: 1,
+      type: 'flash_sale_template',
+      name: template.name,
+      exportedAt: new Date().toISOString(),
+      data: {
+        discountRate: template.discountRate,
+        flashSaleStock: template.flashSaleStock,
+        purchaseLimit: template.purchaseLimit,
+        skuOverrides: template.skuOverrides,
+        productInfo: template.productInfo,
+      },
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${name}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (data.version !== 1 || data.type !== 'flash_sale_template' || !data.data) {
+        throw new Error('无效的模板文件格式');
+      }
+      const template: FlashSaleTemplate = {
+        name: data.name || file.name.replace('.json', ''),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        discountRate: data.data.discountRate ?? 60,
+        flashSaleStock: data.data.flashSaleStock ?? 200,
+        purchaseLimit: data.data.purchaseLimit ?? 0,
+        skuOverrides: data.data.skuOverrides || {},
+        productInfo: data.data.productInfo || [],
+      };
+      await importTemplate(template);
+      setImportMessage(`已导入模板「${template.name}」`);
+      setTimeout(() => setImportMessage(''), 2500);
+    } catch (err: any) {
+      alert(`导入失败: ${err.message || '文件格式错误'}`);
+    }
+    e.target.value = '';
+  };
+
   const formatDate = (ts: number) => {
     const d = new Date(ts);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -185,7 +244,10 @@ export function TemplateManager() {
           {applyMessage && (
             <div className="text-xs text-green-600 mb-1.5">{applyMessage}</div>
           )}
-          <div className="flex items-center gap-2">
+          {importMessage && (
+            <div className="text-xs text-green-600 mb-1.5">{importMessage}</div>
+          )}
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md"
               onClick={() => setView('saving')}
@@ -193,12 +255,25 @@ export function TemplateManager() {
               保存模板
             </button>
             <button
-              className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md"
+              className="text-xs px-3 py-1.5 border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              导入模板
+            </button>
+            <button
+              className="text-xs px-3 py-1.5 border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50"
               onClick={handleLoadList}
             >
               加载模板
             </button>
           </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            className="hidden"
+            onChange={handleImport}
+          />
         </div>
       )}
 
@@ -267,19 +342,34 @@ export function TemplateManager() {
                   key={name}
                   name={name}
                   onApply={() => handleApply(name)}
+                  onExport={() => handleExport(name)}
                   onDelete={() => handleDelete(name)}
+                  onEdit={() => setEditingTemplate(name)}
                 />
               ))}
             </div>
           )}
         </div>
       )}
+
+      {editingTemplate && (
+        <TemplateEditDialog
+          templateName={editingTemplate}
+          onClose={() => setEditingTemplate(null)}
+          onSaved={() => {
+            setEditingTemplate(null);
+            refreshTemplateList();
+          }}
+        />
+      )}
     </>
   );
 }
 
-function TemplateRow({ name, onApply, onDelete }: { name: string; onApply: () => void; onDelete: () => void }) {
+function TemplateRow({ name, onApply, onExport, onDelete, onEdit }: { name: string; onApply: () => void; onExport: () => void; onDelete: () => void; onEdit: () => void }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   return (
     <div className="flex items-center justify-between px-2 py-1.5 bg-gray-50 border rounded text-[10px]">
@@ -291,14 +381,19 @@ function TemplateRow({ name, onApply, onDelete }: { name: string; onApply: () =>
               variant="outline"
               size="sm"
               className="h-5 px-1.5 text-[10px] font-normal text-red-600 border-red-300 hover:bg-red-50"
-              onClick={onDelete}
+              disabled={isDeleting}
+              onClick={async () => {
+                setIsDeleting(true);
+                try { await onDelete(); } finally { setIsDeleting(false); }
+              }}
             >
-              确认删除
+              {isDeleting ? '删除中...' : '确认删除'}
             </Button>
             <Button
               variant="outline"
               size="sm"
               className="h-5 px-1.5 text-[10px] font-normal"
+              disabled={isDeleting}
               onClick={() => setConfirmDelete(false)}
             >
               取消
@@ -309,10 +404,30 @@ function TemplateRow({ name, onApply, onDelete }: { name: string; onApply: () =>
             <Button
               variant="outline"
               size="sm"
-              className="h-5 px-1.5 text-[10px] font-normal text-green-700 border-green-300 hover:bg-green-50"
-              onClick={onApply}
+              className="h-5 px-1.5 text-[10px] font-normal text-blue-600 border-blue-200 hover:bg-blue-50"
+              onClick={onExport}
             >
-              应用
+              导出
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-5 px-1.5 text-[10px] font-normal text-green-700 border-green-300 hover:bg-green-50"
+              disabled={isApplying}
+              onClick={async () => {
+                setIsApplying(true);
+                try { await onApply(); } finally { setIsApplying(false); }
+              }}
+            >
+              {isApplying ? '应用中...' : '应用'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-5 px-1.5 text-[10px] font-normal text-sky-600 border-sky-200 hover:bg-sky-50"
+              onClick={onEdit}
+            >
+              编辑
             </Button>
             <Button
               variant="outline"

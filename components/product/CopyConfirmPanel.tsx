@@ -26,9 +26,12 @@ export function CopyConfirmPanel({
   const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
   const [slotsError, setSlotsError] = useState<string | null>(null);
   const [viewingProducts, setViewingProducts] = useState(false);
+  const [loadingViewProducts, setLoadingViewProducts] = useState(false);
   const [selectedViewProduct, setSelectedViewProduct] = useState<ShopeeProduct | null>(null);
+  const [viewError, setViewError] = useState<string | null>(null);
   const products = useAppStore(s => s.products);
   const isLoadingFlashSales = useAppStore(s => s.isLoadingFlashSales);
+  const skuOverrides = useAppStore(s => s.skuOverrides);
   const loadFlashSaleProducts = useAppStore(s => s.loadFlashSaleProducts);
 
   // 进入面板时自动获取可用时间段
@@ -39,15 +42,7 @@ export function CopyConfirmPanel({
         const slots = await onFetchTimeSlots();
         setTimeSlots(slots);
         if (slots.length > 0) {
-          // 默认选中离「当前时间+2小时」最近的时段
-          const target = Math.floor(Date.now() / 1000) + 7200;
-          let best = slots[0];
-          for (const slot of slots) {
-            if (Math.abs(slot.start_time - target) < Math.abs(best.start_time - target)) {
-              best = slot;
-            }
-          }
-          setSelectedSlotId(best.timeslot_id);
+          setSelectedSlotId(slots[0].timeslot_id);
         }
       } catch (e: any) {
         console.error('[CopyConfirmPanel] 获取时间段失败:', e?.message || e);
@@ -72,8 +67,29 @@ export function CopyConfirmPanel({
     onConfirm(slot.start_time, selectedTemplate);
   };
 
-  const handleOpenView = () => {
-    loadFlashSaleProducts(source.flashSale.flash_sale_id);
+  const handleOpenView = async () => {
+    if (loadingViewProducts) return;
+
+    const saleId = source.flashSale.flash_sale_id;
+    const saleName = source.flashSale.name || `活动 #${saleId}`;
+    console.log(`[CopyConfirmPanel:查看] 点击查看源活动商品, flash_sale_id=${saleId}, name=${saleName}`);
+    setLoadingViewProducts(true);
+    setViewError(null);
+    try {
+      await loadFlashSaleProducts(saleId);
+      console.log(`[CopyConfirmPanel:查看] loadFlashSaleProducts 完成, products=${products.length}, skuOverrides=${Object.keys(skuOverrides).length}`);
+      // 检查前 3 条覆盖参数样例
+      const overrideKeys = Object.keys(skuOverrides);
+      if (overrideKeys.length > 0) {
+        const samples = overrideKeys.slice(0, 3).map(k => ({ key: k, ...skuOverrides[k] }));
+        console.log(`[CopyConfirmPanel:查看] skuOverrides 前3条样例:`, JSON.stringify(samples));
+      }
+    } catch (e: any) {
+      console.error(`[CopyConfirmPanel:查看] 失败:`, e?.message || e);
+      setViewError(e?.message || '查看失败');
+    } finally {
+      setLoadingViewProducts(false);
+    }
     setViewingProducts(true);
   };
 
@@ -83,6 +99,15 @@ export function CopyConfirmPanel({
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-sm">
         <Button variant="outline" size="sm" className="h-7 px-3 text-xs font-normal" onClick={onCancel}>← 返回活动列表</Button>
+      </div>
+
+      {/* 步骤提示 */}
+      <div className="flex items-center justify-center gap-2 text-xs">
+        <span className="text-blue-600 font-medium">● 选择源活动</span>
+        <span className="text-gray-300">→</span>
+        <span className="text-blue-600 font-medium">● 选择目标时间</span>
+        <span className="text-gray-300">→</span>
+        <span className="text-gray-400">○ 创建复制任务</span>
       </div>
 
       <Card>
@@ -107,11 +132,22 @@ export function CopyConfirmPanel({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="ml-1.5 h-5 px-1.5 text-[10px] font-normal text-primary border-primary/30 hover:bg-primary/5"
+                      className="ml-1.5 h-5 px-1.5 text-[10px] font-normal text-blue-600 border-blue-300 hover:bg-blue-50"
+                      disabled={loadingViewProducts}
                       onClick={(e) => { e.stopPropagation(); handleOpenView(); }}
                     >
-                      查看
+                      {loadingViewProducts ? (
+                        <>
+                          <span className="inline-block animate-spin mr-1">↻</span>
+                          查看中
+                        </>
+                      ) : (
+                        '查看'
+                      )}
                     </Button>
+                    {viewError && (
+                      <span className="ml-1 text-[10px] text-red-500">{viewError}</span>
+                    )}
                   </>
                 ) : '加载中...'}
               </span>
@@ -228,7 +264,7 @@ export function CopyConfirmPanel({
         </div>
       )}
       {selectedViewProduct && (
-        <SkuTable product={selectedViewProduct} onClose={() => setSelectedViewProduct(null)} />
+        <SkuTable key={selectedViewProduct.itemid} product={selectedViewProduct} onClose={() => setSelectedViewProduct(null)} />
       )}
     </div>
   );

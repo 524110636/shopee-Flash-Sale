@@ -1,9 +1,10 @@
 import { defineBackground } from 'wxt/utils/define-background';
-import type { ShopeeProduct, EnableItem, EnableResult, EnableProgress, SkuOverride, CopyTaskStatus, ScheduledCopyParams } from './popup/types';
+import type { ShopeeProduct, EnableItem, EnableResult, EnableProgress, SkuOverride, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, ScheduledTaskStatus, AutoModeConfig, AutoModeStatus, AutoModeLog, TimeSlot } from './popup/types';
 
 // ===== Constants =====
 const GRAPHQL_URL = 'https://seller.shopee.tw/api/marketing/v4/graphql/query/';
 const FLASH_SALE_API = 'https://seller.shopee.tw/api/marketing/v4/shop_flash_sale';
+const COPY_MAX_RETRIES = 10;
 
 const PRODUCTS_QUERY = `query Products($productIds: [String], $statusType: Int) {
   products(productIds: $productIds, statusType: $statusType) {
@@ -19,6 +20,7 @@ const PRODUCTS_QUERY = `query Products($productIds: [String], $statusType: Int) 
 // ===== State =====
 let _enableStopRequested = false;
 let _enableRunning = false;
+let _autoModeStopRequested = false;
 
 // ===== Params type for enable loop =====
 interface EnableParams {
@@ -34,17 +36,29 @@ interface EnableParams {
   skuOverrides: Record<string, SkuOverride>;
 }
 
+interface FailedItemDetail {
+  itemId: number;
+  modelId: number;
+  image: string;
+  itemName: string;
+  modelName: string;
+  promoPrice: number;
+  stock: number;
+  purchaseLimit: number;
+  errMsg: string;
+}
+
 // ===== Progress helpers =====
 async function saveProgress(progress: EnableProgress, running: boolean, error?: string) {
   await browser.storage.local.set({ _enableProgress: { progress, error, running } });
 }
 
-async function sendProgressToContentScript(progress: EnableProgress) {
+async function sendProgressToContentScript(progress: EnableProgress, failedItemDetails?: FailedItemDetail[]) {
   try {
     const tabs = await browser.tabs.query({ url: '*://seller.shopee.tw/*' });
     for (const tab of tabs) {
       if (tab.id) {
-        await browser.tabs.sendMessage(tab.id, { type: 'ENABLE_PROGRESS', progress }).catch(() => {});
+        await browser.tabs.sendMessage(tab.id, { type: 'ENABLE_PROGRESS', progress, failedItemDetails }).catch(() => {});
       }
     }
   } catch {
@@ -52,12 +66,12 @@ async function sendProgressToContentScript(progress: EnableProgress) {
   }
 }
 
-async function sendCompleteToContentScript(progress: EnableProgress) {
+async function sendCompleteToContentScript(progress: EnableProgress, failedItemDetails?: FailedItemDetail[]) {
   try {
     const tabs = await browser.tabs.query({ url: '*://seller.shopee.tw/*' });
     for (const tab of tabs) {
       if (tab.id) {
-        await browser.tabs.sendMessage(tab.id, { type: 'ENABLE_COMPLETE', progress }).catch(() => {});
+        await browser.tabs.sendMessage(tab.id, { type: 'ENABLE_COMPLETE', progress, failedItemDetails }).catch(() => {});
       }
     }
   } catch {
@@ -65,28 +79,45 @@ async function sendCompleteToContentScript(progress: EnableProgress) {
   }
 }
 
-async function sendProgress(progress: EnableProgress, error?: string) {
+async function sendProgress(progress: EnableProgress, error?: string, failedItemDetails?: FailedItemDetail[]) {
   try {
-    await browser.runtime.sendMessage({ type: 'ENABLE_PROGRESS', progress, error });
+    await browser.runtime.sendMessage({ type: 'ENABLE_PROGRESS', progress, failedItemDetails, error });
   } catch {
     // popup closed — OK, progress is saved to storage
   }
-  await sendProgressToContentScript(progress);
+  await sendProgressToContentScript(progress, failedItemDetails);
 }
 
-async function sendComplete(progress: EnableProgress, error?: string) {
+async function sendComplete(progress: EnableProgress, error?: string, failedItemDetails?: FailedItemDetail[]) {
   try {
-    await browser.runtime.sendMessage({ type: 'ENABLE_COMPLETE', progress, error });
+    await browser.runtime.sendMessage({ type: 'ENABLE_COMPLETE', progress, failedItemDetails, error });
   } catch {
     // popup closed
   }
-  await sendCompleteToContentScript(progress);
+  await sendCompleteToContentScript(progress, failedItemDetails);
 }
 
 async function clearEnableState() {
   try {
     await browser.storage.local.remove(['_enableParams', '_enableProgress']);
   } catch { /* ignore */ }
+}
+
+// ===== Copy progress messaging =====
+async function sendCopyMessage(type: string, data: Record<string, any> = {}) {
+  const tabs = await browser.tabs.query({ url: '*://seller.shopee.tw/*' });
+  for (const tab of tabs) {
+    browser.tabs.sendMessage(tab.id!, { type, ...data }).catch(() => {});
+  }
+}
+
+// ===== 保存复制活动的源商品数据（供新活动展示和开启限时特卖使用）=====
+async function saveCopiedSaleData(data: CopiedSaleData) {
+  const result = await browser.storage.local.get('_copiedSaleData');
+  const allData: Record<string, CopiedSaleData> = result._copiedSaleData || {};
+  allData[String(data.newFlashSaleId)] = data;
+  await browser.storage.local.set({ _copiedSaleData: allData });
+  console.log('[bg:copiedSaleData] 已保存:', data.newFlashSaleId, data.sourceFlashSaleName);
 }
 
 // ===== Utility: timeout race =====
@@ -103,7 +134,107 @@ function getMonthEnd(): number {
   return Math.floor(endOfMonth.getTime() / 1000) - 1;
 }
 
-// ===== Injected fetch (MAIN world) =====
+// ===== 从 Cookie 读取 SPC_CDS（供后台直接使用，不依赖 storage.local）=====
+async function getSpcCdsFromCookies(): Promise<{ spcCds: string; spcCdsVer: string }> {
+  const urls = ['https://seller.shopee.tw', 'https://shopee.tw', 'https://www.shopee.tw'];
+  for (const url of urls) {
+    try {
+      const cookie = await browser.cookies.get({ url, name: 'SPC_CDS' });
+      if (cookie?.value) {
+        const verCookie = await browser.cookies.get({ url, name: 'SPC_CDS_VER' });
+        return { spcCds: cookie.value, spcCdsVer: verCookie?.value || '2' };
+      }
+    } catch { /* next */ }
+  }
+  // getAll 回退
+  const allCookies = await browser.cookies.getAll({ domain: '.shopee.tw' });
+  const spc = allCookies.find(c => c.name === 'SPC_CDS');
+  if (spc?.value) {
+    const ver = allCookies.find(c => c.name === 'SPC_CDS_VER');
+    return { spcCds: spc.value, spcCdsVer: ver?.value || '2' };
+  }
+  return { spcCds: '', spcCdsVer: '2' };
+}
+
+// ===== Session Keepalive（参考 shopee-plugin 的自动刷新机制）=====
+const HEARTBEAT_ALARM = 'session-heartbeat';
+const HEARTBEAT_INTERVAL_MINUTES = 4;
+
+async function handleHeartbeat() {
+  console.log('[bg:heartbeat] 开始保活检查');
+  try {
+    const sellerTabs = await browser.tabs.query({ url: '*://seller.shopee.tw/*' });
+    if (sellerTabs.length === 0) {
+      console.log('[bg:heartbeat] 没有 seller 标签页，跳过');
+      return;
+    }
+
+    // 优先使用营销页面标签页
+    const marketingTab = sellerTabs.find(t => t.url?.includes('/marketing/'));
+    const targetTab = marketingTab || sellerTabs[0];
+    if (!targetTab?.id) return;
+
+    console.log('[bg:heartbeat] 标签页:', targetTab.url?.slice(0, 80));
+    const results = await executeScriptSafe({
+      target: { tabId: targetTab.id },
+      world: 'MAIN',
+      func: () => {
+        try {
+          const w = window as any;
+          const session =
+            w.__INITIAL_STATE__?.session?.sc_fe_session ||
+            document.querySelector('meta[name="sc-fe-session"]')?.getAttribute('content') ||
+            document.cookie.match(/(?:^|;\s*)sc_fe_session=([^;]*)/)?.[1] || '';
+          if (session) {
+            fetch('/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/?offset=0&limit=1', {
+              credentials: 'include',
+              headers: {
+                accept: 'application/json',
+                'sc-fe-session': session,
+                'content-type': 'application/json',
+              },
+            }).catch(() => {});
+          }
+          return !!session;
+        } catch { return false; }
+      },
+    }, 10000, '心跳保活');
+
+    const alive = results?.[0]?.result === true;
+    console.log('[bg:heartbeat] 保活完成:', alive ? '✓ 会话有效' : '✗ 会话为空');
+    await browser.storage.local.set({ _lastHeartbeat: Date.now() });
+  } catch (e: any) {
+    console.log('[bg:heartbeat] 保活失败:', e?.message?.slice(0, 100));
+  }
+}
+
+// ===== 带重试的 executeScript（处理 Service Worker 长时间休眠后权限未就绪的问题）=====
+async function executeScriptSafe(
+  params: any,
+  timeoutMs: number,
+  label: string,
+): Promise<any[]> {
+  const maxRetries = 5;
+  let lastError: any;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await withTimeout(browser.scripting.executeScript(params), timeoutMs, label);
+    } catch (e: any) {
+      lastError = e;
+      const msg: string = e?.message || '';
+      if (msg.includes('Cannot access contents') || msg.includes('permission to access')) {
+        const delay = 1000 * (attempt + 1);
+        console.log(`[bg:executeSafe] 权限未就绪，${delay}ms 后第 ${attempt + 1}/${maxRetries} 次重试...`);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw lastError;
+}
+
+// ===== Injected fetch (MAIN world) — 仅靠 credentials: 'include' 发送 Cookie，无需 sc-fe-session =====
 async function injectedFetch<T>(
   url: string,
   method: 'GET' | 'POST' = 'GET',
@@ -111,53 +242,32 @@ async function injectedFetch<T>(
   referrerUrl?: string,
 ): Promise<T> {
   console.log('[bg:injectedFetch] 开始', { url, method, hasBody: !!body, referrerUrl });
-  const tabs = await browser.tabs.query({ url: '*://seller.shopee.tw/*' });
-  const tab = tabs?.[0];
-  console.log('[bg:injectedFetch] seller 标签页:', { tabId: tab?.id, url: tab?.url });
-  if (!tab?.id) throw new Error('没有找到 seller.shopee.tw 标签页，请保持卖家中心页面打开');
+  const allTabs = await browser.tabs.query({ url: '*://seller.shopee.tw/*' });
+  if (allTabs.length === 0) throw new Error('没有找到 seller.shopee.tw 标签页，请保持卖家中心页面打开');
 
-  // 获取 sc-fe-session
-  console.log('[bg:injectedFetch] 开始获取 sc-fe-session...');
-  const sessionInfo = await withTimeout(browser.scripting.executeScript({
-    target: { tabId: tab.id },
-    world: 'MAIN',
-    func: () => {
-      try {
-        const fromWindow = (window as any).__INITIAL_STATE__?.session?.sc_fe_session;
-        const fromMeta = document.querySelector('meta[name="sc-fe-session"]')?.getAttribute('content');
-        const cookies = document.cookie.split('; ').reduce((acc, c) => {
-          const [k, ...v] = c.split('=');
-          acc[k] = v.join('=');
-          return acc;
-        }, {} as Record<string, string>);
-        const fromCookie = cookies['sc_fe_session'] || cookies['sc-fe-session'] || '';
-        const fromWindow2 = (window as any)['sc-fe-session'] || (window as any).sc_fe_session || '';
-        let fromScript = '';
-        const scripts = document.querySelectorAll('script');
-        for (let i = 0; i < Math.min(scripts.length, 5); i++) {
-          const text = scripts[i].textContent || '';
-          const m = text.match(/["']sc-fe-session["']\s*:\s*["']([^"']+)["']/);
-          if (m) { fromScript = m[1]; break; }
-        }
-        return fromWindow || fromMeta || fromCookie || fromWindow2 || fromScript || '';
-      } catch { return ''; }
-    },
-  }), 10000, 'sc-fe-session 获取');
-  const scFeSession = (sessionInfo?.[0]?.result as string) || '';
-  console.log('[bg:injectedFetch] sc-fe-session:', scFeSession || '(空)');
+  // 优先找营销页面，再回退到其他 seller 页面
+  const marketingTabs = allTabs.filter(t => t.url?.includes('/marketing/'));
+  const otherTabs = allTabs.filter(t => !t.url?.includes('/marketing/'));
+  const selectedTab = marketingTabs[0] || otherTabs[0];
+
+  if (!selectedTab?.id) throw new Error('没有找到 seller.shopee.tw 标签页，请保持卖家中心页面打开');
+  console.log('[bg:injectedFetch] 选定标签页:', selectedTab.url?.slice(0, 100));
 
   console.log('[bg:injectedFetch] 开始执行 API 请求...');
-  const results = await withTimeout(browser.scripting.executeScript({
-    target: { tabId: tab.id },
+  const results = await executeScriptSafe({
+    target: { tabId: selectedTab.id },
     world: 'MAIN',
-    func: async (fetchUrl: string, fetchMethod: string, fetchBody: string | null, scFeSession: string, referrerUrl: string) => {
+    func: async (fetchUrl: string, fetchMethod: string, fetchBody: string | null, referrerUrl: string) => {
       try {
-        const headers: Record<string, string> = {
-          accept: 'application/json, text/plain, */*',
-          'content-type': 'application/json;charset=UTF-8',
+        const opts: RequestInit = {
+          method: fetchMethod,
+          credentials: 'include',
+          cache: 'no-cache',
+          headers: {
+            accept: 'application/json, text/plain, */*',
+            'content-type': 'application/json;charset=UTF-8',
+          },
         };
-        if (scFeSession) headers['sc-fe-session'] = scFeSession;
-        const opts: RequestInit = { method: fetchMethod, credentials: 'include', headers };
         if (referrerUrl) {
           opts.referrer = referrerUrl;
           opts.referrerPolicy = 'unsafe-url';
@@ -171,8 +281,8 @@ async function injectedFetch<T>(
         return { _error: e.message } as any;
       }
     },
-    args: [url, method, body ? JSON.stringify(body) : null, scFeSession, referrerUrl || ''],
-  }), 30000, 'API 请求');
+    args: [url, method, body ? JSON.stringify(body) : null, referrerUrl || ''],
+  }, 30000, 'API 请求');
 
   const result = results?.[0]?.result as any;
   if (!result) throw new Error('页面脚本执行返回为空，请刷新页面后重试');
@@ -188,10 +298,14 @@ async function runEnableLoop(params: EnableParams) {
   }
   _enableRunning = true;
   try {
-    const { products, flashSaleId, spcCds, spcCdsVer, maxRetries, infiniteRetry, discountRate, flashSaleStock, purchaseLimit, skuOverrides } = params;
+    const { products, flashSaleId, spcCds: initialSpcCds, spcCdsVer: initialSpcCdsVer, maxRetries, infiniteRetry, discountRate, flashSaleStock, purchaseLimit, skuOverrides } = params;
+    let currentSpcCds = initialSpcCds;
+    let currentSpcCdsVer = initialSpcCdsVer;
 
   // 构建所有 SKU 的提交数据
-  console.log('[bg:enable] skuOverrides 全部:', JSON.stringify(skuOverrides));
+  console.log('[bg:enable] skuOverrides 总数:', Object.keys(skuOverrides).length);
+  const withPromoPrice = Object.values(skuOverrides).filter(o => o?.promoPrice !== undefined).length;
+  console.log('[bg:enable] 其中 promoPrice 覆盖:', withPromoPrice, '/', Object.keys(skuOverrides).length);
   const allItems: EnableItem[] = products.flatMap(p =>
     (p.modelList || [])
       .filter(sku => (sku.normalStock || 0) > 0)
@@ -201,7 +315,7 @@ async function runEnableLoop(params: EnableParams) {
         const usedDiscount = override?.discountRate ?? discountRate;
         const usedStock = Math.min(override?.stock ?? flashSaleStock, sku.normalStock || flashSaleStock);
         const usedPurchaseLimit = override?.purchaseLimit ?? purchaseLimit;
-        const promoPrice = Math.floor(Number(sku.originPrice || p.originPrice || 0) * usedDiscount / 100);
+        const promoPrice = override?.promoPrice ?? Math.floor(Number(sku.originPrice || p.originPrice || 0) * usedDiscount / 100);
         if (override) {
           console.log(`[bg:enable] SKU ${key}: override=${JSON.stringify(override)}, usedDiscount=${usedDiscount}, usedStock=${usedStock}, usedPurchaseLimit=${usedPurchaseLimit}, promoPrice=${promoPrice}`);
         }
@@ -233,19 +347,54 @@ async function runEnableLoop(params: EnableParams) {
 
   console.log(`[bg:enable] 开始提交 ${allItems.length} 个 SKU${skippedCount > 0 ? `（${skippedCount} 跳过）` : ''}, 最多重试 ${maxRetries} 次`);
 
+  // 构建商品名称/图片查找表（用于失败详情展示）
+  const productDetailLookup: Record<string, { name: string; modelName: string; image: string }> = {};
+  for (const p of products) {
+    for (const m of p.modelList || []) {
+      const key = `${p.itemid}-${m.modelid}`;
+      productDetailLookup[key] = { name: p.name, modelName: m.name, image: p.images?.[0] || '' };
+    }
+  }
+
+  function buildFailedItemDetails(failedItems: EnableResult[], submittedItems: EnableItem[]): FailedItemDetail[] {
+    const submittedMap = new Map(submittedItems.map(i => [`${i.item_id}-${i.model_id}`, i]));
+    return failedItems.map(r => {
+      const key = `${r.item_id}-${r.model_id}`;
+      const submitted = submittedMap.get(key);
+      const info = productDetailLookup[key];
+      return {
+        itemId: r.item_id,
+        modelId: r.model_id,
+        image: info?.image || '',
+        itemName: info?.name || `商品 #${r.item_id}`,
+        modelName: info?.modelName || '',
+        promoPrice: submitted?.input_promo_price || 0,
+        stock: submitted?.stock || 0,
+        purchaseLimit: submitted?.purchase_limit || 0,
+        errMsg: r.err_msg || '',
+      };
+    });
+  }
+
   // 立即保存运行状态，确保弹窗关闭后重新打开能看到循环在运行
   const initialProgress: EnableProgress = {
     totalSkus: allItems.length, successSkus: 0, failedSkus: 0,
     currentRound: 0, maxRetries, nextRetryItems: [], isComplete: false,
   };
   await saveProgress(initialProgress, true);
+  // 立即发送初始进度到内容脚本，悬浮 UI 立刻出现
+  await sendProgress(initialProgress);
 
   _enableStopRequested = false;
   let currentItems = [...allItems];
   let successCount = 0;
   let failedResults: EnableResult[] = [];
+  let hardFailedAccum: EnableResult[] = []; // 价格超限等不可重试的硬错误
   let lastRawResponse = '';
   let round = 0;
+  let lowFailureStallCount = 0;
+  let previousFailedCount = 0;
+  let zeroProgressCount = 0; // 连续零进展轮数（所有 SKU 全部失败）
 
   for (round = 1; ; round++) {
     if (!infiniteRetry && round > maxRetries) break;
@@ -256,8 +405,17 @@ async function runEnableLoop(params: EnableParams) {
 
     try {
       console.log(`[bg:enable] === 第 ${round} 轮提交开始 ===`);
+      // 每 3 轮刷新一次 SPC_CDS，防止 token 过期导致 spex common error
+      if (round % 3 === 1 && round > 1) {
+        const fresh = await getSpcCdsFromCookies();
+        if (fresh.spcCds) {
+          currentSpcCds = fresh.spcCds;
+          currentSpcCdsVer = fresh.spcCdsVer;
+          console.log('[bg:enable] 🔄 SPC_CDS 已刷新');
+        }
+      }
       const response = await injectedFetch<any>(
-        `${FLASH_SALE_API}/set_shop_flash_sale_items/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`,
+        `${FLASH_SALE_API}/set_shop_flash_sale_items/?SPC_CDS=${currentSpcCds}&SPC_CDS_VER=${currentSpcCdsVer}`,
         'POST',
         { flash_sale_id: flashSaleId, items: currentItems, use_global_category: true },
       );
@@ -265,62 +423,108 @@ async function runEnableLoop(params: EnableParams) {
       lastRawResponse = JSON.stringify(response).slice(0, 2000);
       console.log('[bg:enable] 原始响应:', JSON.stringify(response, null, 2).slice(0, 3000));
 
-      // 顶层 API 错误
+      // 解析失败项
+      let failedItemsFromResponse: EnableResult[];
+
+      // 顶层 API 错误（如 code 1001）— 偶发性错误，标记所有项失败继续重试
       if (response?.code !== undefined && response.code !== 0) {
         const errMsg = response.message || `API error (code=${response.code})`;
-        console.log(`[bg:enable] ❌ API 顶层错误: ${errMsg}`);
-        failedResults = currentItems.map(item => ({ item_id: item.item_id, model_id: item.model_id, err_msg: errMsg }));
-        const progress: EnableProgress = {
-          totalSkus: allItems.length, successSkus: successCount,
-          failedSkus: currentItems.length, currentRound: round, maxRetries,
-          nextRetryItems: failedResults, isComplete: true,
-          lastResponsePreview: lastRawResponse.slice(0, 500),
-        };
-        await saveProgress(progress, false, errMsg);
-        await sendComplete(progress, errMsg);
-        return;
+        console.log(`[bg:enable] ❌ API 顶层错误: ${errMsg}，继续重试`);
+        failedItemsFromResponse = currentItems.map(item => ({
+          item_id: item.item_id,
+          model_id: item.model_id,
+          err_msg: errMsg,
+        }));
+      } else {
+        failedItemsFromResponse = Array.isArray(response?.data?.failed_items)
+          ? response.data.failed_items
+          : Array.isArray(response?.data) ? response.data : [];
       }
 
-      // 解析失败项
-      const failedItemsFromResponse: EnableResult[] = Array.isArray(response?.data?.failed_items)
-        ? response.data.failed_items
-        : Array.isArray(response?.data) ? response.data : [];
-
+      failedResults = failedItemsFromResponse;
       const failKeys = new Set(failedItemsFromResponse.map(r => `${r.item_id}-${r.model_id}`));
       const successInThisRound = currentItems.filter(i => !failKeys.has(`${i.item_id}-${i.model_id}`));
       successCount += successInThisRound.length;
-      failedResults = failedItemsFromResponse;
+
+      // 零进展僵局检测：连续 10 轮没有任何新增成功则停止
+      if (successInThisRound.length === 0) {
+        zeroProgressCount++;
+        console.log(`[bg:enable] ⏳ 零进展检测 (${zeroProgressCount}/10): 本轮全部失败`);
+        if (zeroProgressCount >= 10) {
+          const stallMsg = `连续 ${zeroProgressCount} 轮无进展，疑似持久性 API 错误`;
+          console.log(`[bg:enable] ⏹ ${stallMsg}`);
+          lastRawResponse = stallMsg;
+          break;
+        }
+      } else {
+        zeroProgressCount = 0;
+      }
 
       console.log(`[bg:enable] 本轮成功: ${successInThisRound.length}, 失败: ${failedItemsFromResponse.length}`);
 
+      const failedDetails = buildFailedItemDetails(failedItemsFromResponse, currentItems);
       const progress: EnableProgress = {
         totalSkus: allItems.length, successSkus: successCount,
         failedSkus: failedItemsFromResponse.length, currentRound: round, maxRetries,
         nextRetryItems: failedItemsFromResponse,
+        hardFailedSkus: hardFailedAccum.length > 0 ? [...hardFailedAccum] : undefined,
         isComplete: failedItemsFromResponse.length === 0,
         lastResponsePreview: lastRawResponse.slice(0, 500),
       };
 
       await saveProgress(progress, failedItemsFromResponse.length > 0);
-      await sendProgress(progress);
+      await sendProgress(progress, undefined, failedDetails);
 
       if (failedItemsFromResponse.length === 0) {
         console.log('[bg:enable] ✅ 全部成功！');
         await saveProgress(progress, false);
-        await sendComplete(progress);
+        await sendComplete(progress, undefined, []);
         return;
       }
 
       // 只重试失败的
       currentItems = currentItems.filter(i => failKeys.has(`${i.item_id}-${i.model_id}`));
+
+      // 分离不可重试的硬错误（价格超限 code=10010），从重试列表中移除
+      const PRICE_ERROR_CODE = 10010;
+      const hardFailedThisRound = failedItemsFromResponse.filter(r =>
+        r.unqualified_conditions?.some(c => c.unqualified_code === PRICE_ERROR_CODE)
+      );
+      if (hardFailedThisRound.length > 0) {
+        const hardFailedKeys = new Set(hardFailedThisRound.map(r => `${r.item_id}-${r.model_id}`));
+        currentItems = currentItems.filter(i => !hardFailedKeys.has(`${i.item_id}-${i.model_id}`));
+        hardFailedAccum.push(...hardFailedThisRound);
+        console.log(`[bg:enable] ⛔ 价格超限 ${hardFailedThisRound.length} 个 SKU，已排除出重试`);
+      }
+
       console.log(`[bg:enable] 剩余 ${currentItems.length} 个需要重试`);
+
+      // 低失败数僵局检测：失败 SKU ≤ 5 且连续 10 轮数量不变则停止
+      if (currentItems.length > 0 && currentItems.length <= 5) {
+        if (currentItems.length < previousFailedCount) {
+          lowFailureStallCount = 1;
+        } else {
+          lowFailureStallCount++;
+        }
+        previousFailedCount = currentItems.length;
+        console.log(`[bg:enable] ⏳ 僵局检测 (${lowFailureStallCount}/10): 剩余 ${currentItems.length} 个`);
+        if (lowFailureStallCount >= 10) {
+          const stallMsg = `僵局检测：${currentItems.length} 个 SKU 连续 10 轮无法开启`;
+          console.log(`[bg:enable] ⏹ ${stallMsg}`);
+          lastRawResponse = stallMsg;
+          break;
+        }
+      } else {
+        lowFailureStallCount = 0;
+        previousFailedCount = 0;
+      }
 
       // 小批量诊断
       if (currentItems.length > 0 && currentItems.length <= 10) {
         try {
           const diagItemIds = [...new Set(currentItems.map(i => String(i.item_id)))];
           const diagData = await injectedFetch<any>(
-            `${GRAPHQL_URL}?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`,
+            `${GRAPHQL_URL}?SPC_CDS=${currentSpcCds}&SPC_CDS_VER=${currentSpcCdsVer}`,
             'POST',
             { query: PRODUCTS_QUERY, variables: { productIds: diagItemIds, statusType: 0 } },
           );
@@ -365,19 +569,22 @@ async function runEnableLoop(params: EnableParams) {
         totalSkus: allItems.length, successSkus: successCount,
         failedSkus: currentItems.length, currentRound: round, maxRetries,
         nextRetryItems: [], isComplete: false,
+        hardFailedSkus: hardFailedAccum.length > 0 ? [...hardFailedAccum] : undefined,
         lastResponsePreview: `异常: ${e.message}`,
       };
 
       // 致命错误（找不到 seller 标签页）— 停止循环
       if (e.message?.includes('seller.shopee.tw 标签页')) {
         progress.isComplete = true;
+        const errDetails = buildFailedItemDetails(currentItems.map(i => ({ item_id: i.item_id, model_id: i.model_id, err_msg: e.message } as EnableResult)), currentItems);
         await saveProgress(progress, false, e.message);
-        await sendComplete(progress, e.message);
+        await sendComplete(progress, e.message, errDetails);
         return;
       }
 
+      const catchDetails = buildFailedItemDetails(currentItems.map(i => ({ item_id: i.item_id, model_id: i.model_id, err_msg: e.message } as EnableResult)), currentItems);
       await saveProgress(progress, true, e.message);
-      await sendProgress(progress, e.message);
+      await sendProgress(progress, e.message, catchDetails);
     }
   }
 
@@ -385,15 +592,653 @@ async function runEnableLoop(params: EnableParams) {
   const finalProgress: EnableProgress = {
     totalSkus: allItems.length, successSkus: successCount,
     failedSkus: failedResults.length, currentRound: round, maxRetries,
-    nextRetryItems: failedResults, isComplete: true,
+    nextRetryItems: failedResults,
+    hardFailedSkus: hardFailedAccum.length > 0 ? [...hardFailedAccum] : undefined,
+    isComplete: true,
     lastResponsePreview: lastRawResponse.slice(0, 500),
   };
+  const finalDetails = buildFailedItemDetails(failedResults, allItems);
   await saveProgress(finalProgress, false);
-  await sendComplete(finalProgress);
+  await sendComplete(finalProgress, undefined, finalDetails);
   console.log(`[bg:enable] 完成: ${round} 轮, 成功 ${successCount}, 失败 ${failedResults.length}${skippedCount > 0 ? `, 跳过 ${skippedCount}` : ''}`);
   } finally {
     _enableRunning = false;
   }
+}
+
+// ===== 复制流程重试辅助函数 =====
+async function submitItemsWithRetry(
+  items: EnableItem[],
+  flashSaleId: number,
+  spcCds: string,
+  spcCdsVer: string,
+  maxRetries: number,
+  logPrefix: string,
+  copyStep: number = 4,
+  copyTotalSteps: number = 4,
+): Promise<{ totalItems: number; successCount: number; failures: EnableResult[]; rounds: number }> {
+  let currentItems = [...items];
+  let successCount = 0;
+  let failedResults: EnableResult[] = [];
+  let round = 0;
+
+  for (round = 1; round <= maxRetries; round++) {
+    try {
+      const roundDesc = `复制商品配置中...第${round}轮, ${currentItems.length}个SKU`;
+      console.log(`${logPrefix} 第${round}轮请求开始... (${currentItems.length}个SKU)`);
+      sendCopyMessage('COPY_PROGRESS', { currentStep: copyStep, totalSteps: copyTotalSteps, description: roundDesc });
+      const response = await injectedFetch<any>(
+        `${FLASH_SALE_API}/set_shop_flash_sale_items/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`,
+        'POST',
+        { flash_sale_id: flashSaleId, items: currentItems, use_global_category: true },
+      );
+
+      if (response?.code !== undefined && response.code !== 0) {
+        const errMsg = response.message || `API error (code=${response.code})`;
+        console.log(`${logPrefix} 致命API错误 (code=${response.code}): ${errMsg}`);
+        failedResults = currentItems.map(item => ({
+          item_id: item.item_id, model_id: item.model_id, err_msg: errMsg,
+        }));
+        break;
+      }
+
+      const failedItemsFromResponse: EnableResult[] = Array.isArray(response?.data?.failed_items)
+        ? response.data.failed_items
+        : Array.isArray(response?.data) ? response.data : [];
+
+      const failKeys = new Set(failedItemsFromResponse.map(r => `${r.item_id}-${r.model_id}`));
+      const successInThisRound = currentItems.filter(i => !failKeys.has(`${i.item_id}-${i.model_id}`));
+      successCount += successInThisRound.length;
+      failedResults = failedItemsFromResponse;
+
+      console.log(`${logPrefix} 第 ${round} 轮: 成功 ${successInThisRound.length}, 失败 ${failedItemsFromResponse.length}`);
+
+      if (failedItemsFromResponse.length === 0) {
+        console.log(`${logPrefix} ✅ 全部成功`);
+        break;
+      }
+
+      currentItems = currentItems.filter(i => failKeys.has(`${i.item_id}-${i.model_id}`));
+
+      if (failedItemsFromResponse.some(r => r.err_msg?.includes('NOT_ENOUGH_STOCK'))) {
+        const stockErrorKeys = new Set(
+          failedItemsFromResponse.filter(r => r.err_msg?.includes('NOT_ENOUGH_STOCK')).map(r => `${r.item_id}-${r.model_id}`)
+        );
+        currentItems = currentItems.map(item => {
+          const key = `${item.item_id}-${item.model_id}`;
+          if (stockErrorKeys.has(key)) {
+            const newStock = Math.max(1, Math.floor(item.stock / 2));
+            console.log(`${logPrefix} 📉 降低 SKU ${item.model_id} 库存: ${item.stock}→${newStock}`);
+            return { ...item, stock: newStock };
+          }
+          return item;
+        });
+      }
+
+      console.log(`${logPrefix} 剩余 ${currentItems.length} 个需要重试`);
+    } catch (e: any) {
+      console.log(`${logPrefix} 第 ${round} 轮异常:`, e.message);
+      if (e.message?.includes('seller.shopee.tw 标签页')) {
+        failedResults = currentItems.map(item => ({
+          item_id: item.item_id, model_id: item.model_id, err_msg: e.message,
+        }));
+        break;
+      }
+    }
+  }
+
+  console.log(`${logPrefix} 重试完成: ${round}轮, ${successCount}/${items.length} 成功`);
+  return { totalItems: items.length, successCount, failures: failedResults, rounds: round };
+}
+
+// ===== 构建 EnableItem 数组（用于自动提交） =====
+function buildEnableItems(
+  products: ShopeeProduct[],
+  discountRate: number,
+  flashSaleStock: number,
+  purchaseLimit: number,
+  skuOverrides: Record<string, SkuOverride>,
+): EnableItem[] {
+  return products.flatMap(p =>
+    (p.modelList || [])
+      .filter(sku => (sku.normalStock || 0) > 0)
+      .map(sku => {
+        const key = `${p.itemid}-${sku.modelid}`;
+        const override = skuOverrides[key];
+        const usedDiscount = override?.discountRate ?? discountRate;
+        const usedStock = Math.min(override?.stock ?? flashSaleStock, sku.normalStock || flashSaleStock);
+        const usedPurchaseLimit = override?.purchaseLimit ?? purchaseLimit;
+        const promoPrice = override?.promoPrice ?? Math.floor(Number(sku.originPrice || p.originPrice || 0) * usedDiscount / 100);
+        return {
+          item_id: Number(p.itemid), status: 1, model_id: Number(sku.modelid),
+          item_display_image: p.images?.[0] || '', input_promo_price: promoPrice,
+          stock: usedStock, purchase_limit: usedPurchaseLimit,
+        };
+      })
+  );
+}
+
+// ===== 定时复制流程（创建活动 + 保存数据，返回 enableParams 供调用方启动 runEnableLoop）=====
+async function executeScheduledCopyFlow(
+  params: ScheduledCopyParams,
+  cds: string,
+  cdsVer: string,
+): Promise<{ newFlashSaleId: number; enableParams: EnableParams }> {
+  // Step 1: 关闭进行中的活动
+  sendCopyMessage('COPY_PROGRESS', { currentStep: 1, totalSteps: 4, description: '关闭进行中的活动...' });
+  const listData = await injectedFetch<any>(
+    `${FLASH_SALE_API}/get_shop_flash_sale_list/?SPC_CDS=${cds}&SPC_CDS_VER=${cdsVer}&offset=0&limit=50&type=0`
+  );
+  const activeSales = (listData?.data?.flash_sale_list || []).filter((s: any) => s.status === 1);
+  for (const sale of activeSales) {
+    await injectedFetch(
+      `${FLASH_SALE_API}/set_shop_flash_sale/?SPC_CDS=${cds}&SPC_CDS_VER=${cdsVer}`,
+      'POST',
+      { flash_sale_id: sale.flash_sale_id, time_slot_id: sale.timeslot_id, status: 2 }
+    );
+  }
+
+  // Step 2: 获取时间段
+  sendCopyMessage('COPY_PROGRESS', { currentStep: 2, totalSteps: 4, description: '获取时间段...' });
+  const startTime = params.targetStartTime - 1800;
+  const endTime = getMonthEnd();
+  const tsData = await injectedFetch<any>(
+    `${FLASH_SALE_API}/get_time_slot_id/?SPC_CDS=${cds}&SPC_CDS_VER=${cdsVer}&start_time=${startTime}&end_time=${endTime}`
+  );
+  const timeSlots = Array.isArray(tsData?.data) ? tsData.data : [];
+  let bestSlot = timeSlots[0];
+  for (const slot of timeSlots) {
+    if (!bestSlot || Math.abs(slot.start_time - params.targetStartTime) < Math.abs(bestSlot.start_time - params.targetStartTime)) {
+      bestSlot = slot;
+    }
+  }
+  if (!bestSlot) throw new Error('没有可用的时间段');
+
+  // Step 3: 创建新活动
+  sendCopyMessage('COPY_PROGRESS', { currentStep: 3, totalSteps: 4, description: '创建新活动...' });
+  const createData = await injectedFetch<any>(
+    `${FLASH_SALE_API}/set_shop_flash_sale/?SPC_CDS=${cds}&SPC_CDS_VER=${cdsVer}`,
+    'POST',
+    { time_slot_id: bestSlot.timeslot_id }
+  );
+  const newId = createData?.data?.flash_sale_id;
+  if (!newId) throw new Error('创建活动失败');
+
+  // Step 4: 保存源活动商品数据
+  sendCopyMessage('COPY_PROGRESS', { currentStep: 4, totalSteps: 4, description: '保存商品数据...' });
+  if (params.products?.length) {
+    try {
+      await saveCopiedSaleData({
+        sourceFlashSaleId: params.sourceFlashSaleId,
+        sourceFlashSaleName: params.sourceFlashSaleName || '',
+        newFlashSaleId: newId,
+        copiedAt: Date.now(),
+        products: params.products,
+        skuOverrides: params.skuOverrides || {},
+        discountRate: params.discountRate ?? 60,
+        flashSaleStock: params.flashSaleStock ?? 200,
+        purchaseLimit: params.purchaseLimit ?? 5,
+      });
+    } catch (saveErr: any) {
+      throw new Error(`活动已创建 (ID: ${newId})，但商品数据保存失败: ${saveErr.message}`);
+    }
+  }
+
+  // 返回 enableParams，由调用方通过 runEnableLoop 异步提交商品（复用正常的开启限时特卖逻辑）
+  const enableParams: EnableParams = {
+    products: params.products,
+    flashSaleId: newId,
+    spcCds: cds,
+    spcCdsVer: cdsVer,
+    maxRetries: COPY_MAX_RETRIES,
+    infiniteRetry: true,
+    discountRate: params.discountRate ?? 60,
+    flashSaleStock: params.flashSaleStock ?? 200,
+    purchaseLimit: params.purchaseLimit ?? 5,
+    skuOverrides: params.skuOverrides ?? {},
+  };
+
+  return { newFlashSaleId: newId, enableParams };
+}
+
+// ===== 自动模式 =====
+async function saveAutoModeStatus(status: AutoModeStatus) {
+  await browser.storage.local.set({ _autoModeStatus: status });
+}
+
+async function sendAutoModeUpdate(status: AutoModeStatus) {
+  try {
+    await browser.runtime.sendMessage({ type: 'AUTO_MODE_UPDATE', status });
+  } catch {}
+  try {
+    const tabs = await browser.tabs.query({ url: '*://seller.shopee.tw/*' });
+    for (const tab of tabs) {
+      if (tab.id) {
+        browser.tabs.sendMessage(tab.id, { type: 'AUTO_MODE_UPDATE', status }).catch(() => {});
+      }
+    }
+  } catch {}
+}
+
+async function sendAutoModeLog(log: AutoModeLog) {
+  try {
+    await browser.runtime.sendMessage({ type: 'AUTO_MODE_LOG', log });
+  } catch {}
+  try {
+    const tabs = await browser.tabs.query({ url: '*://seller.shopee.tw/*' });
+    for (const tab of tabs) {
+      if (tab.id) {
+        browser.tabs.sendMessage(tab.id, { type: 'AUTO_MODE_LOG', log }).catch(() => {});
+      }
+    }
+  } catch {}
+}
+
+function generateLogId(): number {
+  return Date.now() * 1000 + Math.floor(Math.random() * 1000);
+}
+
+async function logAutoMode(type: AutoModeLog['type'], message: string) {
+  const log: AutoModeLog = {
+    id: generateLogId(),
+    timestamp: Math.floor(Date.now() / 1000),
+    type,
+    message,
+  };
+  console.log(`[bg:auto] [${type}] ${message}`);
+  await sendAutoModeLog(log);
+
+  const result = await browser.storage.local.get('_autoModeLogs');
+  const logs = (result._autoModeLogs as AutoModeLog[]) || [];
+  const updated = [log, ...logs].slice(0, 50);
+  await browser.storage.local.set({ _autoModeLogs: updated }).catch(() => {});
+}
+
+function countSlotsInDays(slots: TimeSlot[], days: number): number {
+  const now = Math.floor(Date.now() / 1000);
+  const cutoff = now + days * 86400;
+  const futureSlots = slots.filter(s => s.start_time > now && s.start_time < cutoff);
+  const daySet = new Set<string>();
+  for (const slot of futureSlots) {
+    const d = new Date(slot.start_time * 1000);
+    const key = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+    daySet.add(key);
+  }
+  return futureSlots.length;
+}
+
+async function pickNextTargetTime(cds: string, cdsVer: string): Promise<{ targetTime: number; slotId: number } | null> {
+  const now = Math.floor(Date.now() / 1000);
+  const endTime = (() => {
+    const d = new Date();
+    const endOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 1, 0, 0, 0);
+    return Math.floor(endOfMonth.getTime() / 1000) - 1;
+  })();
+
+  const data = await injectedFetch<any>(
+    `${FLASH_SALE_API}/get_time_slot_id/?SPC_CDS=${cds}&SPC_CDS_VER=${cdsVer}&start_time=${now - 1800}&end_time=${endTime}`
+  );
+  const slots: TimeSlot[] = Array.isArray(data?.data) ? data.data : [];
+  const futureSlots = slots.filter(s => s.start_time > now).sort((a, b) => a.start_time - b.start_time);
+
+  if (futureSlots.length === 0) return null;
+  return { targetTime: futureSlots[0].start_time, slotId: futureSlots[0].timeslot_id };
+}
+
+async function scheduleNextRound() {
+  const result = await browser.storage.local.get('_autoModeStatus');
+  const status = result._autoModeStatus as AutoModeStatus | undefined;
+  if (!status?.isRunning) return;
+
+  if (_autoModeStopRequested) {
+    await logAutoMode('info', '收到停止请求，不再调度下一场');
+    status.isRunning = false;
+    status.phase = 'stopped';
+    await saveAutoModeStatus(status);
+    await sendAutoModeUpdate(status);
+    await clearAutoModeAlarms();
+    return;
+  }
+
+  if (status.currentRound > status.totalRounds) {
+    await logAutoMode('success', `自动模式完成：共完成 ${status.totalRounds} 场`);
+    status.isRunning = false;
+    status.phase = 'completed';
+    await saveAutoModeStatus(status);
+    await sendAutoModeUpdate(status);
+    await clearAutoModeAlarms();
+    return;
+  }
+
+  const { spcCds, spcCdsVer } = await getSpcCdsFromCookies();
+  if (!spcCds) {
+    await logAutoMode('error', 'SPC_CDS 不存在，无法调度下一场');
+    status.lastError = 'SPC_CDS 不存在，请确认已登录 seller.shopee.tw';
+    status.phase = 'stopped';
+    status.isRunning = false;
+    await saveAutoModeStatus(status);
+    await sendAutoModeUpdate(status);
+    await clearAutoModeAlarms();
+    return;
+  }
+
+  const isDebug = !!status.debugMode;
+
+  if (isDebug) {
+    // 伪造目标时间 = 当前时间 + 提前量 + 3 秒缓冲
+    const advanceSec = status.config.advanceMinutes || 5;
+    const fakeTargetTime = Math.floor(Date.now() / 1000) + advanceSec + 3;
+
+    status.nextTargetTime = fakeTargetTime;
+    status.nextActionTime = fakeTargetTime;
+    status.phase = 'waiting_create';
+
+    await saveAutoModeStatus(status);
+    await sendAutoModeUpdate(status);
+    await logAutoMode('info', `[加速] 伪造目标时间: ${fmtBgTime(fakeTargetTime)}，${advanceSec + 3} 秒后创建活动`);
+
+    chrome.alarms.create('auto_mode_create', { delayInMinutes: (advanceSec + 3) / 60 });
+    return;
+  }
+
+  // 第一轮优先使用用户选择的场次
+  let targetTime: number | undefined;
+  if (status.currentRound === 1 && status.selectedSlotId && status.selectedSlotTime) {
+    const now = Math.floor(Date.now() / 1000);
+    const tsData = await injectedFetch<any>(
+      `${FLASH_SALE_API}/get_time_slot_id/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&start_time=${now - 1800}&end_time=${getMonthEnd()}`
+    );
+    const currentSlots = Array.isArray(tsData?.data) ? tsData.data : [];
+    const foundSlot = currentSlots.find((s: any) => s.timeslot_id === status.selectedSlotId);
+    if (!foundSlot) {
+      await logAutoMode('warning', `选择的场次 #${status.selectedSlotId} 已不存在，回退到自动选择`);
+    } else if (foundSlot.start_time !== status.selectedSlotTime) {
+      await logAutoMode('warning', `场次 #${status.selectedSlotId} 的开始时间已变更，回退到自动选择`);
+    } else if (foundSlot.start_time <= now) {
+      await logAutoMode('warning', `场次 #${status.selectedSlotId} 已经开始 (${fmtBgTime(foundSlot.start_time)})，回退到自动选择`);
+    } else {
+      targetTime = foundSlot.start_time;
+      await logAutoMode('info', `使用选定场次 #${status.selectedSlotId}: ${fmtBgTime(targetTime)}`);
+    }
+  }
+
+  let next;
+  if (targetTime) {
+    next = { targetTime };
+  } else {
+    const result = await pickNextTargetTime(spcCds, spcCdsVer);
+    next = result;
+  }
+
+  if (!next) {
+    await logAutoMode('warning', '未找到可用的时间段，5 分钟后重试');
+    chrome.alarms.create('auto_mode_heartbeat', { delayInMinutes: 5 });
+    return;
+  }
+
+  status.nextTargetTime = next.targetTime;
+  status.phase = 'waiting_create';
+
+  const advanceSec = (status.config.advanceMinutes || 5) * 60;
+  const creationTime = next.targetTime - advanceSec;
+  const now = Math.floor(Date.now() / 1000);
+
+  if (creationTime <= now) {
+    status.nextActionTime = now + 30;
+    await logAutoMode('info', `申报时间已过(${fmtBgTime(next.targetTime)} -${advanceSec}秒)，30秒后创建`);
+    await saveAutoModeStatus(status);
+    await sendAutoModeUpdate(status);
+    chrome.alarms.create('auto_mode_create', { delayInMinutes: 0.5 });
+  } else {
+    const delayMin = Math.ceil((creationTime - now) / 60);
+    status.nextActionTime = creationTime;
+    await logAutoMode('info', `下一场: ${fmtBgTime(next.targetTime)}，${delayMin} 分钟后创建活动`);
+    await saveAutoModeStatus(status);
+    await sendAutoModeUpdate(status);
+    chrome.alarms.create('auto_mode_create', { delayInMinutes: delayMin });
+  }
+}
+
+function fmtBgTime(ts: number): string {
+  const d = new Date(ts * 1000);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  return `${mm}/${dd} ${hh}:${mi}`;
+}
+
+async function clearAutoModeAlarms() {
+  await chrome.alarms.clear('auto_mode_create').catch(() => {});
+  await chrome.alarms.clear('auto_mode_enable').catch(() => {});
+  await chrome.alarms.clear('auto_mode_heartbeat').catch(() => {});
+}
+
+async function handleAutoModeCreate() {
+  const result = await browser.storage.local.get('_autoModeStatus');
+  const status = result._autoModeStatus as AutoModeStatus | undefined;
+  if (!status?.isRunning || _autoModeStopRequested) return;
+
+  status.phase = 'creating';
+  await saveAutoModeStatus(status);
+  await sendAutoModeUpdate(status);
+
+  try {
+    const { spcCds, spcCdsVer } = await getSpcCdsFromCookies();
+    if (!spcCds) throw new Error('SPC_CDS 不存在，请确认已登录 seller.shopee.tw');
+
+    // 关闭进行中的活动
+    const listData = await injectedFetch<any>(
+      `${FLASH_SALE_API}/get_shop_flash_sale_list/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&offset=0&limit=50&type=0`
+    );
+    const activeSales = (listData?.data?.flash_sale_list || []).filter((s: any) => s.status === 1);
+    for (const sale of activeSales) {
+      await injectedFetch(
+        `${FLASH_SALE_API}/set_shop_flash_sale/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`,
+        'POST',
+        { flash_sale_id: sale.flash_sale_id, time_slot_id: sale.timeslot_id, status: 2 }
+      );
+    }
+
+    // 获取最佳时间段
+    const startTime = (status.nextTargetTime || Math.floor(Date.now() / 1000)) - 1800;
+    const endTime = getMonthEnd();
+    const tsData = await injectedFetch<any>(
+      `${FLASH_SALE_API}/get_time_slot_id/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&start_time=${startTime}&end_time=${endTime}`
+    );
+    const timeSlots = Array.isArray(tsData?.data) ? tsData.data : [];
+    let bestSlot = timeSlots[0];
+    const target = status.nextTargetTime || Math.floor(Date.now() / 1000);
+    for (const slot of timeSlots) {
+      if (!bestSlot || Math.abs(slot.start_time - target) < Math.abs(bestSlot.start_time - target)) {
+        bestSlot = slot;
+      }
+    }
+    if (!bestSlot) throw new Error('没有可用的时间段');
+
+    // 创建空活动
+    const createData = await injectedFetch<any>(
+      `${FLASH_SALE_API}/set_shop_flash_sale/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`,
+      'POST',
+      { time_slot_id: bestSlot.timeslot_id }
+    );
+    const newId = createData?.data?.flash_sale_id;
+    if (!newId) throw new Error('创建限时特卖活动失败');
+
+    status.currentFlashSaleId = newId;
+    await logAutoMode('success', `已创建活动 #${newId}，目标时间: ${fmtBgTime(status.nextTargetTime || 0)}`);
+
+    // 保存源活动商品数据
+    if (status.enableParams?.products?.length) {
+      await saveCopiedSaleData({
+        sourceFlashSaleId: status.sourceFlashSaleId,
+        sourceFlashSaleName: status.sourceFlashSaleName,
+        newFlashSaleId: newId,
+        copiedAt: Date.now(),
+        products: status.enableParams.products,
+        skuOverrides: status.enableParams.skuOverrides || {},
+        discountRate: status.enableParams.discountRate ?? 60,
+        flashSaleStock: status.enableParams.flashSaleStock ?? 200,
+        purchaseLimit: status.enableParams.purchaseLimit ?? 5,
+      });
+    }
+
+    // 设置 auto_mode_enable alarm
+    const targetTime = status.nextTargetTime || Math.floor(Date.now() / 1000) + 600;
+    const isDbg = !!status.debugMode;
+    const delaySec = (status.config.delayMinutes || 5) * (isDbg ? 1 : 60);
+    const enableTime = targetTime + delaySec;
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    status.phase = 'waiting_enable';
+    status.currentFlashSaleId = newId;
+    if (enableTime <= nowSec) {
+      const delayMin = isDbg ? 1/60 : 0.5;
+      status.nextActionTime = nowSec + (isDbg ? 1 : 30);
+      await saveAutoModeStatus(status);
+      await sendAutoModeUpdate(status);
+      chrome.alarms.create('auto_mode_enable', { delayInMinutes: delayMin });
+      await logAutoMode('info', isDbg ? '传递时间已到，1秒后传递' : `传递时间已到(${delaySec}秒后)，立即传递`);
+    } else {
+      const remainSec = enableTime - nowSec;
+      const delayMin = isDbg ? Math.max(remainSec / 60, 1/60) : Math.max(1, Math.ceil(remainSec / 60));
+      status.nextActionTime = enableTime;
+      await saveAutoModeStatus(status);
+      await sendAutoModeUpdate(status);
+      chrome.alarms.create('auto_mode_enable', { delayInMinutes: delayMin });
+      await logAutoMode('info', isDbg ? `${remainSec} 秒后传递商品参数` : `${delayMin} 分钟后传递商品参数`);
+    }
+  } catch (e: any) {
+    const errMsg = e?.message || String(e);
+    await logAutoMode('error', `创建活动失败: ${errMsg}`);
+    status.lastError = `创建活动失败: ${errMsg}`;
+    status.phase = 'waiting_create';
+    await saveAutoModeStatus(status);
+    await sendAutoModeUpdate(status);
+
+    // 致命错误暂停
+    if (errMsg.includes('seller.shopee.tw') || errMsg.includes('SPC_CDS')) {
+      status.isRunning = false;
+      status.phase = 'stopped';
+      await saveAutoModeStatus(status);
+      await sendAutoModeUpdate(status);
+      await clearAutoModeAlarms();
+    }
+  }
+}
+
+async function handleAutoModeEnable() {
+  const result = await browser.storage.local.get('_autoModeStatus');
+  const status = result._autoModeStatus as AutoModeStatus | undefined;
+  if (!status?.isRunning || _autoModeStopRequested) return;
+
+  status.phase = 'enabling';
+  await saveAutoModeStatus(status);
+  await sendAutoModeUpdate(status);
+
+  try {
+    const { spcCds, spcCdsVer } = await getSpcCdsFromCookies();
+    if (!spcCds) throw new Error('SPC_CDS 不存在');
+
+    const flashSaleId = status.currentFlashSaleId;
+    if (!flashSaleId) throw new Error('没有找到当前活动 ID');
+
+    const ep = status.enableParams;
+    if (!ep?.products?.length) throw new Error('没有固化商品参数');
+
+    // 每轮开始前重新拉取商品库存数据
+    const productIds = ep.products.map(p => String(p.itemid));
+    const graphqlResp = await injectedFetch<any>(
+      `${GRAPHQL_URL}?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`,
+      'POST',
+      { query: PRODUCTS_QUERY, variables: { productIds, statusType: 0 } }
+    );
+    const freshItems: ShopeeProduct[] = graphqlResp?.data?.products?.items || [];
+    if (freshItems.length > 0) {
+      // 用最新库存数据更新 products，保留 skuOverrides 不变
+      const freshMap = new Map(freshItems.map(p => [String(p.itemid), p]));
+      for (const oldProduct of ep.products) {
+        const fresh = freshMap.get(String(oldProduct.itemid));
+        if (fresh) {
+          oldProduct.normalStock = fresh.normalStock;
+          for (const oldSku of (oldProduct.modelList || [])) {
+            const freshSku = (fresh.modelList || []).find(m => String(m.modelid) === String(oldSku.modelid));
+            if (freshSku) {
+              oldSku.normalStock = freshSku.normalStock;
+              oldSku.totalNormalStock = freshSku.totalNormalStock;
+              oldSku.originPrice = freshSku.originPrice;
+            }
+          }
+        }
+      }
+      status.enableParams = { ...ep, products: ep.products };
+      await saveAutoModeStatus(status);
+      await logAutoMode('info', `已刷新 ${freshItems.length} 个商品的最新库存数据`);
+
+      // 同步写回 _copiedSaleData，确保查看商品弹窗也显示最新库存
+      try {
+        const saleResult = await browser.storage.local.get('_copiedSaleData');
+        const allSaleData: Record<string, CopiedSaleData> = saleResult._copiedSaleData || {};
+        const currentEntry = allSaleData[String(flashSaleId)];
+        if (currentEntry) {
+          currentEntry.products = ep.products;
+          await browser.storage.local.set({ _copiedSaleData: allSaleData });
+        }
+      } catch {}
+    }
+
+    const enableParams: EnableParams = {
+      products: ep.products,
+      flashSaleId,
+      spcCds,
+      spcCdsVer,
+      maxRetries: COPY_MAX_RETRIES,
+      infiniteRetry: true,
+      discountRate: ep.discountRate,
+      flashSaleStock: ep.flashSaleStock,
+      purchaseLimit: ep.purchaseLimit,
+      skuOverrides: ep.skuOverrides,
+    };
+
+    await logAutoMode('info', `开始传递商品参数到活动 #${flashSaleId}`);
+    await runEnableLoop(enableParams);
+
+    await logAutoMode('success', `第 ${status.currentRound}/${status.totalRounds} 轮商品参数传递完成`);
+    status.sourceFlashSaleId = flashSaleId;
+    status.sourceFlashSaleName = `自动模式 第${status.currentRound}轮`;
+    status.currentRound++;
+    status.phase = 'idle';
+    status.lastError = undefined;
+    status.currentFlashSaleId = undefined;
+    await saveAutoModeStatus(status);
+    await sendAutoModeUpdate(status);
+
+    await scheduleNextRound();
+  } catch (e: any) {
+    const errMsg = e?.message || String(e);
+    await logAutoMode('error', `传递商品参数失败: ${errMsg}`);
+    status.lastError = `传递商品参数失败: ${errMsg}`;
+    status.phase = 'waiting_enable';
+    await saveAutoModeStatus(status);
+    await sendAutoModeUpdate(status);
+
+    if (errMsg.includes('seller.shopee.tw') || errMsg.includes('SPC_CDS')) {
+      status.isRunning = false;
+      status.phase = 'stopped';
+      await saveAutoModeStatus(status);
+      await sendAutoModeUpdate(status);
+      await clearAutoModeAlarms();
+    }
+  }
+}
+
+async function handleAutoModeHeartbeat() {
+  const result = await browser.storage.local.get('_autoModeStatus');
+  const status = result._autoModeStatus as AutoModeStatus | undefined;
+  if (!status?.isRunning || _autoModeStopRequested) return;
+
+  await logAutoMode('info', '心跳检测，重新尝试调度');
+  await scheduleNextRound();
 }
 
 export default defineBackground({
@@ -403,6 +1248,10 @@ export default defineBackground({
     browser.runtime.onInstalled.addListener((details) => {
       console.log('[限时特卖助手] 已安装/更新:', details.reason);
     });
+
+    // 创建心跳 alarm 保持 Service Worker 活跃，防止因 SW 终止导致的会话失效
+    chrome.alarms.create(HEARTBEAT_ALARM, { periodInMinutes: HEARTBEAT_INTERVAL_MINUTES });
+    console.log(`[bg:heartbeat] 心跳 alarm 已创建 (每${HEARTBEAT_INTERVAL_MINUTES}分钟)`);
 
     browser.runtime.onMessage.addListener(async (msg: any) => {
       const type = msg?.type;
@@ -438,6 +1287,18 @@ export default defineBackground({
       // ===== START_ENABLE: 启动限时特卖 =====
       if (type === 'START_ENABLE') {
         console.log('[START_ENABLE] 收到启动请求, _enableRunning =', _enableRunning);
+
+        // 如果 _enableRunning true 但 storage 显示不在运行，说明是 SW 重启后的假阳性
+        if (_enableRunning) {
+          try {
+            const stored = await browser.storage.local.get('_enableProgress');
+            const data = stored._enableProgress as { running?: boolean } | undefined;
+            if (!data?.running) {
+              console.log('[START_ENABLE] 标志为 true 但 storage 不在运行，重置');
+              _enableRunning = false;
+            }
+          } catch {}
+        }
         try {
           // 重试读取 storage（处理 storage 写入传播延迟）
           let params: EnableParams | undefined;
@@ -605,9 +1466,17 @@ export default defineBackground({
           console.log('[bg:SCHEDULE_COPY]', { targetStartTime: params.targetStartTime, fireTime, now, delayMs });
           if (delayMs <= 0) throw new Error('目标时间已过');
 
-          await browser.storage.local.set({ _scheduledCopy: params });
+          await browser.storage.local.set({
+            _scheduledCopy: params,
+            _copyCountdown: { targetStartTime: params.targetStartTime, sourceName: params.sourceFlashSaleName || '' },
+          });
           chrome.alarms.create('scheduled_copy', { delayInMinutes: Math.ceil(delayMs / 60000) });
           console.log('[bg:SCHEDULE_COPY] ✅ 定时任务已创建');
+          // Send countdown info to content script
+          sendCopyMessage('COPY_SCHEDULED', {
+            targetStartTime: params.targetStartTime,
+            sourceName: params.sourceFlashSaleName || '',
+          });
           // 写入 storage，popup 通过 storage 读取状态（sendMessage 响应不可靠）
           await browser.storage.local.set({
             _copyTaskStatus: { scheduled: true, executed: false, success: null },
@@ -619,6 +1488,39 @@ export default defineBackground({
             _copyTaskStatus: { scheduled: true, executed: true, success: false, error: e.message },
           });
           return { success: false, error: e.message };
+        }
+      }
+
+      // ===== GET_SCHEDULED_STATUS: 查询定时任务存活状态 =====
+      if (type === 'GET_SCHEDULED_STATUS') {
+        try {
+          const storageResult = await browser.storage.local.get('_scheduledCopy');
+          const params = storageResult._scheduledCopy as ScheduledCopyParams | undefined;
+          const exists = !!params;
+
+          let alarmActive = false;
+          let alarmScheduledTime: number | undefined;
+          let remainingSeconds: number | undefined;
+
+          try {
+            const alarm = await chrome.alarms.get('scheduled_copy');
+            if (alarm) {
+              alarmActive = true;
+              alarmScheduledTime = alarm.scheduledTime;
+              const now = Date.now();
+              remainingSeconds = Math.max(0, Math.floor((alarm.scheduledTime - now) / 1000));
+            }
+          } catch {}
+
+          return {
+            exists,
+            alarmActive,
+            params: params || null,
+            alarmScheduledTime,
+            remainingSeconds,
+          } as ScheduledTaskStatus;
+        } catch (e: any) {
+          return { exists: false, alarmActive: false, params: null } as ScheduledTaskStatus;
         }
       }
 
@@ -635,6 +1537,7 @@ export default defineBackground({
           }
 
           // 步骤 1: 检查并关闭进行中的活动
+          sendCopyMessage('COPY_PROGRESS', { currentStep: 1, totalSteps: 4, description: '关闭进行中的活动...' });
           console.log('[bg:executeCopy] 步骤1: 检查进行中的活动');
           const listData = await injectedFetch<any>(
             `${FLASH_SALE_API}/get_shop_flash_sale_list/?SPC_CDS=${finalCds}&SPC_CDS_VER=${finalVer}&offset=0&limit=50&type=0`
@@ -650,6 +1553,7 @@ export default defineBackground({
           }
 
           // 步骤 2: 获取可用时间段
+          sendCopyMessage('COPY_PROGRESS', { currentStep: 2, totalSteps: 4, description: '获取时间段...' });
           console.log('[bg:executeCopy] 步骤2: 获取时间段');
           const startTime = targetTime - 1800;
           const endTime = getMonthEnd();
@@ -665,7 +1569,8 @@ export default defineBackground({
           }
           if (!bestSlot) throw new Error('没有可用的时间段');
 
-          // 步骤 3: 创建新活动（不含商品，后续手动复制）
+          // 步骤 3: 创建新活动（不含商品）
+          sendCopyMessage('COPY_PROGRESS', { currentStep: 3, totalSteps: 4, description: '创建新活动...' });
           console.log('[bg:executeCopy] 步骤3: 创建新活动');
           const createData = await injectedFetch<any>(
             `${FLASH_SALE_API}/set_shop_flash_sale/?SPC_CDS=${finalCds}&SPC_CDS_VER=${finalVer}`,
@@ -676,169 +1581,229 @@ export default defineBackground({
           const newFlashSaleId = createData?.data?.flash_sale_id;
           if (!newFlashSaleId) throw new Error('创建活动失败，响应: ' + JSON.stringify(createData).slice(0, 300));
 
-          // 步骤 4: 复制源活动的商品配置到新活动
-          const stepErrors: string[] = [];
-          if (templateName && products?.length > 0) {
-            // 4a: 使用模板 — 从 GraphQL 商品数据 + 模板参数计算促销价
-            console.log('[bg:executeCopy] 步骤4a: 应用模板:', templateName);
-            try {
-              const tResult = await browser.storage.local.get('flashSaleTemplates');
-              const templates = tResult.flashSaleTemplates || {};
-              const template = templates[templateName];
-              if (template) {
-                const items = products.flatMap((p: any) =>
-                  (p.modelList || []).filter((sku: any) => (sku.normalStock || 0) > 0).map((sku: any) => {
-                    const key = `${p.itemid}-${sku.modelid}`;
-                    const override = (skuOverrides || {})[key];
-                    const usedDiscount = override?.discountRate ?? template.discountRate;
-                    const usedStock = Math.min(override?.stock ?? template.flashSaleStock, sku.normalStock || template.flashSaleStock);
-                    const usedPurchaseLimit = override?.purchaseLimit ?? template.purchaseLimit;
-                    const promoPrice = Math.floor(Number(sku.originPrice || p.originPrice || 0) * usedDiscount / 100);
-                    return {
-                      item_id: Number(p.itemid), status: 1, model_id: Number(sku.modelid),
-                      item_display_image: p.images?.[0] || '',
-                      input_promo_price: promoPrice, stock: usedStock, purchase_limit: usedPurchaseLimit,
-                    };
-                  })
-                );
-                if (items.length > 0) {
-                  const apiResult = await injectedFetch<any>(
-                    `${FLASH_SALE_API}/set_shop_flash_sale_items/?SPC_CDS=${finalCds}&SPC_CDS_VER=${finalVer}`,
-                    'POST',
-                    { flash_sale_id: newFlashSaleId, items, use_global_category: true }
-                  );
-                  if (apiResult?.code !== undefined && apiResult.code !== 0) {
-                    const errMsg = `模板应用API错误: ${apiResult.message || `code=${apiResult.code}`}`;
-                    console.error('[bg:executeCopy] ❌', errMsg);
-                    stepErrors.push(errMsg);
-                  } else {
-                    const failedItems = apiResult?.data?.failed_items || [];
-                    if (failedItems.length > 0) {
-                      const errMsg = `模板应用部分失败: ${failedItems.length} 个SKU, 示例: ${JSON.stringify(failedItems.slice(0, 2))}`;
-                      console.error('[bg:executeCopy] ⚠', errMsg);
-                      stepErrors.push(errMsg);
-                    } else {
-                      console.log('[bg:executeCopy] ✅ 模板应用成功');
-                    }
-                  }
-                }
-              }
-            } catch (e: any) {
-              const errMsg = `模板应用异常: ${e.message}`;
-              console.error('[bg:executeCopy] ❌', errMsg);
-              stepErrors.push(errMsg);
-            }
-          } else {
-            // 4b: 无模板 — 从源活动直接获取商品配置并复制
-            console.log('[bg:executeCopy] 步骤4b: 从源活动复制商品配置');
-            const srcId = sourceFlashSale?.flash_sale_id;
-            if (!srcId) {
-              const errMsg = '源活动ID为空，无法复制商品';
-              console.error('[bg:executeCopy] ❌', errMsg);
-              stepErrors.push(errMsg);
-            } else {
-              try {
-                // 获取源活动的商品完整配置
-                const sourceItemsData = await injectedFetch<any>(
-                  `${FLASH_SALE_API}/get_shop_flash_sale_item/?SPC_CDS=${finalCds}&SPC_CDS_VER=${finalVer}&flash_sale_id=${srcId}&offset=0&limit=100`
-                );
-                console.log('[bg:executeCopy] 源活动商品数据:', JSON.stringify(sourceItemsData).slice(0, 2000));
-                // 支持两种响应格式: data.items (SKU级) 或 data.item_info (商品级)
-                let sourceItems = sourceItemsData?.data?.items || [];
-                const itemInfo = sourceItemsData?.data?.item_info || [];
-                // 如果 items 为空但 item_info 有数据, 从 item_info 构建
-                if (sourceItems.length === 0 && itemInfo.length > 0) {
-                  sourceItems = itemInfo.map((info: any) => ({
-                    item_id: info.itemid,
-                    model_id: 0, // 单规格商品
-                    item_display_image: (info.images || '').split(',')[0],
-                    stock: info.stock || 0,
-                    purchase_limit: info.min_purchase_limit || 0,
-                    price: info.price || 0,
-                  }));
-                }
-                if (sourceItems.length > 0) {
-                  // 构建价格映射: 先尝试 model_info_str, 再退回到 item_info
-                  let priceMap: Record<string, Record<string, number>> = {};
-                  try {
-                    const raw = sourceItemsData?.data?.model_info_str;
-                    if (raw) priceMap = JSON.parse(raw);
-                  } catch { /* ignore parse errors */ }
-                  // 后备: 从 item_info 构建商品级价格映射
-                  if (Object.keys(priceMap).length === 0 && itemInfo.length > 0) {
-                    for (const info of itemInfo) {
-                      const itemId = String(info.itemid);
-                      if (info.price > 0) {
-                        priceMap[itemId] = priceMap[itemId] || {};
-                        priceMap[itemId]['0'] = { price: info.price };
-                      }
-                    }
-                  }
-                  const items: EnableItem[] = sourceItems.map((si: any) => {
-                    const itemId = String(si.item_id);
-                    const modelId = String(si.model_id);
-                    let promoPrice = priceMap[itemId]?.[modelId]?.price ?? priceMap[itemId]?.['0']?.price ?? 0;
-                    if (!promoPrice) promoPrice = Number(si.price) || 0;
-                    if (!promoPrice) promoPrice = 1; // 最低有效价格
-                    return {
-                      item_id: Number(si.item_id),
-                      status: 1,
-                      model_id: Number(si.model_id),
-                      item_display_image: si.item_display_image || '',
-                      input_promo_price: promoPrice,
-                      stock: si.stock || 0,
-                      purchase_limit: si.purchase_limit || 0,
-                    };
-                  }).filter((i: EnableItem) => i.stock > 0);
-                  if (items.length > 0) {
-                    console.log(`[bg:executeCopy] 复制 ${items.length} 个 SKU, 价格示例:`, items.slice(0, 3).map(i => ({ id: i.item_id, price: i.input_promo_price, stock: i.stock })));
-                    const apiResult = await injectedFetch<any>(
-                      `${FLASH_SALE_API}/set_shop_flash_sale_items/?SPC_CDS=${finalCds}&SPC_CDS_VER=${finalVer}`,
-                      'POST',
-                      { flash_sale_id: newFlashSaleId, items, use_global_category: true }
-                    );
-                    if (apiResult?.code !== undefined && apiResult.code !== 0) {
-                      const errMsg = `商品复制API错误: ${apiResult.message || `code=${apiResult.code}`}`;
-                      console.error('[bg:executeCopy] ❌', errMsg);
-                      stepErrors.push(errMsg);
-                    } else {
-                      const failedItems = apiResult?.data?.failed_items || [];
-                      if (failedItems.length > 0) {
-                        const errMsg = `商品复制部分失败: ${failedItems.length} 个SKU`;
-                        console.error('[bg:executeCopy] ⚠', errMsg);
-                        stepErrors.push(errMsg);
-                      } else {
-                        console.log('[bg:executeCopy] ✅ 商品复制成功');
-                      }
-                    }
-                  } else {
-                    console.log('[bg:executeCopy] ⚠ 源活动没有可用的SKU');
-                    stepErrors.push('源活动没有可用的SKU（库存>0）');
-                  }
-                } else {
-                  console.log('[bg:executeCopy] ⚠ 源活动没有商品数据');
-                  stepErrors.push('源活动没有商品数据');
-                }
-              } catch (e: any) {
-                const errMsg = `商品复制异常: ${e.message}`;
-                console.error('[bg:executeCopy] ❌', errMsg);
-                stepErrors.push(errMsg);
-              }
-            }
+          // 步骤 4: 保存源活动商品数据（供后续开启限时特卖使用）
+          sendCopyMessage('COPY_PROGRESS', { currentStep: 4, totalSteps: 4, description: '保存商品数据...' });
+          console.log('[bg:executeCopy] 步骤4: 保存源活动商品数据');
+
+          // 保存商品数据到 storage，供后续在 popup 中展示和开启限时特卖使用
+          const savedProducts: ShopeeProduct[] = products || [];
+          const savedSkuOverrides = skuOverrides || {};
+
+          try {
+            await saveCopiedSaleData({
+              sourceFlashSaleId: sourceFlashSale?.flash_sale_id || 0,
+              sourceFlashSaleName: sourceFlashSale?.name || '',
+              newFlashSaleId,
+              copiedAt: Date.now(),
+              products: savedProducts,
+              skuOverrides: savedSkuOverrides,
+              discountRate: msg.discountRate ?? 60,
+              flashSaleStock: msg.flashSaleStock ?? 200,
+              purchaseLimit: msg.purchaseLimit ?? 5,
+            });
+          } catch (saveErr: any) {
+            console.error('[bg:executeCopy] 保存商品数据失败:', saveErr.message);
+            await browser.storage.local.set({
+              _copyTaskStatus: {
+                scheduled: true, executed: true, success: false,
+                newFlashSaleId,
+                error: `复制成功但商品数据保存失败: ${saveErr.message}。请重新加载扩展后重试。`,
+              },
+            }).catch(() => {});
+            sendCopyMessage('COPY_COMPLETE', { success: false, error: saveErr.message });
+            return { success: false, error: saveErr.message };
           }
 
           console.log(`[bg:executeCopy] ✅ 完成: ${newFlashSaleId}`);
-          // 保存到 storage 作为可靠的状态备份（popup 可通过 storage 获取结果）
           const finalStatus: CopyTaskStatus = {
             scheduled: true, executed: true, success: true,
             newFlashSaleId,
-            warning: stepErrors.length > 0 ? stepErrors.join('; ') : undefined,
           };
           await browser.storage.local.set({ _copyTaskStatus: finalStatus }).catch(() => {});
-          return { success: true, flashSaleId: newFlashSaleId, stepErrors: stepErrors.length > 0 ? stepErrors : undefined };
+          sendCopyMessage('COPY_COMPLETE', { success: true });
+          return { success: true, flashSaleId: newFlashSaleId };
         } catch (e: any) {
           console.error('[bg:executeCopy] ❌ 失败:', e);
+          sendCopyMessage('COPY_COMPLETE', { success: false, error: e.message });
           return { success: false, error: e.message };
+        }
+      }
+
+      // ===== TRIGGER_SCHEDULED_COPY_NOW: 手动触发定时复制 =====
+      if (type === 'TRIGGER_SCHEDULED_COPY_NOW') {
+        try {
+          const result = await browser.storage.local.get('_scheduledCopy');
+          const params = result._scheduledCopy as ScheduledCopyParams | undefined;
+          if (!params) throw new Error('没有找到定时复制任务');
+
+          const { spcCds: cds, spcCdsVer: cdsVer } = await getSpcCdsFromCookies();
+          if (!cds) throw new Error('SPC_CDS 不存在，请确认已登录 seller.shopee.tw');
+
+          chrome.alarms.clear('scheduled_copy');
+          const flowResult = await executeScheduledCopyFlow(params, cds, cdsVer);
+          console.log(`[TRIGGER] 空活动已创建: ${flowResult.newFlashSaleId}`);
+
+          await browser.storage.local.set({
+            _copyTaskStatus: {
+              scheduled: true, executed: true, success: true,
+              newFlashSaleId: flowResult.newFlashSaleId,
+            },
+          });
+
+          await browser.storage.local.set({ _enableParams: flowResult.enableParams });
+          await browser.storage.local.remove(['_scheduledCopy', '_copyCountdown', 'flashSaleCache']);
+
+          const now = Math.floor(Date.now() / 1000);
+          const enableFireTime = params.targetStartTime + 300;
+
+          if (now >= enableFireTime) {
+            // 活动已经开始超过 5 分钟，直接执行
+            console.log('[TRIGGER] 活动已开始，立即提交 SKU 参数');
+            runEnableLoop(flowResult.enableParams).catch(err => {
+              console.error('[TRIGGER] runEnableLoop 异常:', err);
+            });
+            await browser.storage.local.remove('_enableParams');
+          } else {
+            // 活动尚未开始或刚开始不足 5 分钟，设置定时 alarm
+            const enableDelayMinutes = Math.max(1, Math.ceil((enableFireTime - now) / 60));
+            chrome.alarms.create('scheduled_copy_enable', { delayInMinutes: enableDelayMinutes });
+            console.log(`[TRIGGER] 已安排在 ${enableDelayMinutes} 分钟后 (活动开始+5分钟) 提交 SKU 参数`);
+          }
+
+          sendCopyMessage('COPY_COMPLETE', { success: true });
+          return { success: true, flashSaleId: flowResult.newFlashSaleId };
+        } catch (e: any) {
+          console.error('[TRIGGER] 失败:', e.message);
+          await browser.storage.local.set({
+            _copyTaskStatus: { scheduled: true, executed: true, success: false, error: e.message },
+          });
+          sendCopyMessage('COPY_COMPLETE', { success: false, error: e.message });
+          return { success: false, error: e.message };
+        }
+      }
+
+      // ===== START_AUTO_MODE: 启动自动模式 =====
+      if (type === 'START_AUTO_MODE') {
+        try {
+          const { config, sourceFlashSaleId, sourceFlashSaleName, skuOverrides: msgOverrides, debugMode, selectedSlotId, selectedSlotTime } = msg;
+
+          // 获取源活动商品数据
+          const sourceDataResult = await browser.storage.local.get('_copiedSaleData');
+          const allData = sourceDataResult._copiedSaleData as Record<string, CopiedSaleData> | undefined;
+          const sourceData = allData?.[String(sourceFlashSaleId)];
+
+          if (!sourceData?.products?.length) {
+            return { success: false, error: '源活动没有商品数据，请先在主界面加载该活动' };
+          }
+
+          const { spcCds, spcCdsVer } = await getSpcCdsFromCookies();
+          if (!spcCds) {
+            return { success: false, error: 'SPC_CDS 不存在，请确认已登录 seller.shopee.tw' };
+          }
+
+          // 验证用户选择的场次是否仍然有效
+          if (selectedSlotId && selectedSlotTime) {
+            const now = Math.floor(Date.now() / 1000);
+            const tsData = await injectedFetch<any>(
+              `${FLASH_SALE_API}/get_time_slot_id/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&start_time=${now - 1800}&end_time=${getMonthEnd()}`
+            );
+            const currentSlots = Array.isArray(tsData?.data) ? tsData.data : [];
+            const foundSlot = currentSlots.find((s: any) => s.timeslot_id === selectedSlotId);
+            if (!foundSlot) {
+              return { success: false, error: `选择的场次 #${selectedSlotId} 已不存在，请重新选择` };
+            }
+            if (foundSlot.start_time !== selectedSlotTime) {
+              return { success: false, error: `场次 #${selectedSlotId} 的开始时间已变更，请重新选择` };
+            }
+            if (foundSlot.start_time <= now) {
+              return { success: false, error: `场次 #${selectedSlotId} 已经开始 (${fmtBgTime(foundSlot.start_time)})，请选择未来的场次` };
+            }
+          }
+
+          // 清除上一次运行的残留状态
+          await clearAutoModeAlarms();
+          await browser.storage.local.remove('_enableParams');
+
+          let totalRounds = config.value;
+          if (config.mode === 'days') {
+            const now = Math.floor(Date.now() / 1000);
+            const endTime = getMonthEnd();
+            const tsData = await injectedFetch<any>(
+              `${FLASH_SALE_API}/get_time_slot_id/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&start_time=${now - 1800}&end_time=${endTime}`
+            );
+            const slots = Array.isArray(tsData?.data) ? tsData.data : [];
+            totalRounds = countSlotsInDays(slots, config.value);
+            if (totalRounds === 0) {
+              return { success: false, error: `未来 ${config.value} 天内没有可用的限时特卖时间段` };
+            }
+          }
+
+          _autoModeStopRequested = false;
+
+          const status: AutoModeStatus = {
+            isRunning: true,
+            sourceFlashSaleId,
+            sourceFlashSaleName,
+            config,
+            currentRound: 1,
+            totalRounds,
+            phase: 'idle',
+            startedAt: Date.now(),
+            debugMode: !!debugMode,
+            selectedSlotId,
+            selectedSlotTime,
+            enableParams: {
+              products: sourceData.products,
+              skuOverrides: msgOverrides || sourceData.skuOverrides || {},
+              discountRate: sourceData.discountRate,
+              flashSaleStock: sourceData.flashSaleStock,
+              purchaseLimit: sourceData.purchaseLimit,
+            },
+          };
+
+          await saveAutoModeStatus(status);
+          await sendAutoModeUpdate(status);
+
+          // 清除旧日志
+          await browser.storage.local.set({ _autoModeLogs: [] });
+
+          await logAutoMode('info', `自动模式启动: 源活动 "${sourceFlashSaleName}", ${config.mode === 'rounds' ? `共 ${totalRounds} 轮` : `${config.value} 天共 ${totalRounds} 场`}`);
+          await scheduleNextRound();
+
+          return { success: true };
+        } catch (e: any) {
+          console.error('[bg:START_AUTO_MODE] 失败:', e);
+          return { success: false, error: `启动自动模式失败: ${e?.message || '未知错误'}` };
+        }
+      }
+
+      // ===== STOP_AUTO_MODE: 停止自动模式 =====
+      if (type === 'STOP_AUTO_MODE') {
+        _autoModeStopRequested = true;
+        try {
+          await clearAutoModeAlarms();
+          await browser.storage.local.remove('_enableParams');
+          const result = await browser.storage.local.get('_autoModeStatus');
+          const status = result._autoModeStatus as AutoModeStatus | undefined;
+          if (status) {
+            status.isRunning = false;
+            status.phase = 'stopped';
+            await saveAutoModeStatus(status);
+            await sendAutoModeUpdate(status);
+          }
+          await logAutoMode('warning', '自动模式已手动停止');
+          await browser.storage.local.remove('_autoModeStatus');
+        } catch {}
+        return { success: true };
+      }
+
+      // ===== GET_AUTO_MODE_STATUS: 查询自动模式状态 =====
+      if (type === 'GET_AUTO_MODE_STATUS') {
+        try {
+          const result = await browser.storage.local.get('_autoModeStatus');
+          return { status: result._autoModeStatus || null };
+        } catch {
+          return { status: null };
         }
       }
 
@@ -851,125 +1816,89 @@ export default defineBackground({
 
     // ===== chrome.alarms 监听（定时复制） =====
     chrome.alarms.onAlarm.addListener(async (alarm) => {
+      if (alarm.name === HEARTBEAT_ALARM) {
+        handleHeartbeat();
+        return;
+      }
+
       if (alarm.name === 'scheduled_copy') {
-        console.log('[bg:scheduled_copy] 定时复制任务触发');
+        console.log('[bg:scheduled_copy] 定时复制任务触发 (活动开始前5分钟)');
         try {
           const result = await browser.storage.local.get('_scheduledCopy');
           const params = result._scheduledCopy as ScheduledCopyParams | undefined;
           if (!params) return;
 
-          // 获取 SPC_CDS
-          const cookieResult = await browser.storage.local.get(['spcCds', 'spcCdsVer']);
-          const cds = cookieResult.spcCds || '';
-          const cdsVer = cookieResult.spcCdsVer || '2';
-          if (!cds) throw new Error('SPC_CDS 不存在');
+          const { spcCds: cds, spcCdsVer: cdsVer } = await getSpcCdsFromCookies();
+          if (!cds) throw new Error('SPC_CDS 不存在，请确认已登录 seller.shopee.tw');
 
-          // 步骤 1: 关闭进行中的活动
-          console.log('[bg:scheduled_copy] 步骤1: 关闭进行中的活动');
-          const listData = await injectedFetch<any>(
-            `${FLASH_SALE_API}/get_shop_flash_sale_list/?SPC_CDS=${cds}&SPC_CDS_VER=${cdsVer}&offset=0&limit=50&type=0`
-          );
-          const activeSales = (listData?.data?.flash_sale_list || []).filter((s: any) => s.status === 1);
-          for (const sale of activeSales) {
-            await injectedFetch(
-              `${FLASH_SALE_API}/set_shop_flash_sale/?SPC_CDS=${cds}&SPC_CDS_VER=${cdsVer}`,
-              'POST',
-              { flash_sale_id: sale.flash_sale_id, time_slot_id: sale.timeslot_id, status: 2 }
-            );
-          }
-
-          // 步骤 2: 获取时间段并创建新活动
-          console.log('[bg:scheduled_copy] 步骤2: 创建新活动');
-          const startTime = params.targetStartTime - 1800;
-          const endTime = getMonthEnd();
-          const tsData = await injectedFetch<any>(
-            `${FLASH_SALE_API}/get_time_slot_id/?SPC_CDS=${cds}&SPC_CDS_VER=${cdsVer}&start_time=${startTime}&end_time=${endTime}`
-          );
-          const timeSlots = Array.isArray(tsData?.data) ? tsData.data : [];
-          let bestSlot = timeSlots[0];
-          for (const slot of timeSlots) {
-            if (!bestSlot || Math.abs(slot.start_time - params.targetStartTime) < Math.abs(bestSlot.start_time - params.targetStartTime)) {
-              bestSlot = slot;
-            }
-          }
-          if (!bestSlot) throw new Error('没有可用的时间段');
-
-          const createData = await injectedFetch<any>(
-            `${FLASH_SALE_API}/set_shop_flash_sale/?SPC_CDS=${cds}&SPC_CDS_VER=${cdsVer}`,
-            'POST',
-            { time_slot_id: bestSlot.timeslot_id }
-          );
-          const newId = createData?.data?.flash_sale_id;
-          if (!newId) throw new Error('创建活动失败');
-
-          // 步骤 3: 复制源活动商品（无模板时）或应用模板
-          if (params.templateItems?.length) {
-            console.log('[bg:scheduled_copy] 步骤3: 应用模板');
-            await injectedFetch(
-              `${FLASH_SALE_API}/set_shop_flash_sale_items/?SPC_CDS=${cds}&SPC_CDS_VER=${cdsVer}`,
-              'POST',
-              { flash_sale_id: newId, items: params.templateItems, use_global_category: true }
-            );
-          } else {
-            // 无模板：从源活动复制商品配置
-            console.log('[bg:scheduled_copy] 步骤3: 从源活动复制商品');
-            const sourceItemsData = await injectedFetch<any>(
-              `${FLASH_SALE_API}/get_shop_flash_sale_item/?SPC_CDS=${cds}&SPC_CDS_VER=${cdsVer}&flash_sale_id=${params.sourceFlashSaleId}&offset=0&limit=100`
-            );
-            let sourceItems = sourceItemsData?.data?.items || [];
-            const itemInfo = sourceItemsData?.data?.item_info || [];
-            if (sourceItems.length === 0 && itemInfo.length > 0) {
-              sourceItems = itemInfo.map((info: any) => ({
-                item_id: info.itemid, model_id: 0,
-                item_display_image: (info.images || '').split(',')[0],
-                stock: info.stock || 0, purchase_limit: info.min_purchase_limit || 0,
-                price: info.price || 0,
-              }));
-            }
-            if (sourceItems.length > 0) {
-              let priceMap: Record<string, Record<string, number>> = {};
-              try { const raw = sourceItemsData?.data?.model_info_str; if (raw) priceMap = JSON.parse(raw); } catch {}
-              if (Object.keys(priceMap).length === 0 && itemInfo.length > 0) {
-                for (const info of itemInfo) {
-                  const itemId = String(info.itemid);
-                  if (info.price > 0) { priceMap[itemId] = priceMap[itemId] || {}; priceMap[itemId]['0'] = { price: info.price }; }
-                }
-              }
-              const items = sourceItems
-                .map((si: any) => {
-                  const itemId = String(si.item_id);
-                  const modelId = String(si.model_id);
-                  let promoPrice = priceMap[itemId]?.[modelId]?.price ?? priceMap[itemId]?.['0']?.price ?? 0;
-                  if (!promoPrice) promoPrice = Number(si.price) || 1;
-                  return {
-                    item_id: Number(si.item_id), status: 1, model_id: Number(si.model_id),
-                    item_display_image: si.item_display_image || '',
-                    input_promo_price: promoPrice, stock: si.stock || 0, purchase_limit: si.purchase_limit || 0,
-                  };
-                })
-                .filter((i: any) => i.stock > 0);
-              if (items.length > 0) {
-                await injectedFetch(
-                  `${FLASH_SALE_API}/set_shop_flash_sale_items/?SPC_CDS=${cds}&SPC_CDS_VER=${cdsVer}`,
-                  'POST',
-                  { flash_sale_id: newId, items, use_global_category: true }
-                );
-                console.log(`[bg:scheduled_copy] ✅ 复制 ${items.length} 个 SKU`);
-              }
-            }
-          }
+          const flowResult = await executeScheduledCopyFlow(params, cds, cdsVer);
+          console.log(`[bg:scheduled_copy] 空活动已创建: ${flowResult.newFlashSaleId}`);
 
           await browser.storage.local.set({
-            _copyTaskStatus: { scheduled: true, executed: true, success: true, newFlashSaleId: newId },
+            _copyTaskStatus: {
+              scheduled: true, executed: true, success: true,
+              newFlashSaleId: flowResult.newFlashSaleId,
+            },
           });
-          await browser.storage.local.remove('_scheduledCopy');
-          console.log('[bg:scheduled_copy] ✅ 完成');
+
+          await browser.storage.local.set({ _enableParams: flowResult.enableParams });
+          await browser.storage.local.remove(['_scheduledCopy', '_copyCountdown', 'flashSaleCache']);
+
+          // 设置第二个 alarm：活动开始 5 分钟后执行 enable
+          const enableFireTime = params.targetStartTime + 300;
+          const now = Math.floor(Date.now() / 1000);
+          const enableDelayMinutes = Math.max(1, Math.ceil((enableFireTime - now) / 60));
+          chrome.alarms.create('scheduled_copy_enable', { delayInMinutes: enableDelayMinutes });
+          console.log(`[bg:scheduled_copy] 已安排在 ${enableDelayMinutes} 分钟后 (活动开始+5分钟) 提交 SKU 参数`);
         } catch (e: any) {
-          console.error('[bg:scheduled_copy] ❌ 失败:', e);
+          console.error('[bg:scheduled_copy] 失败:', e.message);
+          sendCopyMessage('COPY_COMPLETE', { success: false, error: e.message });
           await browser.storage.local.set({
             _copyTaskStatus: { scheduled: true, executed: true, success: false, error: e.message },
           });
         }
+      }
+
+      if (alarm.name === 'scheduled_copy_enable') {
+        console.log('[bg:scheduled_copy_enable] 定时启用任务触发 (活动开始5分钟后)');
+        try {
+          const paramsResult = await browser.storage.local.get('_enableParams');
+          const params = paramsResult._enableParams as EnableParams | undefined;
+          if (!params) {
+            console.log('[bg:scheduled_copy_enable] 未找到 enable 参数，跳过');
+            return;
+          }
+
+          const { spcCds: cds, spcCdsVer: cdsVer } = await getSpcCdsFromCookies();
+          if (cds) {
+            params.spcCds = cds;
+            params.spcCdsVer = cdsVer;
+          }
+
+          await browser.storage.local.set({ _enableParams: params });
+          runEnableLoop(params).catch(err => {
+            console.error('[scheduled_copy_enable] runEnableLoop 异常:', err);
+          });
+          await browser.storage.local.remove('_enableParams');
+          console.log('[bg:scheduled_copy_enable] 启用循环已启动');
+        } catch (e: any) {
+          console.error('[bg:scheduled_copy_enable] 失败:', e.message);
+        }
+      }
+
+      if (alarm.name === 'auto_mode_create') {
+        console.log('[bg:auto] auto_mode_create 触发');
+        handleAutoModeCreate();
+      }
+
+      if (alarm.name === 'auto_mode_enable') {
+        console.log('[bg:auto] auto_mode_enable 触发');
+        handleAutoModeEnable();
+      }
+
+      if (alarm.name === 'auto_mode_heartbeat') {
+        console.log('[bg:auto] auto_mode_heartbeat 触发');
+        handleAutoModeHeartbeat();
       }
     });
   },

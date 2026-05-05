@@ -85,6 +85,7 @@ export interface FlashSaleItemIdListData {
 // 单个 SKU 的限时参数覆盖
 export interface SkuOverride {
   discountRate?: number;  // 折扣率（百分比），不填则使用全局默认
+  promoPrice?: number;    // 限时价（直接指定价格，优先级高于 discountRate）
   stock?: number;         // 活动库存，不填则使用全局默认
   purchaseLimit?: number; // 限购数量，不填则使用全局默认（0=不限购）
 }
@@ -124,6 +125,7 @@ export interface EnableProgress {
   currentRound: number;
   maxRetries: number;
   nextRetryItems: EnableResult[];
+  hardFailedSkus?: EnableResult[]; // 不可重试的硬错误（如价格超限），需用户手动处理
   isComplete: boolean;
   lastResponsePreview?: string;
 }
@@ -173,6 +175,11 @@ export interface ScheduledCopyParams {
   targetStartTime: number;
   templateName: string | null;
   templateItems: EnableItem[] | null;
+  products: ShopeeProduct[];
+  discountRate: number;
+  flashSaleStock: number;
+  purchaseLimit: number;
+  skuOverrides: Record<string, SkuOverride>;
 }
 
 export interface CopyTaskStatus {
@@ -182,6 +189,28 @@ export interface CopyTaskStatus {
   newFlashSaleId?: number;
   error?: string;
   warning?: string;
+}
+
+// 定时任务存活状态查询结果
+export interface ScheduledTaskStatus {
+  exists: boolean;
+  alarmActive: boolean;
+  params: ScheduledCopyParams | null;
+  alarmScheduledTime?: number;
+  remainingSeconds?: number;
+}
+
+// 复制时保存的源活动商品数据，用于新活动展示和开启限时特卖
+export interface CopiedSaleData {
+  sourceFlashSaleId: number;
+  sourceFlashSaleName: string;
+  newFlashSaleId: number;
+  copiedAt: number;
+  products: ShopeeProduct[];
+  skuOverrides: Record<string, SkuOverride>;
+  discountRate: number;
+  flashSaleStock: number;
+  purchaseLimit: number;
 }
 
 // ===== 模板相关类型 =====
@@ -202,4 +231,54 @@ export interface FlashSaleTemplate {
   purchaseLimit: number;
   skuOverrides: Record<string, SkuOverride>;
   productInfo: TemplateProductInfo[];
+}
+
+// ===== 自动模式相关类型 =====
+
+export interface AutoModeConfig {
+  mode: 'rounds' | 'days';
+  value: number;
+  advanceMinutes: number;
+  delayMinutes: number;
+}
+
+export type AutoModePhase =
+  | 'idle'
+  | 'waiting_create'
+  | 'creating'
+  | 'waiting_enable'
+  | 'enabling'
+  | 'completed'
+  | 'stopped';
+
+export interface AutoModeStatus {
+  isRunning: boolean;
+  sourceFlashSaleId: number;
+  sourceFlashSaleName: string;
+  config: AutoModeConfig;
+  currentRound: number;
+  totalRounds: number;
+  phase: AutoModePhase;
+  nextTargetTime?: number;
+  nextActionTime?: number;
+  currentFlashSaleId?: number;
+  lastError?: string;
+  startedAt: number;
+  debugMode?: boolean;
+  selectedSlotId?: number;
+  selectedSlotTime?: number;
+  enableParams?: {
+    products: ShopeeProduct[];
+    skuOverrides: Record<string, SkuOverride>;
+    discountRate: number;
+    flashSaleStock: number;
+    purchaseLimit: number;
+  };
+}
+
+export interface AutoModeLog {
+  id: number;
+  timestamp: number;
+  type: 'info' | 'success' | 'error' | 'warning';
+  message: string;
 }
