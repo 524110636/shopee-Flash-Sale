@@ -170,7 +170,7 @@ interface AppState {
   // 自动模式 Actions
   enterAutoMode: () => void;
   exitAutoMode: () => void;
-  startAutoMode: (config: AutoModeConfig, flashSaleId?: number, flashSaleName?: string, debugMode?: boolean, selectedSlotId?: number, selectedSlotTime?: number) => Promise<void>;
+  startAutoMode: (config: AutoModeConfig, flashSaleId?: number, flashSaleName?: string, debugMode?: boolean, selectedSlotId?: number, selectedSlotTime?: number) => Promise<{ success: boolean; error?: string }>;
   stopAutoMode: () => Promise<void>;
   setFirstSelectedActivity: (sale: FlashSale) => void;
   loadAutoModeStatus: () => Promise<void>;
@@ -618,7 +618,72 @@ export const useAppStore = create<AppState>((set, get) => ({
       console.log(`[loadFlashSaleProducts] item_id_list API: code=${itemResp.code}, item_ids=${itemResp.data?.item_ids?.length ?? 0} 个`);
 
       if (itemResp.code !== 0 || !itemResp.data?.item_ids?.length) {
-        set({ products: [], productIds: [], inputText: '', error: `该活动中没有找到商品`, isLoadingFlashSales: false });
+        const currentSale = sale;
+        const isStarted = currentSale ? now >= currentSale.start_time : false;
+        let autoMatched = false;
+
+        if (isStarted && currentSale) {
+          const sortedSales = [...flashSaleList]
+            .filter(s => s.flash_sale_id !== flashSaleId && s.start_time < currentSale.start_time)
+            .sort((a, b) => b.start_time - a.start_time);
+
+          for (const prevSale of sortedSales) {
+            try {
+              const storageResult = await browser.storage.local.get('_copiedSaleData');
+              const allCopiedData: Record<string, CopiedSaleData> = storageResult._copiedSaleData || {};
+              const prevData = allCopiedData[String(prevSale.flash_sale_id)];
+              if (prevData?.products?.length) {
+                const ids = prevData.products.map(p => p.itemid);
+                const label = currentSale.name || `活动 #${flashSaleId}`;
+
+                set({
+                  flashSaleId,
+                  productIds: ids,
+                  inputText: ids.join('\n'),
+                  products: prevData.products,
+                  skuOverrides: prevData.skuOverrides ?? {},
+                  discountRate: prevData.discountRate ?? get().discountRate,
+                  flashSaleStock: prevData.flashSaleStock ?? get().flashSaleStock,
+                  purchaseLimit: prevData.purchaseLimit ?? get().purchaseLimit,
+                  isLoadingFlashSales: false,
+                  flashSaleInfo: `📦 ${label} [${timeStatus}] — ${ids.length} 个商品 (自动匹配: ${prevData.sourceFlashSaleName || '历史活动'})`,
+                  error: null,
+                });
+
+                try {
+                  await get().fetchProducts();
+                  const freshProducts = get().products;
+                  if (freshProducts.length > 0) {
+                    const freshMap = new Map(freshProducts.map(p => [String(p.itemid), p]));
+                    for (const p of prevData.products) {
+                      const fresh = freshMap.get(String(p.itemid));
+                      if (fresh) {
+                        p.normalStock = fresh.normalStock;
+                        for (const m of (p.modelList || [])) {
+                          const freshSku = (fresh.modelList || []).find(sm => String(sm.modelid) === String(m.modelid));
+                          if (freshSku) {
+                            m.normalStock = freshSku.normalStock;
+                            m.totalNormalStock = freshSku.totalNormalStock;
+                          }
+                        }
+                      }
+                    }
+                    set({ products: prevData.products });
+                  }
+                } catch {}
+
+                get().saveCache();
+                autoMatched = true;
+                console.log(`[loadFlashSaleProducts] 自动匹配成功: 从 ${prevData.sourceFlashSaleName || `活动#${prevSale.flash_sale_id}`} 继承 ${ids.length} 个商品`);
+                break;
+              }
+            } catch {}
+          }
+        }
+
+        if (!autoMatched) {
+          set({ flashSaleId, products: [], productIds: [], inputText: '', error: `该活动中没有找到商品`, isLoadingFlashSales: false });
+        }
         return;
       }
 
@@ -1330,26 +1395,99 @@ export const useAppStore = create<AppState>((set, get) => ({
     const sourceId = flashSaleId || get().firstSelectedActivity?.flashSaleId;
     const sourceName = flashSaleName || get().firstSelectedActivity?.flashSaleName;
     if (!sourceId) {
+      console.warn('[startAutoMode] 拒绝: 无模板活动');
       set({ error: '请先选择一个模板活动' });
-      return;
+      return { success: false, error: '请先选择一个模板活动' };
     }
     set({ error: null });
 
+    const startTs = Date.now();
+    console.log('[startAutoMode] ===== 发送 START_AUTO_MODE 到后台 =====');
+    console.log('[startAutoMode] 参数:', JSON.stringify({
+      sourceId, sourceName,
+      mode: config.mode, value: config.value,
+      advanceMinutes: config.advanceMinutes, delayMinutes: config.delayMinutes,
+      debugMode, selectedSlotId,
+    }));
+
     try {
-      const currentOverrides = get().skuOverrides;
-      await browser.runtime.sendMessage({
+      const state = get();
+      const currentOverrides = state.skuOverrides;
+      const response = await browser.runtime.sendMessage({
         type: 'START_AUTO_MODE',
         config,
         sourceFlashSaleId: sourceId,
         sourceFlashSaleName: sourceName || `活动 #${sourceId}`,
         skuOverrides: currentOverrides || {},
+        products: state.products,
+        discountRate: state.discountRate,
+        flashSaleStock: state.flashSaleStock,
+        purchaseLimit: state.purchaseLimit,
         debugMode: !!debugMode,
         selectedSlotId,
         selectedSlotTime,
       });
-      await get().loadAutoModeStatus();
+
+      console.log('[startAutoMode] sendMessage 响应:', JSON.stringify(response));
+      const elapsedSend = Date.now() - startTs;
+      console.log(`[startAutoMode] sendMessage 耗时: ${elapsedSend}ms`);
+
+      // MV3 下 sendMessage 可能返回 undefined，此时需靠 storage 轮询确认
+      if (response?.success) {
+        console.log('[startAutoMode] 后台返回成功，等待 storage 写入...');
+      } else if (response?.error) {
+        const errMsg = response.error;
+        console.error('[startAutoMode] 后台返回错误:', errMsg);
+        set({ error: errMsg });
+        return { success: false, error: errMsg };
+      } else {
+        console.warn('[startAutoMode] sendMessage 返回 undefined/无success 字段 (MV3 常见)，通过 storage 轮询确认');
+      }
+
+      // 轮询 storage 等待 _autoModeStatus 出现（后台可能还在写入）
+      let statusLoaded = false;
+      for (let attempt = 0; attempt < 10; attempt++) {
+        if (attempt > 0) {
+          await new Promise(r => setTimeout(r, 300));
+        }
+        const result = await browser.storage.local.get('_autoModeStatus');
+        const st = result._autoModeStatus as AutoModeStatus | undefined;
+        if (st?.isRunning) {
+          console.log(`[startAutoMode] storage 轮询成功 (第${attempt + 1}次), isRunning=true, phase=${st.phase}`);
+          set({ autoModeStatus: st, autoModeActive: true });
+          const logsResult = await browser.storage.local.get('_autoModeLogs');
+          set({ autoModeLogs: (logsResult._autoModeLogs as AutoModeLog[]) || [] });
+          statusLoaded = true;
+          break;
+        }
+      }
+
+      if (!statusLoaded) {
+        // 最后一次尝试：直接检查是否还有残留错误
+        const finalResult = await browser.storage.local.get('_autoModeStatus');
+        const finalStatus = finalResult._autoModeStatus as AutoModeStatus | undefined;
+        if (finalStatus?.isRunning) {
+          console.log('[startAutoMode] 最后轮询成功');
+          set({ autoModeStatus: finalStatus, autoModeActive: true });
+          statusLoaded = true;
+        }
+      }
+
+      if (!statusLoaded) {
+        console.error('[startAutoMode] storage 轮询超时 (10次×300ms=3000ms)');
+        set({ error: '自动模式启动超时：后台未在 3 秒内写入状态，请检查 Service Worker 是否活跃 (chrome://extensions → 点击 Service Worker)' });
+        return { success: false, error: '启动超时，请检查后台 Service Worker' };
+      }
+
+      const elapsed = Date.now() - startTs;
+      console.log(`[startAutoMode] ===== 启动完成，总耗时 ${elapsed}ms =====`);
+      return { success: true };
     } catch (e: any) {
-      set({ error: `启动自动模式失败: ${e?.message || '未知错误'}` });
+      const elapsed = Date.now() - startTs;
+      console.error(`[startAutoMode] ===== 异常，耗时 ${elapsed}ms =====`, e?.message, e?.stack);
+      const errMsg = `启动自动模式失败: ${e?.message || '未知错误'}`;
+      set({ error: errMsg });
+      return { success: false, error: errMsg };
     }
   },
 

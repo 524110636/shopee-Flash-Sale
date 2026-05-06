@@ -11,3 +11,5 @@ docs/
 CLAUDE.md
 AGENTS.md
 *.zip
+.harness/
+harness/

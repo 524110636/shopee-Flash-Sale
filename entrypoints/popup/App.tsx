@@ -139,9 +139,46 @@ export default function App() {
     }
   };
 
-  const handleFetch = () => {
-    if (isConnected) {
-      fetchProducts();
+  const handleFetch = async () => {
+    if (!isConnected) return;
+
+    const { flashSaleId: currentFsId, products: currentProducts } = useAppStore.getState();
+    const wasEmpty = currentProducts.length === 0 && currentFsId !== null;
+
+    await fetchProducts();
+
+    if (wasEmpty && currentFsId) {
+      const state = useAppStore.getState();
+      const currentSale = state.flashSaleList.find(s => s.flash_sale_id === currentFsId);
+      if (currentSale && state.products.length > 0 && Math.floor(Date.now() / 1000) >= currentSale.start_time) {
+        const sortedSales = [...state.flashSaleList]
+          .filter(s => s.flash_sale_id !== currentFsId && s.start_time < currentSale.start_time)
+          .sort((a, b) => b.start_time - a.start_time);
+
+        for (const prevSale of sortedSales) {
+          try {
+            const result = await browser.storage.local.get('_copiedSaleData');
+            const allData: Record<string, any> = result._copiedSaleData || {};
+            const prevData = allData[String(prevSale.flash_sale_id)];
+            if (prevData?.skuOverrides) {
+              const currentIdSet = new Set(state.productIds);
+              const inherited: Record<string, any> = {};
+              for (const [key, override] of Object.entries(prevData.skuOverrides)) {
+                if (currentIdSet.has(key.split('-')[0])) {
+                  inherited[key] = override;
+                }
+              }
+              if (Object.keys(inherited).length > 0) {
+                const merged = { ...state.skuOverrides, ...inherited };
+                useAppStore.setState({ skuOverrides: merged });
+                useAppStore.getState().saveCache();
+                console.log(`[handleFetch] 自动匹配: 从 ${prevData.sourceFlashSaleName || '历史活动'} 继承 ${Object.keys(inherited).length} 个 SKU 覆盖参数`);
+              }
+              break;
+            }
+          } catch {}
+        }
+      }
     }
   };
 

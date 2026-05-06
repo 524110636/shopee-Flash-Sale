@@ -1574,62 +1574,142 @@ export default defineBackground({
 
       // ===== START_AUTO_MODE: 启动自动模式 =====
       if (type === 'START_AUTO_MODE') {
+        const startTs = Date.now();
+        console.log('[bg:START_AUTO_MODE] ===== 收到启动请求 =====');
         try {
-          const { config, sourceFlashSaleId, sourceFlashSaleName, skuOverrides: msgOverrides, debugMode, selectedSlotId, selectedSlotTime } = msg;
+          const { config, sourceFlashSaleId, sourceFlashSaleName, skuOverrides: msgOverrides, products: msgProducts, discountRate: msgDiscountRate, flashSaleStock: msgFlashSaleStock, purchaseLimit: msgPurchaseLimit, debugMode, selectedSlotId, selectedSlotTime } = msg;
+          console.log('[bg:START_AUTO_MODE] 参数:', JSON.stringify({
+             sourceFlashSaleId, sourceFlashSaleName,
+             mode: config.mode, value: config.value,
+             advanceMinutes: config.advanceMinutes, delayMinutes: config.delayMinutes,
+             debugMode, selectedSlotId, selectedSlotTime: selectedSlotTime ? new Date(selectedSlotTime * 1000).toISOString() : undefined,
+             skuOverrideCount: Object.keys(msgOverrides || {}).length,
+             msgProductCount: msgProducts?.length ?? 0,
+           }));
 
-          // 获取源活动商品数据
-          const sourceDataResult = await browser.storage.local.get('_copiedSaleData');
-          const allData = sourceDataResult._copiedSaleData as Record<string, CopiedSaleData> | undefined;
-          const sourceData = allData?.[String(sourceFlashSaleId)];
-
-          if (!sourceData?.products?.length) {
-            return { success: false, error: '源活动没有商品数据，请先在主界面加载该活动' };
+          // Step 1: 获取源活动商品数据
+          console.log('[bg:START_AUTO_MODE] Step1: 读取 _copiedSaleData...');
+          let sourceData: CopiedSaleData | undefined;
+          try {
+            const sourceDataResult = await browser.storage.local.get('_copiedSaleData');
+            const allData = sourceDataResult._copiedSaleData as Record<string, CopiedSaleData> | undefined;
+            sourceData = allData?.[String(sourceFlashSaleId)];
+            console.log('[bg:START_AUTO_MODE] Step1 结果:', sourceData
+              ? `productCount=${sourceData.products?.length}, skuOverrideCount=${Object.keys(sourceData.skuOverrides || {}).length}`
+              : 'null — 未找到源活动商品数据');
+          } catch (e: any) {
+            console.error('[bg:START_AUTO_MODE] Step1 失败:', e?.message, e?.stack);
+            return { success: false, error: `读取源活动数据失败: ${e?.message || '未知错误'}` };
           }
 
-          const { spcCds, spcCdsVer } = await getSpcCdsFromCookies();
+          if (!sourceData?.products?.length) {
+            // _copiedSaleData 中没有数据时，尝试使用 popup 传来的 products
+            if (msgProducts?.length) {
+              console.log('[bg:START_AUTO_MODE] Step1 _copiedSaleData 为空，使用消息中附带的 products (数量=' + msgProducts.length + ')');
+              sourceData = {
+                sourceFlashSaleId,
+                sourceFlashSaleName,
+                newFlashSaleId: sourceFlashSaleId,
+                copiedAt: Date.now(),
+                products: msgProducts,
+                skuOverrides: msgOverrides || {},
+                discountRate: msgDiscountRate ?? 0,
+                flashSaleStock: msgFlashSaleStock ?? 0,
+                purchaseLimit: msgPurchaseLimit ?? 0,
+              };
+            } else {
+              console.warn('[bg:START_AUTO_MODE] Step1 失败: 源活动无商品 (_copiedSaleData 和消息中均无)');
+              return { success: false, error: '源活动没有商品数据，请先在主界面加载该活动' };
+            }
+          }
+
+          // Step 2: 获取 SPC_CDS
+          console.log('[bg:START_AUTO_MODE] Step2: 获取 SPC_CDS...');
+          let spcCds = ''; let spcCdsVer = '';
+          try {
+            const cookies = await getSpcCdsFromCookies();
+            spcCds = cookies.spcCds; spcCdsVer = cookies.spcCdsVer;
+            console.log('[bg:START_AUTO_MODE] Step2 结果:', spcCds ? `SPC_CDS=${spcCds.slice(0, 12)}..., SPC_CDS_VER=${spcCdsVer}` : 'SPC_CDS 为空');
+          } catch (e: any) {
+            console.error('[bg:START_AUTO_MODE] Step2 失败:', e?.message, e?.stack);
+            return { success: false, error: `获取 SPC_CDS 失败: ${e?.message || '未知错误'}` };
+          }
           if (!spcCds) {
+            console.warn('[bg:START_AUTO_MODE] Step2 失败: SPC_CDS 为空');
             return { success: false, error: 'SPC_CDS 不存在，请确认已登录 seller.shopee.tw' };
           }
 
-          // 验证用户选择的场次是否仍然有效
+          // Step 3: 验证场次
           if (selectedSlotId && selectedSlotTime) {
-            const now = Math.floor(Date.now() / 1000);
-            const tsData = await injectedFetch<any>(
-              `${FLASH_SALE_API}/get_time_slot_id/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&start_time=${now - 1800}&end_time=${getMonthEnd()}`
-            );
-            const currentSlots = Array.isArray(tsData?.data) ? tsData.data : [];
-            const foundSlot = currentSlots.find((s: any) => s.timeslot_id === selectedSlotId);
-            if (!foundSlot) {
-              return { success: false, error: `选择的场次 #${selectedSlotId} 已不存在，请重新选择` };
+            console.log('[bg:START_AUTO_MODE] Step3: 验证场次 #' + selectedSlotId + '...');
+            try {
+              const now = Math.floor(Date.now() / 1000);
+              const tsData = await injectedFetch<any>(
+                `${FLASH_SALE_API}/get_time_slot_id/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&start_time=${now - 1800}&end_time=${getMonthEnd()}`
+              );
+              const currentSlots = Array.isArray(tsData?.data) ? tsData.data : [];
+              console.log('[bg:START_AUTO_MODE] Step3 场次总数:', currentSlots.length);
+              const foundSlot = currentSlots.find((s: any) => s.timeslot_id === selectedSlotId);
+              if (!foundSlot) {
+                console.warn('[bg:START_AUTO_MODE] Step3 失败: 场次不存在');
+                return { success: false, error: `选择的场次 #${selectedSlotId} 已不存在，请重新选择` };
+              }
+              if (foundSlot.start_time !== selectedSlotTime) {
+                console.warn('[bg:START_AUTO_MODE] Step3 失败: 时间已变更', { expected: selectedSlotTime, actual: foundSlot.start_time });
+                return { success: false, error: `场次 #${selectedSlotId} 的开始时间已变更，请重新选择` };
+              }
+              if (foundSlot.start_time <= now) {
+                console.warn('[bg:START_AUTO_MODE] Step3 失败: 场次已开始');
+                return { success: false, error: `场次 #${selectedSlotId} 已经开始 (${fmtBgTime(foundSlot.start_time)})，请选择未来的场次` };
+              }
+              console.log('[bg:START_AUTO_MODE] Step3 通过');
+            } catch (e: any) {
+              console.error('[bg:START_AUTO_MODE] Step3 失败:', e?.message, e?.stack);
+              return { success: false, error: `验证场次失败: ${e?.message || '未知错误'}` };
             }
-            if (foundSlot.start_time !== selectedSlotTime) {
-              return { success: false, error: `场次 #${selectedSlotId} 的开始时间已变更，请重新选择` };
-            }
-            if (foundSlot.start_time <= now) {
-              return { success: false, error: `场次 #${selectedSlotId} 已经开始 (${fmtBgTime(foundSlot.start_time)})，请选择未来的场次` };
-            }
+          } else {
+            console.log('[bg:START_AUTO_MODE] Step3 跳过: 无选定场次');
           }
 
-          // 清除上一次运行的残留状态
-          await clearAutoModeAlarms();
-          await browser.storage.local.remove('_enableParams');
+          // Step 4: 清除残留状态
+          console.log('[bg:START_AUTO_MODE] Step4: 清除残留状态...');
+          try {
+            await clearAutoModeAlarms();
+            await browser.storage.local.remove('_enableParams');
+            console.log('[bg:START_AUTO_MODE] Step4 完成');
+          } catch (e: any) {
+            console.error('[bg:START_AUTO_MODE] Step4 失败:', e?.message);
+          }
 
+          // Step 5: 计算总轮数
+          console.log('[bg:START_AUTO_MODE] Step5: 计算总轮数...');
           let totalRounds = config.value;
           if (config.mode === 'days') {
-            const now = Math.floor(Date.now() / 1000);
-            const endTime = getMonthEnd();
-            const tsData = await injectedFetch<any>(
-              `${FLASH_SALE_API}/get_time_slot_id/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&start_time=${now - 1800}&end_time=${endTime}`
-            );
-            const slots = Array.isArray(tsData?.data) ? tsData.data : [];
-            totalRounds = countSlotsInDays(slots, config.value);
+            try {
+              const now = Math.floor(Date.now() / 1000);
+              const endTime = getMonthEnd();
+              const tsData = await injectedFetch<any>(
+                `${FLASH_SALE_API}/get_time_slot_id/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&start_time=${now - 1800}&end_time=${endTime}`
+              );
+              const slots = Array.isArray(tsData?.data) ? tsData.data : [];
+              totalRounds = countSlotsInDays(slots, config.value);
+              console.log('[bg:START_AUTO_MODE] Step5 天数模式下总轮数:', totalRounds);
+            } catch (e: any) {
+              console.error('[bg:START_AUTO_MODE] Step5 失败:', e?.message);
+              return { success: false, error: `计算场次失败: ${e?.message || '未知错误'}` };
+            }
             if (totalRounds === 0) {
+              console.warn('[bg:START_AUTO_MODE] Step5 失败: 无可选场次');
               return { success: false, error: `未来 ${config.value} 天内没有可用的限时特卖时间段` };
             }
+          } else {
+            console.log('[bg:START_AUTO_MODE] Step5 轮数模式: totalRounds=' + totalRounds);
           }
 
           _autoModeStopRequested = false;
 
+          // Step 6: 构建并保存状态
+          console.log('[bg:START_AUTO_MODE] Step6: 构建并保存状态...');
           const status: AutoModeStatus = {
             isRunning: true,
             sourceFlashSaleId,
@@ -1651,18 +1731,45 @@ export default defineBackground({
             },
           };
 
-          await saveAutoModeStatus(status);
+          try {
+            await saveAutoModeStatus(status);
+            console.log('[bg:START_AUTO_MODE] Step6 _autoModeStatus 已保存');
+          } catch (e: any) {
+            console.error('[bg:START_AUTO_MODE] Step6 保存失败:', e?.message);
+            await browser.storage.local.remove('_autoModeStatus');
+            return { success: false, error: `保存自动模式状态失败: ${e?.message || '未知错误'}` };
+          }
+
+          // Step 7: 通知前端
+          console.log('[bg:START_AUTO_MODE] Step7: 通知前端...');
           await sendAutoModeUpdate(status);
 
           // 清除旧日志
           await browser.storage.local.set({ _autoModeLogs: [] });
 
+          // Step 8: 记录日志并调度
+          console.log('[bg:START_AUTO_MODE] Step8: 记录日志并调度首轮...');
           await logAutoMode('info', `自动模式启动: 源活动 "${sourceFlashSaleName}", ${config.mode === 'rounds' ? `共 ${totalRounds} 轮` : `${config.value} 天共 ${totalRounds} 场`}`);
-          await scheduleNextRound();
 
+          try {
+            await scheduleNextRound();
+            console.log(`[bg:START_AUTO_MODE] Step8 scheduleNextRound 完成`);
+          } catch (e: any) {
+            console.error('[bg:START_AUTO_MODE] Step8 scheduleNextRound 失败:', e?.message, e?.stack);
+            status.isRunning = false;
+            status.phase = 'stopped';
+            status.lastError = `调度首轮失败: ${e?.message}`;
+            await saveAutoModeStatus(status);
+            await sendAutoModeUpdate(status);
+            return { success: false, error: `调度首轮失败: ${e?.message || '未知错误'}` };
+          }
+
+          const elapsed = Date.now() - startTs;
+          console.log(`[bg:START_AUTO_MODE] ===== 启动成功，耗时 ${elapsed}ms =====`);
           return { success: true };
         } catch (e: any) {
-          console.error('[bg:START_AUTO_MODE] 失败:', e);
+          const elapsed = Date.now() - startTs;
+          console.error(`[bg:START_AUTO_MODE] ===== 启动异常，耗时 ${elapsed}ms =====`, e?.message, e?.stack);
           return { success: false, error: `启动自动模式失败: ${e?.message || '未知错误'}` };
         }
       }

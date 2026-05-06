@@ -12,13 +12,18 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "harness": "tsx harness/cli.ts",
+    "mcp-server": "tsx harness/mcp-server.ts",
+    "repair": "tsx harness/scripts/repair-loop.ts",
+    "compare": "tsx harness/scripts/compare-reports.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@radix-ui/react-scroll-area": "^1.2.10",
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
@@ -30,6 +35,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/pngjs": "^6.0.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.59.2",
@@ -38,10 +44,14 @@
     "clsx": "^2.1.1",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "pixelmatch": "^7.2.0",
+    "playwright": "^1.59.1",
+    "pngjs": "^7.0.0",
     "postcss": "^8.5.13",
     "prettier": "^3.8.3",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^3.4.19",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.3",
     "wxt": "^0.20.25"
   }

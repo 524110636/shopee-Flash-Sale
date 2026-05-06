@@ -601,6 +601,10 @@ export default defineContentScript({
   main() {
     console.log('[限时特卖助手] Content Script 已加载');
 
+    // Harness injection marker (for extension-harness content script detection)
+    document.documentElement.dataset.extensionRoot = 'limited-time-sale';
+    (window as any).__EXTENSION_HARNESS_READY__ = true;
+
     // ===== 初始化：检测是否有正在进行的 enable 循环或排程倒计时（消息可能丢失，storage 更可靠）=====
     browser.storage.local.get(['_enableProgress', '_copyCountdown', '_autoModeStatus']).then(data => {
       const ep = data._enableProgress as { progress?: ProgressData; running?: boolean } | undefined;

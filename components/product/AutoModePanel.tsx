@@ -37,6 +37,7 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
   const [isStarting, setIsStarting] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [confirmStop, setConfirmStop] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
   const [selectedTemplate, setSelectedTemplate] = useState<FlashSale | null>(null);
   const [editingProduct, setEditingProduct] = useState<ShopeeProduct | null>(null);
@@ -109,12 +110,15 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
     setSelectedTemplate(sale);
     setSelectedSlot(null);
     setEditedProductIds(new Set());
+    setStartError(null);
     await loadFlashSaleProducts(sale.flash_sale_id);
   };
 
   const handleStart = async () => {
     if (validationError || !selectedTemplate || !selectedSlot) return;
+    setStartError(null);
     setIsStarting(true);
+    console.log('[AutoModePanel] handleStart 触发, 开始启动自动模式...');
     try {
       const config: AutoModeConfig = {
         mode,
@@ -122,7 +126,15 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
         advanceMinutes,
         delayMinutes,
       };
-      await startAutoMode(config, selectedTemplate.flash_sale_id, selectedTemplate.name, debugMode, selectedSlot.timeslot_id, selectedSlot.start_time);
+      const result = await startAutoMode(config, selectedTemplate.flash_sale_id, selectedTemplate.name, debugMode, selectedSlot.timeslot_id, selectedSlot.start_time);
+      console.log('[AutoModePanel] startAutoMode 返回:', JSON.stringify(result));
+      if (!result?.success) {
+        setStartError(result?.error || '启动失败，请查看后台日志');
+        console.error('[AutoModePanel] 启动失败:', result?.error);
+      }
+    } catch (e: any) {
+      setStartError(e?.message || '启动异常');
+      console.error('[AutoModePanel] handleStart 异常:', e?.message, e?.stack);
     } finally {
       setIsStarting(false);
     }
@@ -424,6 +436,15 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
 
               {selectedTemplate && isLoadingFlashSales && (
                 <div className="text-xs text-muted-foreground text-center py-4">加载商品中...</div>
+              )}
+
+              {startError && (
+                <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                  <div className="flex items-start gap-2">
+                    <span className="mt-0.5 shrink-0 font-medium">错误</span>
+                    <span>{startError}</span>
+                  </div>
+                </div>
               )}
 
               <Button
