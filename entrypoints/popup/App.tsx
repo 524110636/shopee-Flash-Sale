@@ -9,8 +9,12 @@ import { CopyConfirmPanel } from '@/components/product/CopyConfirmPanel';
 import { CopyResultPanel } from '@/components/product/CopyResultPanel';
 import { AutoModePanel } from '@/components/product/AutoModePanel';
 import { SkuTable } from '@/components/product/SkuTable';
+import { AuthPanel } from '@/components/product/AuthPanel';
+import { StoreStatus } from '@/components/product/StoreStatus';
+import { AdminPanel } from '@/components/product/AdminPanel';
 import { useAppStore, setupBackgroundListener } from './store';
 import type { ShopeeProduct } from './types';
+import * as backendApi from './backend-api';
 
 export default function App() {
   const {
@@ -48,6 +52,8 @@ export default function App() {
   const [isClearingCache, setIsClearingCache] = useState(false);
   const [isTriggeringScheduled, setIsTriggeringScheduled] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const { checkAuthOnStartup, isLoggedIn, isCheckingAuth, storeBindings } = useAppStore();
 
   const fmtTime = (ts: number) => {
     const d = new Date(ts * 1000);
@@ -112,7 +118,8 @@ export default function App() {
     checkCopyTaskStatus();
     checkScheduledCopy();
     loadAutoModeStatus();
-  }, [isConnected, spcCds, extractSpcCds, loadCache, checkBackgroundStatus, checkCopyTaskStatus, checkScheduledCopy, loadAutoModeStatus]);
+    checkAuthOnStartup();
+  }, [isConnected, spcCds, extractSpcCds, loadCache, checkBackgroundStatus, checkCopyTaskStatus, checkScheduledCopy, loadAutoModeStatus, checkAuthOnStartup]);
 
   useEffect(() => {
     if (flashSaleList.length > 0) {
@@ -182,6 +189,26 @@ export default function App() {
     }
   };
 
+  // 登录门控：未登录时只显示认证界面
+  if (isCheckingAuth) {
+    return (
+      <div className="w-[500px] min-h-[500px] p-4 bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
+          <p className="mt-2 text-xs text-muted-foreground">检查登录状态...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div className="w-[500px] min-h-[500px] bg-background">
+        <AuthPanel />
+      </div>
+    );
+  }
+
   return (
     <div className="w-[500px] min-h-[500px] p-4 bg-background" style={{ perspective: '1000px' }}>
       <div
@@ -193,7 +220,34 @@ export default function App() {
         }}
       >
         <div style={{ backfaceVisibility: 'hidden' }}>
-          {copyMode === 'confirm' && copySource ? (
+          <AuthPanel />
+          {isLoggedIn && <StoreStatus />}
+
+          {isLoggedIn && storeBindings.filter(b => b.isActive).length === 0 && !showAdminPanel ? (
+            <Card>
+              <CardContent className="py-6">
+                <div className="text-center space-y-2">
+                  <div className="text-xl">🔗</div>
+                  <div className="text-sm font-medium text-amber-600">请先绑定店铺</div>
+                  <div className="text-xs text-muted-foreground">使用扩展功能前需要先绑定一个 Shopee 店铺</div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : showAdminPanel ? (
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">管理后台</CardTitle>
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs font-normal" onClick={() => setShowAdminPanel(false)}>
+                    返回
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <AdminPanel />
+              </CardContent>
+            </Card>
+          ) : copyMode === 'confirm' && copySource ? (
             <CopyConfirmPanel
               source={copySource}
               savedTemplates={savedTemplates}
@@ -226,6 +280,16 @@ export default function App() {
                   >
                     🤖 自动模式
                   </Button>
+                  {backendApi.isAdmin() && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 px-2 text-xs font-normal border-purple-300 text-purple-600"
+                      onClick={() => setShowAdminPanel(true)}
+                    >
+                      管理后台
+                    </Button>
+                  )}
                 </div>
                 <SpcStatus />
               </div>

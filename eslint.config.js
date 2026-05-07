@@ -119,14 +119,16 @@ export default [
         HTMLTableCaptionElement: "readonly",
         KeyboardEvent: "readonly",
         MouseEvent: "readonly",
+        TextEncoder: "readonly",
+        TextDecoder: "readonly",
         RequestInit: "readonly",
       },
     },
   },
 
-  // ===== Node.js globals (harness scripts + tests) =====
+  // ===== Node.js globals (harness scripts + tests + backend) =====
   {
-    files: ["harness/**/*.ts", "tests/**/*.ts"],
+    files: ["harness/**/*.ts", "tests/**/*.ts", "backend/**/*.ts"],
     languageOptions: {
       globals: {
         process: "readonly",

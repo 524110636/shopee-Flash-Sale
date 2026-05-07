@@ -1,0 +1,28 @@
+{
+  "name": "limited-time-sale-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "build": "tsc",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.0.1",
+    "@libsql/client": "^0.14.0",
+    "bcryptjs": "^2.4.3",
+    "drizzle-orm": "^0.43.1",
+    "hono": "^4.7.5",
+    "jose": "^6.0.10"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "drizzle-kit": "^0.30.6",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
+}

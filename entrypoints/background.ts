@@ -156,6 +156,26 @@ async function getSpcCdsFromCookies(): Promise<{ spcCds: string; spcCdsVer: stri
   return { spcCds: '', spcCdsVer: '2' };
 }
 
+// ===== Analytics event reporting (fire-and-forget to backend) =====
+async function reportAnalyticsEvent(eventType: string, eventData: Record<string, any> = {}) {
+  try {
+    const result = await browser.storage.local.get(['backendAuth', 'backendUrl']);
+    const auth = result.backendAuth as { token?: string } | undefined;
+    const backendUrl = result.backendUrl as string | undefined;
+    if (!auth?.token || !backendUrl) return;
+    await fetch(`${backendUrl}/api/analytics/events`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${auth.token}`,
+      },
+      body: JSON.stringify({ eventType, eventData }),
+    });
+  } catch {
+    // fire-and-forget, ignore errors
+  }
+}
+
 // ===== Session Keepalive（参考 shopee-plugin 的自动刷新机制）=====
 const HEARTBEAT_ALARM = 'session-heartbeat';
 const HEARTBEAT_INTERVAL_MINUTES = 4;
@@ -600,6 +620,12 @@ async function runEnableLoop(params: EnableParams) {
   const finalDetails = buildFailedItemDetails(failedResults, allItems);
   await saveProgress(finalProgress, false);
   await sendComplete(finalProgress, undefined, finalDetails);
+  reportAnalyticsEvent('enable_loop', {
+    totalSkus: allItems.length,
+    successSkus: successCount,
+    failedSkus: failedResults.length,
+    rounds: round,
+  });
   console.log(`[bg:enable] 完成: ${round} 轮, 成功 ${successCount}, 失败 ${failedResults.length}${skippedCount > 0 ? `, 跳过 ${skippedCount}` : ''}`);
   } finally {
     _enableRunning = false;
@@ -1104,6 +1130,11 @@ async function handleAutoModeEnable() {
     await sendAutoModeUpdate(status);
 
     await scheduleNextRound();
+    reportAnalyticsEvent('auto_mode_round', {
+      round: status.currentRound - 1,
+      totalRounds: status.totalRounds,
+      flashSaleId: flashSaleId,
+    });
   } catch (e: any) {
     const errMsg = e?.message || String(e);
     await logAutoMode('error', `传递商品参数失败: ${errMsg}`);
@@ -1511,6 +1542,10 @@ export default defineBackground({
           };
           await browser.storage.local.set({ _copyTaskStatus: finalStatus }).catch(() => {});
           sendCopyMessage('COPY_COMPLETE', { success: true });
+          reportAnalyticsEvent('copy_flow', {
+            flashSaleId: newFlashSaleId,
+            hasSkuOverrides: Object.keys(skuOverrides || {}).length > 0,
+          });
           return { success: true, flashSaleId: newFlashSaleId };
         } catch (e: any) {
           console.error('[bg:executeCopy] ❌ 失败:', e);
@@ -1789,6 +1824,10 @@ export default defineBackground({
             await sendAutoModeUpdate(status);
           }
           await logAutoMode('warning', '自动模式已手动停止');
+          reportAnalyticsEvent('auto_mode_stop', {
+            currentRound: status?.currentRound || 0,
+            totalRounds: status?.totalRounds || 0,
+          });
           await browser.storage.local.remove('_autoModeStatus');
         } catch {}
         return { success: true };
@@ -1836,6 +1875,11 @@ export default defineBackground({
               scheduled: true, executed: true, success: true,
               newFlashSaleId: flowResult.newFlashSaleId,
             },
+          });
+
+          reportAnalyticsEvent('copy_flow', {
+            flashSaleId: flowResult.newFlashSaleId,
+            source: 'scheduled_copy',
           });
 
           await browser.storage.local.set({ _enableParams: flowResult.enableParams });

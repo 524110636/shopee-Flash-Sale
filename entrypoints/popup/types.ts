@@ -282,3 +282,41 @@ export interface AutoModeLog {
   type: 'info' | 'success' | 'error' | 'warning';
   message: string;
 }
+
+// ===== 后端管理系统类型 =====
+
+export interface BackendUser {
+  id: number;
+  email: string;
+  role: 'user' | 'admin';
+  isActive: number;
+  createdAt: string;
+  bindingCount?: number;
+}
+
+export interface BackendStoreBinding {
+  id: number;
+  userId: number;
+  spcCds: string;
+  shopName: string | null;
+  maxStores: number;
+  isActive: number;
+  createdAt: string;
+}
+
+export interface BackendAuthState {
+  token: string | null;
+  user: { id: number; email: string; role: string } | null;
+  backendUrl: string;
+}
+
+export interface BackendAnalyticsSummary {
+  summary: Record<string, number>;
+  total: number;
+}
+
+export interface BackendAdminAnalytics {
+  totalUsers: number;
+  totalBindings: number;
+  events: Array<{ eventType: string; count: number }>;
+}

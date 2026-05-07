@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { ShopeeProduct, FlashSale, EnableItem, EnableProgress, SkuOverride, CacheData, FlashSaleTemplate, TemplateProductInfo, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, TimeSlot, ScheduledTaskStatus, AutoModeConfig, AutoModeStatus, AutoModeLog } from './types';
+import type { ShopeeProduct, FlashSale, EnableItem, EnableProgress, SkuOverride, CacheData, FlashSaleTemplate, TemplateProductInfo, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, TimeSlot, ScheduledTaskStatus, AutoModeConfig, AutoModeStatus, AutoModeLog, BackendAuthState, BackendStoreBinding } from './types';
+import * as backendApi from './backend-api';
 
 // ===== 注入页面执行 fetch（MAIN world）=====
 async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -123,6 +124,13 @@ interface AppState {
   autoModeLogs: AutoModeLog[];
   firstSelectedActivity: { flashSaleId: number; flashSaleName: string } | null;
 
+  // 后端管理认证状态
+  isLoggedIn: boolean;
+  authUser: BackendAuthState['user'];
+  backendUrl: string;
+  storeBindings: BackendStoreBinding[];
+  isCheckingAuth: boolean;
+
   // Actions
   setSpcCds: (spcCds: string, spcCdsVer: string) => void;
   setConnected: (connected: boolean) => void;
@@ -174,6 +182,14 @@ interface AppState {
   stopAutoMode: () => Promise<void>;
   setFirstSelectedActivity: (sale: FlashSale) => void;
   loadAutoModeStatus: () => Promise<void>;
+
+  // 后端管理 Actions
+  setBackendUrl: (url: string) => Promise<void>;
+  checkAuthOnStartup: () => Promise<void>;
+  loginUser: (email: string, password: string) => Promise<void>;
+  logoutUser: () => Promise<void>;
+  refreshStoreBindings: () => Promise<void>;
+  bindCurrentStore: () => Promise<string | null>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -215,6 +231,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   autoModeStatus: null,
   autoModeLogs: [],
   firstSelectedActivity: null,
+
+  // 后端管理初始值
+  isLoggedIn: false,
+  authUser: null,
+  backendUrl: 'http://localhost:3001',
+  storeBindings: [],
+  isCheckingAuth: false,
 
   setSpcCds: (spcCds, spcCdsVer) => set({ spcCds, spcCdsVer }),
   setConnected: (isConnected) => set({ isConnected }),
@@ -1515,6 +1538,73 @@ export const useAppStore = create<AppState>((set, get) => ({
         set({ autoModeLogs: logs.slice(0, 50) });
       }
     } catch {}
+  },
+
+  // ===== 后端管理 Actions =====
+  setBackendUrl: async (url: string) => {
+    backendApi.setBaseUrl(url);
+    set({ backendUrl: url });
+    await browser.storage.local.set({ backendUrl: url });
+  },
+
+  checkAuthOnStartup: async () => {
+    set({ isCheckingAuth: true });
+    try {
+      const result = await browser.storage.local.get('backendUrl');
+      if (result.backendUrl) {
+        backendApi.setBaseUrl(result.backendUrl);
+        set({ backendUrl: result.backendUrl });
+      }
+      const hasAuth = await backendApi.loadAuthFromStorage();
+      if (hasAuth) {
+        try {
+          await backendApi.checkAdmin();
+          const user = backendApi.getAuthUser();
+          set({ isLoggedIn: true, authUser: user });
+          // 刷新店铺绑定
+          setTimeout(() => get().refreshStoreBindings(), 500);
+        } catch {
+          // Token invalid or server unavailable — log out silently
+          await backendApi.clearAuth();
+          set({ isLoggedIn: false, authUser: null });
+        }
+      }
+    } catch {}
+    set({ isCheckingAuth: false });
+  },
+
+  loginUser: async (email: string, password: string) => {
+    const data = await backendApi.login(email, password);
+    set({ isLoggedIn: true, authUser: data.user });
+    // 登录后自动刷新店铺绑定
+    await get().refreshStoreBindings();
+  },
+
+  logoutUser: async () => {
+    await backendApi.clearAuth();
+    set({ isLoggedIn: false, authUser: null, storeBindings: [] });
+  },
+
+  refreshStoreBindings: async () => {
+    if (!backendApi.isLoggedIn()) return;
+    try {
+      const result = await backendApi.getStores();
+      set({ storeBindings: result.stores });
+    } catch {
+      // Server may be offline
+    }
+  },
+
+  bindCurrentStore: async () => {
+    const state = get();
+    if (!state.spcCds || !backendApi.isLoggedIn()) return null;
+    try {
+      await backendApi.bindStore(state.spcCds);
+      await get().refreshStoreBindings();
+      return null;
+    } catch (e: any) {
+      return e.message || '绑定失败';
+    }
   },
 
 }));
