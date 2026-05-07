@@ -691,7 +691,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const label = sale?.name || `活动 #${flashSaleId}`;
 
       // 从虾皮 API 获取该活动中每个 SKU 的实际限时特卖参数（促销价/库存/限购）
-      let flashSaleOverrides: Record<string, SkuOverride> = {};
+      const flashSaleOverrides: Record<string, SkuOverride> = {};
       try {
         const configResp = await injectedFetch<any>(
           `${FLASH_SALE_API}/get_shop_flash_sale_item/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&flash_sale_id=${flashSaleId}&offset=0&limit=100`,

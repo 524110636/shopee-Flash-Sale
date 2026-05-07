@@ -13,6 +13,7 @@ export default [
       ".wxt/",
       ".output/",
       "backup/",
+      "playwright-report/",
       "*.config.*",
     ],
   },
@@ -119,6 +120,22 @@ export default [
         KeyboardEvent: "readonly",
         MouseEvent: "readonly",
         RequestInit: "readonly",
+      },
+    },
+  },
+
+  // ===== Node.js globals (harness scripts + tests) =====
+  {
+    files: ["harness/**/*.ts", "tests/**/*.ts"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        __dirname: "readonly",
+        __filename: "readonly",
+        Buffer: "readonly",
+        module: "readonly",
+        require: "readonly",
+        self: "readonly",
       },
     },
   },

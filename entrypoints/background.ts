@@ -389,7 +389,7 @@ async function runEnableLoop(params: EnableParams) {
   let currentItems = [...allItems];
   let successCount = 0;
   let failedResults: EnableResult[] = [];
-  let hardFailedAccum: EnableResult[] = []; // 价格超限等不可重试的硬错误
+  const hardFailedAccum: EnableResult[] = []; // 价格超限等不可重试的硬错误
   let lastRawResponse = '';
   let round = 0;
   let lowFailureStallCount = 0;

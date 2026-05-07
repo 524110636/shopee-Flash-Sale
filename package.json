@@ -16,7 +16,12 @@
     "harness": "tsx harness/cli.ts",
     "mcp-server": "tsx harness/mcp-server.ts",
     "repair": "tsx harness/scripts/repair-loop.ts",
-    "compare": "tsx harness/scripts/compare-reports.ts"
+    "compare": "tsx harness/scripts/compare-reports.ts",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "vitest run tests/unit/",
+    "test:e2e": "playwright test",
+    "test:ci": "npm run build && npm run test:harness && npm run test:unit && npm run test:e2e",
+    "test:harness": "tsx harness/cli.ts --extension .output/chrome-mv3 --target https://seller.shopee.tw --headed false"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +40,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.59.1",
     "@types/pngjs": "^6.0.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -44,6 +50,7 @@
     "clsx": "^2.1.1",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "msw": "^2.14.3",
     "pixelmatch": "^7.2.0",
     "playwright": "^1.59.1",
     "pngjs": "^7.0.0",
@@ -53,6 +60,7 @@
     "tailwindcss": "^3.4.19",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",
+    "vitest": "^4.1.5",
     "wxt": "^0.20.25"
   }
 }

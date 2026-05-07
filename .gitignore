@@ -13,3 +13,7 @@ AGENTS.md
 *.zip
 .harness/
 harness/
+test/
+tests/
+playwright-report/
+vitest-report/
