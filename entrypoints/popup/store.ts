@@ -56,6 +56,9 @@ async function injectedFetch<T>(
   const result = results?.[0]?.result as any;
   if (!result) throw new Error('页面脚本执行返回为空，请刷新页面后重试');
   if (result._error) throw new Error(`API 请求失败: ${result._error}`);
+  // 打印虾皮 API 完整响应（扩展控制台可见）
+  const resultJson = JSON.stringify(result);
+  console.log(`[Shopee API 响应] ${method} ${url}\n${resultJson.slice(0, 3000)}${resultJson.length > 3000 ? '\n...(截断)' : ''}`);
   console.log('[injectedFetch] 成功返回数据');
   return result as T;
 }
@@ -131,6 +134,11 @@ interface AppState {
   storeBindings: BackendStoreBinding[];
   isCheckingAuth: boolean;
 
+  // 当前店铺信息（从 login API 获取）
+  shopId: number | null;
+  accountId: number | null;
+  shopUsername: string;
+
   // Actions
   setSpcCds: (spcCds: string, spcCdsVer: string) => void;
   setConnected: (connected: boolean) => void;
@@ -141,6 +149,7 @@ interface AppState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   extractSpcCds: () => Promise<void>;
+  fetchShopInfo: () => Promise<void>;
   fetchProducts: () => Promise<void>;
   fetchFlashSaleProducts: () => Promise<void>;
   fetchTimeSlots: () => Promise<TimeSlot[]>;
@@ -190,6 +199,7 @@ interface AppState {
   logoutUser: () => Promise<void>;
   refreshStoreBindings: () => Promise<void>;
   bindCurrentStore: () => Promise<string | null>;
+  setShopInfo: (shopId: number | null, accountId: number | null, shopUsername: string) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -238,6 +248,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   backendUrl: import.meta.env.VITE_BACKEND_URL || 'http://localhost:5724',
   storeBindings: [],
   isCheckingAuth: false,
+
+  // 当前店铺信息初始值
+  shopId: null,
+  accountId: null,
+  shopUsername: '',
 
   setSpcCds: (spcCds, spcCdsVer) => set({ spcCds, spcCdsVer }),
   setConnected: (isConnected) => set({ isConnected }),
@@ -320,6 +335,27 @@ export const useAppStore = create<AppState>((set, get) => ({
       await browser.storage.local.remove('flashSaleCache');
     } catch {}
   },
+  setShopInfo: (shopId, accountId, shopUsername) => set({ shopId, accountId, shopUsername }),
+
+  fetchShopInfo: async () => {
+    const { spcCds, spcCdsVer } = get();
+    if (!spcCds) return;
+    try {
+      const data = await injectedFetch<{ id?: number; shopid?: number; username?: string }>(
+        `https://seller.shopee.tw/api/v2/login/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`,
+        'GET',
+      );
+      console.log('[fetchShopInfo] 获取到店铺信息:', { id: data.id, shopid: data.shopid, username: data.username });
+      set({
+        shopId: data.shopid ?? null,
+        accountId: data.id ?? null,
+        shopUsername: data.username ?? '',
+      });
+    } catch (e: any) {
+      // 获取店铺信息失败不应阻止扩展使用
+      console.warn('[fetchShopInfo] 获取店铺信息失败:', e?.message);
+    }
+  },
 
   extractSpcCds: async () => {
     console.log('[extractSpcCds] 开始获取 SPC_CDS...');
@@ -357,6 +393,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (spcCds) {
         console.log('[extractSpcCds] 成功, isConnected = true');
         set({ spcCds, spcCdsVer, isConnected: true, isExtracting: false, error: null });
+
+        // 获取店铺信息（shopId / accountId / username）
+        get().fetchShopInfo();
       } else {
         console.log('[extractSpcCds] 未找到 SPC_CDS');
         set({
@@ -1126,6 +1165,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     maxRetries: 10, discountRate: 60, flashSaleStock: 200, purchaseLimit: 5, isEnabling: false, enableProgress: null, skuOverrides: {},
     copyMode: null, copySource: null, copyTaskStatus: null, isCopying: false, savedTemplates: [], selectedTemplate: null, hasScheduledCopy: false, scheduledTaskStatus: null,
     autoModeActive: false, autoModeStatus: null, autoModeLogs: [], firstSelectedActivity: null,
+    shopId: null, accountId: null, shopUsername: '',
   }),
 
   // ===== 复制功能 =====
@@ -1610,7 +1650,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const state = get();
     if (!state.spcCds || !backendApi.isLoggedIn()) return null;
     try {
-      await backendApi.bindStore(state.spcCds);
+      await backendApi.bindStore(state.spcCds, state.shopId ?? undefined, state.accountId ?? undefined, state.shopUsername || undefined);
       await get().refreshStoreBindings();
       return null;
     } catch (e: any) {

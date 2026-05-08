@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/entrypoints/popup/store';
 
 export function StoreStatus() {
-  const { isLoggedIn, storeBindings, bindCurrentStore, spcCds, refreshStoreBindings } = useAppStore();
+  const { isLoggedIn, storeBindings, bindCurrentStore, spcCds, shopId, refreshStoreBindings } = useAppStore();
   const [binding, setBinding] = useState(false);
   const [error, setError] = useState('');
 
@@ -59,12 +59,17 @@ export function StoreStatus() {
               <div className="flex items-center gap-1.5 min-w-0">
                 <span className="text-green-600 shrink-0">●</span>
                 <span className="truncate text-muted-foreground">
-                  {b.shopName || b.spcCds.slice(0, 20)}...
+                  {b.shopName
+                    ? b.shopName
+                    : b.shopId
+                      ? `店铺 ${b.shopId}${b.shopUsername ? ` (${b.shopUsername})` : ''}`
+                      : `${b.spcCds.slice(0, 20)}...`
+                  }
                 </span>
               </div>
-              {b.spcCds === spcCds && (
+              {(b.shopId && b.shopId === shopId) || (!b.shopId && b.spcCds === spcCds) ? (
                 <span className="text-[10px] text-green-600 shrink-0 ml-1">当前</span>
-              )}
+              ) : null}
             </div>
           ))}
         </div>

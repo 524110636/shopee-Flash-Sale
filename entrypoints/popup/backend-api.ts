@@ -108,8 +108,8 @@ export async function checkAdmin() {
 
 // ===== Store API =====
 
-export async function bindStore(spcCds: string, shopName?: string) {
-  return request<{ message: string }>('POST', '/api/stores/bind', { spcCds, shopName });
+export async function bindStore(spcCds: string, shopId?: number, accountId?: number, shopUsername?: string, shopName?: string) {
+  return request<{ message: string }>('POST', '/api/stores/bind', { spcCds, shopId, accountId, shopUsername, shopName });
 }
 
 export async function getStores() {
@@ -147,4 +147,15 @@ export async function getAdminAnalytics() {
 export async function getAdminAnalyticsEvents(type?: string) {
   const query = type ? `?type=${encodeURIComponent(type)}` : '';
   return request<{ events: Array<{ id: number; userId: number; eventType: string; eventData: string | null; createdAt: string; email: string }> }>('GET', `/api/admin/analytics/events${query}`);
+}
+
+// ===== Admin Binding Management API =====
+
+export async function getAdminBindings(userId?: number) {
+  const query = userId ? `?userId=${userId}` : '';
+  return request<{ bindings: BackendStoreBinding[] }>('GET', `/api/admin/bindings${query}`);
+}
+
+export async function adminUnbindStore(bindingId: number) {
+  return request<{ message: string }>('DELETE', `/api/admin/bindings/${bindingId}`);
 }

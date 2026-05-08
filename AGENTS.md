@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # 限时特卖助手 (Limited Time Sale Helper)
 
-**版本:** 1.8.0
+**版本:** 1.8.1
 **状态:** 功能完善阶段 + 后端管理系统
-**最近更新:** 2026-05-09 — UI 全面改版（Teal 主题色）、认证流程优化（内联验证码）、.env 配置系统
+**最近更新:** 2026-05-09 — 店铺绑定增强（shop_id/account_id/shop_username）、SPC_CDS 自动续期、管理员解绑、SPC_CDS 匹配门改用 shop_id 优先
 
 ## 相关文档
 - `docs/shopee-flash-sale-api.md` — Shopee API endpoints and response formats
@@ -92,9 +92,9 @@ backend/                      # 独立后端服务
 │   │   └── index.ts          # SQLite 初始化 + 自动迁移
 │   ├── routes/
 │   │   ├── auth.ts           # 注册/验证/登录/管理员检查
-│   │   ├── stores.ts         # 店铺绑定/列表/解绑
+│   │   ├── stores.ts         # 店铺绑定/列表/解绑 (shop_id 唯一性, 同用户自动续期 SPC_CDS)
 │   │   ├── analytics.ts      # 事件上报/个人摘要
-│   │   └── admin.ts          # 管理员接口 (用户列表, 限额调整, 全局统计)
+│   │   └── admin.ts          # 管理员接口 (用户列表, 限额调整, 全局统计, 绑定查询/解绑)
 │   ├── middleware/
 │   │   └── auth.ts           # JWT 验证 + admin 角色守卫
 │   └── utils/
@@ -261,7 +261,7 @@ Auto mode (background):
 - **POST `/api/auth/login`** — Login, returns JWT
 - **POST `/api/auth/check-admin`** — Check admin role (JWT)
 - **GET `/api/stores`** — List store bindings (JWT)
-- **POST `/api/stores/bind`** — Bind store by SPC_CDS (JWT)
+- **POST `/api/stores/bind`** — Bind store by SPC_CDS + shop_id/account_id/username (JWT)
 - **DELETE `/api/stores/:id`** — Unbind store (JWT)
 - **POST `/api/analytics/events`** — Report usage event (JWT)
 - **GET `/api/analytics/summary`** — Personal usage summary (JWT)
@@ -269,6 +269,8 @@ Auto mode (background):
 - **PATCH `/api/admin/users/:id/store-limit`** — Adjust store limit (admin)
 - **GET `/api/admin/analytics`** — Global analytics (admin)
 - **GET `/api/admin/analytics/events`** — Event details (admin)
+- **GET `/api/admin/bindings?userId=X`** — List store bindings with user info (admin)
+- **DELETE `/api/admin/bindings/:id`** — Force-unbind any store (admin)
 - **GET `/api/health`** — Health check
 
 ### Copy Flash Sale Flow
@@ -342,6 +344,7 @@ The API returns two possible formats (check both):
 
 ### State Shape (Store)
 - **SPC_CDS:** spcCds, spcCdsVer, isConnected, isExtracting
+- **Shop Info (from login API):** shopId, accountId, shopUsername
 - **Products:** productIds[], products[], inputText, isLoading, error
 - **Flash Sales:** flashSaleList[], flashSaleId, flashSaleInfo, isLoadingFlashSales
 - **Enable:** maxRetries, infiniteRetry, discountRate, flashSaleStock, purchaseLimit, isEnabling, enableProgress
@@ -498,14 +501,20 @@ The API returns two possible formats (check both):
 - `isCheckingAuth` → loading spinner during startup validation
 - `!isLoggedIn` → full-screen AuthPanel (login/register forms)
 - Logged in + no store bindings → blocking "请先绑定店铺" message over main features
+- Logged in + has bindings + current shop_id/SPC_CDS not in bindings → "店铺绑定数量已达到上限" message
 - Admin panel accessible without personal store bindings
+- `isCurrentStoreBound` uses `shopId` match first, falls back to `spcCds` match for legacy data
 
 ### Store Binding
-- SPC_CDS serves as store identity token (extracted from Shopee cookies)
+- **shop_id** is the stable binding anchor (from `GET /api/v2/login/`), SPC_CDS is only for API calls
+- `storeBindings` table has `shop_id`, `account_id`, `shop_username` for stable identification
+- Same shop_id + same user = auto-update SPC_CDS (session refresh, no re-binding needed)
+- Different shop_id = blocked with "店铺绑定数量已达到上限" message
+- `isCurrentStoreBound` in App.tsx: **shop_id first, SPC_CDS fallback** for legacy records
 - Each user has `users.max_stores` limit (default 1, admin-configurable)
-- Binding checks: limit not exceeded + SPC_CDS not bound by another user
-- `StoreStatus` component shows current count vs limit with bind/unbind controls
-- Store binding gate: main extension features blocked until at least one store bound
+- `StoreStatus` component shows current count vs limit, displays shop_id/shopUsername
+- Admin can force-unbind any user's store via AdminPanel "绑定管理" tab
+- `GET /api/v2/login/?SPC_CDS=xx` is called after SPC_CDS extraction to get shop info
 
 ### Analytics Event Reporting
 - Background SW uses `reportAnalyticsEvent()` helper (fire-and-forget `fetch()`)

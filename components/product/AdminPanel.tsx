@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import * as backendApi from '@/entrypoints/popup/backend-api';
-import type { BackendUser, BackendAdminAnalytics } from '@/entrypoints/popup/types';
+import type { BackendUser, BackendAdminAnalytics, BackendStoreBinding } from '@/entrypoints/popup/types';
 
-type AdminTab = 'users' | 'analytics';
+type AdminTab = 'users' | 'analytics' | 'bindings';
 
 export function AdminPanel() {
   const [tab, setTab] = useState<AdminTab>('users');
@@ -13,6 +13,10 @@ export function AdminPanel() {
   const [error, setError] = useState('');
   const [adjustingUserId, setAdjustingUserId] = useState<number | null>(null);
   const [adjustLimit, setAdjustLimit] = useState(1);
+
+  // 绑定管理状态
+  const [bindings, setBindings] = useState<(BackendStoreBinding & { userEmail?: string })[]>([]);
+  const [unbindingId, setUnbindingId] = useState<number | null>(null);
 
   const loadUsers = async () => {
     setLoading(true); setError('');
@@ -36,10 +40,35 @@ export function AdminPanel() {
     setLoading(false);
   };
 
+  const loadBindings = async () => {
+    setLoading(true); setError('');
+    try {
+      const result = await backendApi.getAdminBindings();
+      setBindings(result.bindings);
+    } catch (e: any) {
+      setError(e.message);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (tab === 'users') loadUsers();
-    else loadAnalytics();
+    else if (tab === 'analytics') loadAnalytics();
+    else loadBindings();
   }, [tab]);
+
+  const handleUnbind = async (bindingId: number) => {
+    if (!confirm('确定要解绑该店铺吗？')) return;
+    setUnbindingId(bindingId);
+    setError('');
+    try {
+      await backendApi.adminUnbindStore(bindingId);
+      loadBindings();
+    } catch (e: any) {
+      setError(e.message);
+    }
+    setUnbindingId(null);
+  };
 
   return (
     <div className="space-y-3">
@@ -51,6 +80,14 @@ export function AdminPanel() {
           onClick={() => setTab('users')}
         >
           用户管理
+        </Button>
+        <Button
+          variant={tab === 'bindings' ? 'default' : 'outline'}
+          size="sm"
+          className="h-7 px-3 text-xs"
+          onClick={() => setTab('bindings')}
+        >
+          绑定管理
         </Button>
         <Button
           variant={tab === 'analytics' ? 'default' : 'outline'}
@@ -134,6 +171,46 @@ export function AdminPanel() {
                     </Button>
                   )}
                 </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {tab === 'bindings' && (
+        <div className="space-y-2 max-h-80 overflow-y-auto">
+          {loading ? (
+            <div className="py-4 text-center text-xs text-muted-foreground">加载中...</div>
+          ) : bindings.length === 0 ? (
+            <div className="py-4 text-center text-xs text-muted-foreground">暂无绑定记录</div>
+          ) : (
+            bindings.map(b => (
+              <div key={b.id} className="flex items-center justify-between p-2 rounded-md border text-xs">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium truncate">{b.userEmail || `用户 #${b.userId}`}</span>
+                    {!b.isActive && (
+                      <span className="px-1 py-0.5 text-[10px] bg-gray-100 text-muted-foreground rounded">已解绑</span>
+                    )}
+                  </div>
+                  <div className="mt-0.5 text-muted-foreground space-x-2">
+                    {b.shopId && <span>店铺 ID: {b.shopId}</span>}
+                    {b.shopUsername && <span>用户名: {b.shopUsername}</span>}
+                    {b.shopName && <span>{b.shopName}</span>}
+                    {!b.shopId && <span>SPC_CDS: {b.spcCds.slice(0, 16)}...</span>}
+                  </div>
+                </div>
+                {b.isActive && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-[10px] font-normal text-red-500 border-red-200 hover:bg-red-50 shrink-0 ml-2"
+                    disabled={unbindingId === b.id}
+                    onClick={() => handleUnbind(b.id)}
+                  >
+                    {unbindingId === b.id ? '解绑中...' : '解绑'}
+                  </Button>
+                )}
               </div>
             ))
           )}

@@ -298,6 +298,9 @@ export interface BackendStoreBinding {
   id: number;
   userId: number;
   spcCds: string;
+  shopId: number | null;
+  accountId: number | null;
+  shopUsername: string | null;
   shopName: string | null;
   maxStores: number;
   isActive: number;

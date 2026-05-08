@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Chrome extension (MV3) for automating Shopee Taiwan seller center flash sale operations. Built with **WXT** + **React 19** + **TypeScript 6.0** + **Tailwind CSS 3.4** + **shadcn/ui** + **Zustand 5**.
 
-Plus a standalone **backend** (Node.js + Hono + Drizzle ORM + SQLite) for user auth, store binding, usage analytics, and admin management.
+Plus a standalone **backend** (Node.js + Hono + Drizzle ORM + SQLite) for user auth, store binding (backed by shop_id), usage analytics, and admin management (including admin unbind).
 
 ## Environment
 
@@ -100,10 +100,12 @@ backend/                      # Standalone backend service
 6. On 401 response, auth is cleared and user is redirected to login
 
 ### Store Binding
-- SPC_CDS serves as the store identity token
+- **shop_id** is the stable binding anchor (from `GET /api/v2/login/`), SPC_CDS is only for API calls
+- `storeBindings` table has `shop_id`, `account_id`, `shop_username` for stable identification
+- Same shop_id + same user = auto-update SPC_CDS (session refresh, no re-binding needed)
+- `isCurrentStoreBound` in App.tsx: **shop_id first, SPC_CDS fallback** for old records
 - Each user has `max_stores` limit on the `users` table (default 1)
-- Binding API checks: limit not exceeded, SPC_CDS not bound by another user
-- Admin can adjust per-user limits; changes persist in `users.max_stores`
+- Admin can adjust per-user limits and **force-unbind** any user's store
 
 ### Analytics
 - Background SW reports events after enable loop, copy flow, and auto mode rounds
@@ -119,7 +121,9 @@ backend/                      # Standalone backend service
 - `App.tsx` checks `isCheckingAuth` on mount → shows loading spinner
 - If `!isLoggedIn` → full-screen AuthPanel (login/register)
 - If logged in but no store bindings → blocking "请先绑定店铺" message over main features
+- If logged in + has bindings + current shop SPC_CDS/shop_id NOT in bindings → "店铺绑定数量已达到上限" gate
 - Admin panel is accessible even without personal store bindings
+- `isCurrentStoreBound` uses `shopId` match first, falls back to `spcCds` match for legacy data
 
 ## Important Patterns
 
@@ -146,6 +150,8 @@ backend/                      # Standalone backend service
 | PATCH | `/api/admin/users/:id/store-limit` | Admin | Adjust store binding limit |
 | GET | `/api/admin/analytics` | Admin | Global analytics |
 | GET | `/api/admin/analytics/events` | Admin | Event details |
+| GET | `/api/admin/bindings` | Admin | List all store bindings (optional `?userId=`) |
+| DELETE | `/api/admin/bindings/:id` | Admin | Force-unbind any store |
 | GET | `/api/health` | Public | Health check |
 
 ## Config Files

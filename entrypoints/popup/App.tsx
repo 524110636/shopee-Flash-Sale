@@ -53,7 +53,19 @@ export default function App() {
   const [isTriggeringScheduled, setIsTriggeringScheduled] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
-  const { checkAuthOnStartup, isLoggedIn, isCheckingAuth, storeBindings } = useAppStore();
+  const { checkAuthOnStartup, isLoggedIn, isCheckingAuth, storeBindings, shopId } = useAppStore();
+
+  // 检测当前店铺 SPC_CDS 是否在用户绑定列表中
+  const isCurrentStoreBound = useMemo(() => {
+    if (!isConnected || !spcCds) return null;
+    // 优先用 shopId 匹配（稳定标识）
+    if (shopId) {
+      const matchByShopId = storeBindings.some(b => b.isActive && b.shopId === shopId);
+      if (matchByShopId) return true;
+    }
+    // 无 shopId 或未匹配到，回退到 spcCds 匹配（兼容旧数据）
+    return storeBindings.some(b => b.isActive && b.spcCds === spcCds);
+  }, [isConnected, spcCds, shopId, storeBindings]);
 
   const fmtTime = (ts: number) => {
     const d = new Date(ts * 1000);
@@ -257,6 +269,20 @@ export default function App() {
                   </div>
                   <div className="text-sm font-medium text-shopee-brand">请先绑定店铺</div>
                   <div className="text-xs text-muted-foreground max-w-[280px] mx-auto">使用扩展功能前需要先绑定一个 Shopee 店铺</div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : isLoggedIn && isCurrentStoreBound === false && !showAdminPanel ? (
+            <Card className="mx-4 mt-3 border-red-200">
+              <CardContent className="py-8">
+                <div className="text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                  </div>
+                  <div className="text-sm font-medium text-red-600">店铺绑定数量已达到上限</div>
+                  <div className="text-xs text-muted-foreground max-w-[280px] mx-auto">当前店铺未在绑定列表中，请增加绑定套餐</div>
                 </div>
               </CardContent>
             </Card>

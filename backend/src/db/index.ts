@@ -88,4 +88,15 @@ async function createTables() {
   } catch {
     // 列已存在，忽略
   }
+
+  // 迁移：为旧数据库添加 shop_id / account_id / shop_username 列
+  try {
+    await client.execute('ALTER TABLE store_bindings ADD COLUMN shop_id INTEGER;');
+  } catch { /* 列已存在 */ }
+  try {
+    await client.execute('ALTER TABLE store_bindings ADD COLUMN account_id INTEGER;');
+  } catch { /* 列已存在 */ }
+  try {
+    await client.execute('ALTER TABLE store_bindings ADD COLUMN shop_username TEXT;');
+  } catch { /* 列已存在 */ }
 }

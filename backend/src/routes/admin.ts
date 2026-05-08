@@ -57,6 +57,63 @@ admin.patch('/users/:id/store-limit', async (c) => {
   return c.json({ message: `用户 ${user[0].email} 的店铺限额已更新为 ${maxStores}` });
 });
 
+/** 获取所有绑定记录（可按 userId 过滤） */
+admin.get('/bindings', async (c) => {
+  const db = getDb();
+  const userIdParam = c.req.query('userId');
+
+  const baseQuery = db.select({
+    id: storeBindings.id,
+    userId: storeBindings.userId,
+    spcCds: storeBindings.spcCds,
+    shopId: storeBindings.shopId,
+    accountId: storeBindings.accountId,
+    shopUsername: storeBindings.shopUsername,
+    shopName: storeBindings.shopName,
+    isActive: storeBindings.isActive,
+    maxStores: storeBindings.maxStores,
+    createdAt: storeBindings.createdAt,
+    userEmail: users.email,
+  })
+    .from(storeBindings)
+    .leftJoin(users, eq(storeBindings.userId, users.id));
+
+  let bindings;
+  if (userIdParam) {
+    const userId = parseInt(userIdParam, 10);
+    bindings = await baseQuery
+      .where(eq(storeBindings.userId, userId))
+      .orderBy(storeBindings.createdAt);
+  } else {
+    bindings = await baseQuery
+      .where(eq(storeBindings.isActive, 1))
+      .orderBy(storeBindings.createdAt);
+  }
+
+  return c.json({ bindings });
+});
+
+/** 管理员强制解绑 */
+admin.delete('/bindings/:id', async (c) => {
+  const db = getDb();
+  const id = parseInt(c.req.param('id'), 10);
+
+  const binding = await db.select()
+    .from(storeBindings)
+    .where(eq(storeBindings.id, id))
+    .limit(1);
+
+  if (binding.length === 0) {
+    return c.json({ error: '未找到该绑定记录' }, 404);
+  }
+
+  await db.update(storeBindings)
+    .set({ isActive: 0 })
+    .where(eq(storeBindings.id, id));
+
+  return c.json({ message: `已解绑店铺绑定 (ID: ${id})` });
+});
+
 /** 全局统计概览 */
 admin.get('/analytics', async (c) => {
   const db = getDb();
