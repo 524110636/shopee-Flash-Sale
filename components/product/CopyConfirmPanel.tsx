@@ -98,16 +98,30 @@ export function CopyConfirmPanel({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-sm">
-        <Button variant="outline" size="sm" className="h-7 px-3 text-xs font-normal" onClick={onCancel}>← 返回活动列表</Button>
+        <Button variant="outline" size="sm" className="h-7 px-3 text-xs font-normal" onClick={onCancel}>
+          <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5m7-7-7 7 7 7"/>
+          </svg>
+          返回活动列表
+        </Button>
       </div>
 
       {/* 步骤提示 */}
       <div className="flex items-center justify-center gap-2 text-xs">
-        <span className="text-blue-600 font-medium">● 选择源活动</span>
-        <span className="text-gray-300">→</span>
-        <span className="text-blue-600 font-medium">● 选择目标时间</span>
-        <span className="text-gray-300">→</span>
-        <span className="text-gray-400">○ 创建复制任务</span>
+        <span className="text-shopee-brand font-medium flex items-center gap-1">
+          <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>
+          选择源活动
+        </span>
+        <span className="text-muted-foreground">→</span>
+        <span className="text-shopee-brand font-medium flex items-center gap-1">
+          <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>
+          选择目标时间
+        </span>
+        <span className="text-muted-foreground">→</span>
+        <span className="text-muted-foreground flex items-center gap-1">
+          <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="6"/></svg>
+          创建复制任务
+        </span>
       </div>
 
       <Card>
@@ -132,7 +146,7 @@ export function CopyConfirmPanel({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="ml-1.5 h-5 px-1.5 text-[10px] font-normal text-blue-600 border-blue-300 hover:bg-blue-50"
+                      className="ml-1.5 h-5 px-1.5 text-[10px] font-normal text-shopee-brand border-shopee-brand/30 hover:bg-shopee-brand-light"
                       disabled={loadingViewProducts}
                       onClick={(e) => { e.stopPropagation(); handleOpenView(); }}
                     >
@@ -172,7 +186,7 @@ export function CopyConfirmPanel({
                     key={slot.timeslot_id}
                     className={`w-full text-left px-3 py-2 text-xs border rounded-md transition-colors ${
                       slot.timeslot_id === selectedSlotId
-                        ? 'border-l-4 border-l-blue-500 bg-blue-50/50'
+                        ? 'border-l-4 border-l-shopee-brand bg-shopee-brand-light/50'
                         : 'hover:bg-accent/50'
                     }`}
                     onClick={() => setSelectedSlotId(slot.timeslot_id)}
@@ -183,7 +197,7 @@ export function CopyConfirmPanel({
                         {fmtTime(slot.start_time)} ~ {fmtTime(slot.end_time)}
                       </div>
                       {slot.timeslot_id === selectedSlotId && (
-                        <span className="text-[10px] text-blue-600 font-medium ml-2 shrink-0">已选中</span>
+                        <span className="text-[10px] text-shopee-brand font-medium ml-2 shrink-0">已选中</span>
                       )}
                     </div>
                   </button>

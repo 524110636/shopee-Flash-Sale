@@ -222,7 +222,7 @@ export function TemplateManager() {
                 取消
               </button>
               <button
-                className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md"
+                className="text-xs px-3 py-1.5 bg-shopee-brand hover:bg-shopee-brand-dark text-white rounded-md shadow-sm"
                 onClick={handleConfirmApply}
               >
                 确认应用
@@ -245,19 +245,19 @@ export function TemplateManager() {
           )}
           <div className="flex items-center gap-2 flex-wrap">
             <button
-              className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md"
+              className="text-xs px-3 py-1.5 bg-shopee-brand hover:bg-shopee-brand-dark text-white rounded-md shadow-sm"
               onClick={() => setView('saving')}
             >
               保存模板
             </button>
             <button
-              className="text-xs px-3 py-1.5 border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50"
+              className="text-xs px-3 py-1.5 border border-shopee-brand/30 text-shopee-brand rounded-md hover:bg-shopee-brand-light"
               onClick={() => fileInputRef.current?.click()}
             >
               导入模板
             </button>
             <button
-              className="text-xs px-3 py-1.5 border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50"
+              className="text-xs px-3 py-1.5 border border-shopee-brand/30 text-shopee-brand rounded-md hover:bg-shopee-brand-light"
               onClick={handleLoadList}
             >
               加载模板
@@ -293,7 +293,7 @@ export function TemplateManager() {
             ) : (
               <>
                 <button
-                  className="text-xs px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md disabled:opacity-50"
+                  className="text-xs px-3 py-1.5 bg-shopee-brand hover:bg-shopee-brand-dark text-white rounded-md shadow-sm disabled:opacity-50"
                   disabled={!templateNameInput.trim() || saving}
                   onClick={handleSave}
                 >
@@ -400,7 +400,7 @@ function TemplateRow({ name, onApply, onExport, onDelete, onEdit }: { name: stri
             <Button
               variant="outline"
               size="sm"
-              className="h-5 px-1.5 text-[10px] font-normal text-blue-600 border-blue-200 hover:bg-blue-50"
+              className="h-5 px-1.5 text-[10px] font-normal text-shopee-brand border-shopee-brand/20 hover:bg-shopee-brand-light"
               onClick={onExport}
             >
               导出
@@ -408,7 +408,7 @@ function TemplateRow({ name, onApply, onExport, onDelete, onEdit }: { name: stri
             <Button
               variant="outline"
               size="sm"
-              className="h-5 px-1.5 text-[10px] font-normal text-green-700 border-green-300 hover:bg-green-50"
+              className="h-5 px-1.5 text-[10px] font-normal text-shopee-brand border-shopee-brand/30 hover:bg-shopee-brand-light"
               disabled={isApplying}
               onClick={async () => {
                 setIsApplying(true);
@@ -420,7 +420,7 @@ function TemplateRow({ name, onApply, onExport, onDelete, onEdit }: { name: stri
             <Button
               variant="outline"
               size="sm"
-              className="h-5 px-1.5 text-[10px] font-normal text-sky-600 border-sky-200 hover:bg-sky-50"
+              className="h-5 px-1.5 text-[10px] font-normal text-shopee-brand-dark border-shopee-brand/15 hover:bg-shopee-brand-light/50"
               onClick={onEdit}
             >
               编辑
@@ -428,7 +428,7 @@ function TemplateRow({ name, onApply, onExport, onDelete, onEdit }: { name: stri
             <Button
               variant="outline"
               size="sm"
-              className="h-5 px-1.5 text-[10px] font-normal text-red-400 border-red-200 hover:bg-red-50 hover:text-red-600"
+              className="h-5 px-1.5 text-[10px] font-normal text-red-400 border-red-200 hover:bg-red-50"
               onClick={() => setConfirmDelete(true)}
             >
               删除

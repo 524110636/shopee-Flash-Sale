@@ -1,0 +1,520 @@
+# AGENTS.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+# 限时特卖助手 (Limited Time Sale Helper)
+
+**版本:** 1.8.0
+**状态:** 功能完善阶段 + 后端管理系统
+**最近更新:** 2026-05-09 — UI 全面改版（Teal 主题色）、认证流程优化（内联验证码）、.env 配置系统
+
+## 相关文档
+- `docs/shopee-flash-sale-api.md` — Shopee API endpoints and response formats
+- `docs/superpowers/specs/2026-05-02-copy-flash-sale-design.md` — Copy flash sale design spec
+- `docs/superpowers/plans/2026-05-02-copy-flash-sale-plan.md` — Copy flash sale implementation plan
+- `docs/superpowers/plans/2026-05-05-ux-optimization-plan.md` — UX optimization plan (7 items)
+- `docs/superpowers/specs/2026-05-05-ux-optimization-spec.md` — UX optimization dev blueprint
+- `docs/superpowers/specs/2026-05-05-ux-optimization-checklist.md` — UX optimization verification checklist
+- `docs/superpowers/specs/2026-05-06-auto-mode-spec.md` — Auto mode development blueprint
+- `docs/superpowers/specs/2026-05-06-auto-mode-checklist.md` — Auto mode acceptance checklist
+- `docs/superpowers/specs/2026-05-07-backend-system-spec.md` — Backend management system dev blueprint (if exists)
+
+## 完整目录结构
+
+```
+limited-time-sale/
+├── entrypoints/                  # WXT 入口点
+│   ├── popup/                    # 弹窗 UI
+│   │   ├── App.tsx               # 主应用组件 (布局 + 路由切换)
+│   │   ├── main.tsx              # React 挂载入口
+│   │   ├── index.html            # HTML 模板 (viewport=420px)
+│   │   ├── store.ts              # Zustand 状态管理 + 全部业务逻辑
+│   │   ├── api.ts                # GraphQL 商品查询 (fetchProducts)
+│   │   ├── backend-api.ts        # 后端 REST API 客户端 (auth, stores, analytics)
+│   │   ├── types.ts              # 全局 TypeScript 类型定义
+│   │   └── style.css             # Tailwind CSS 指令
+│   ├── background.ts             # Service Worker (enable loop, copy flows, alarms, auto mode, analytics event reporting)
+│   └── content.ts                # 内容脚本 (浮动进度 UI, 消息中继)
+├── components/
+│   ├── ui/                       # shadcn/ui 基础组件
+│   │   ├── badge.tsx             # 标签/徽章
+│   │   ├── button.tsx            # 按钮 (cva variants: default/destructive/outline/secondary/ghost/link)
+│   │   ├── card.tsx              # 卡片容器 (Card, CardHeader, CardTitle, CardContent)
+│   │   ├── input.tsx             # 输入框
+│   │   ├── scroll-area.tsx       # 滚动区域
+│   │   ├── separator.tsx         # 分隔线
+│   │   └── table.tsx             # 表格 (Table, TableHeader, TableBody, TableRow, TableCell)
+│   ├── lib/
+│   │   └── utils.ts              # shadcn cn() 工具函数 (clsx + tailwind-merge)
+│   └── product/                  # 业务组件
+│       ├── AutoModePanel.tsx      # 自动模式面板 (模板选择, 场次选择, 参数配置, 日志)
+│       ├── AuthPanel.tsx          # 登录/注册/验证码内联验证/设置 UI
+│       ├── StoreStatus.tsx        # 店铺绑定状态 + 绑定按钮
+│       ├── AdminPanel.tsx         # 管理员面板 (用户列表, 限额调整, 统计)
+│       ├── CopyConfirmPanel.tsx   # 复制确认面板 (时段选择, 模板选择, 查看/Demo 按钮)
+│       ├── CopyResultPanel.tsx    # 复制结果面板
+│       ├── ProductCard.tsx        # 单个商品卡片
+│       ├── ProductList.tsx        # 商品列表 (含 SkuTable 弹窗)
+│       ├── ProductViewModal.tsx   # 商品查看二级窗口 (自动模式)
+│       ├── SkuTable.tsx           # SKU 参数表格 (折扣%, 限时价, 活动库存, 限购, 批量编辑)
+│       ├── SpcStatus.tsx          # SPC_CDS 连接状态 + 流程引导
+│       ├── TemplateEditDialog.tsx # 模板编辑弹窗 (分组折叠, 分页)
+│       ├── TemplateManager.tsx    # 模板管理器 (保存/加载/导出/导入/编辑)
+│       └── TimeSlotModal.tsx      # 场次选择模态窗口 (调用 API 获取实时场次)
+├── docs/
+│   ├── shopee-flash-sale-api.md
+│   └── superpowers/
+│       ├── plans/
+│       │   ├── 2026-05-02-copy-flash-sale-plan.md
+│       │   └── 2026-05-05-ux-optimization-plan.md
+│       └── specs/
+│           ├── 2026-05-02-copy-flash-sale-design.md
+│           ├── 2026-05-05-ux-optimization-spec.md
+│           └── 2026-05-05-ux-optimization-checklist.md
+├── backup/                        # 项目备份 (gitignore 排除)
+├── CLAUDE.md                      # 本文档
+├── components.json                # shadcn/ui 配置 (baseColor=slate, cssVariables=true)
+├── package.json                   # 依赖与脚本
+├── package-lock.json
+├── postcss.config.js              # PostCSS 配置
+├── tailwind.config.ts             # Tailwind CSS 配置 (content: entrypoints/ + components/)
+├── tsconfig.json                  # TypeScript 配置 (strict, paths: @/* → ./*)
+├── wxt.config.ts                  # WXT + Vite 配置 (extensionApi=chrome, manifest, alias)
+└── .gitignore
+```
+
+n```
+backend/                      # 独立后端服务
+├── src/
+│   ├── index.ts              # 入口: Hono HTTP 服务 + CORS + 路由挂载
+│   ├── db/
+│   │   ├── schema.ts         # Drizzle ORM 表定义 (users, verification_codes, store_bindings, analytics_events)
+│   │   └── index.ts          # SQLite 初始化 + 自动迁移
+│   ├── routes/
+│   │   ├── auth.ts           # 注册/验证/登录/管理员检查
+│   │   ├── stores.ts         # 店铺绑定/列表/解绑
+│   │   ├── analytics.ts      # 事件上报/个人摘要
+│   │   └── admin.ts          # 管理员接口 (用户列表, 限额调整, 全局统计)
+│   ├── middleware/
+│   │   └── auth.ts           # JWT 验证 + admin 角色守卫
+│   └── utils/
+│       ├── jwt.ts            # 签发/验证 JWT (jose, HS256, 7天)
+│       └── code.ts           # 6位验证码生成器 (5分钟过期)
+├── package.json
+└── tsconfig.json
+```
+
+## Project Overview
+Chrome extension (MV3) for automating Shopee Taiwan seller center flash sale operations, plus a standalone backend (Node.js + Hono + Drizzle ORM + SQLite) for user auth/store binding/analytics.
+
+Built with WXT + React 19 + TypeScript + Tailwind CSS + shadcn/ui + Zustand (extension).
+
+## Development Commands
+- `cp .env.example .env` — 创建本地环境变量配置（默认后端地址 `http://localhost:5724`）
+- `cd backend && npm run dev` — Start backend server on port 5724
+- `cd backend && npx kill-port 5724` — Kill backend if port in use
+- `npm run dev` — Start dev server with hot reload (WXT)
+- `npm run build` — Production build
+- `npm run zip` — Build + create zip for Chrome Web Store
+- `npx tsc --noEmit` — TypeScript type checking only (no bundling)
+- `npm run postinstall` — Run `wxt prepare` after install
+
+## Tech Stack & Key Versions
+### Backend
+- **Hono** 4 — HTTP framework (lightweight, fast)
+- **Drizzle ORM** — Type-safe SQLite queries
+- **@libsql/client** — SQLite driver (WASM, no native compilation)
+- **bcryptjs** — Password hashing
+- **jose** — JWT sign/verify (HS256, 7-day expiry)
+- **@hono/node-server** — Node.js adapter for Hono
+- **WXT** 0.20.25 — Chrome MV3 extension framework (Vite 8 under the hood)
+- **React** 19.2.5 + **TypeScript** 6.0
+- **Zustand** 5.0.12 — State management (single store for all business logic)
+- **Tailwind CSS** 3.4 + shadcn/ui (`components/ui/`) — UI
+- **Radix UI** (@radix-ui/react-slot) — Button asChild pattern
+- **class-variance-authority** + **clsx** + **tailwind-merge** — shadcn/ui styling utilities
+- Extension API: `chrome` (configured in `wxt.config.ts` via `extensionApi: 'chrome'`)
+
+## Architecture
+
+### Entrypoints (WXT convention)
+- **`entrypoints/popup/`** — Popup UI (viewport=420px). `main.tsx` mounts `<App />` into `index.html` root div. `style.css` contains Tailwind directives (`@tailwind base/components/utilities`). App.tsx renders layout with conditional panel switching (copyMode='confirm'/'result' vs default dashboard, CSS 3D flip animation to auto mode). `store.ts` is Zustand single store with all business logic including auto mode state. `api.ts` exports `fetchProducts()` GraphQL query fetcher. `types.ts` defines all shared TypeScript interfaces.
+- **`entrypoints/background.ts`** — Service Worker: SPC_CDS cookie extraction, flash sale enable loop (`runEnableLoop` with `injectedFetch`), copy flash sale flows (EXECUTE_COPY/SCHEDULE_COPY/TRIGGER_SCHEDULED_COPY_NOW), auto mode (START_AUTO_MODE/STOP_AUTO_MODE/GET_AUTO_MODE_STATUS, alarms: auto_mode_create/auto_mode_enable/auto_mode_heartbeat), message relay
+- **`entrypoints/content.ts`** — Content script: unified floating panel (`#__flash_sale_panel__`) merging enable progress, copy progress, and auto mode status. Listens for `ENABLE_PROGRESS`/`ENABLE_COMPLETE`/`COPY_SCHEDULED`/`COPY_PROGRESS`/`COPY_COMPLETE`/`AUTO_MODE_UPDATE` messages. Also watches `storage.onChanged` as backup path for `_enableProgress`, `_copyCountdown`, and `_autoModeStatus` when messages fail.
+
+### Critical Design Decisions
+1. **Enable loop runs in background Service Worker** — `runEnableLoop` is in `background.ts`, not popup. Popup builds items, saves params via `storage.local`, sends `START_ENABLE` message. Background sends `ENABLE_PROGRESS`/`ENABLE_COMPLETE` messages back. Loop continues after popup closes. Uses `_enableRunning` flag + try/finally to prevent concurrent loops.
+2. **Data loading still in popup** — Uses `browser.scripting.executeScript({ world: 'MAIN' })` via `injectedFetch()`. Background's `injectedFetch` finds seller tab by URL (not active tab), allowing loop to run while user switches tabs.
+3. **SPC_CDS cookie extraction** — `browser.cookies.get()` with multi-domain fallback chain: `seller.shopee.tw` → `shopee.tw` → `www.shopee.tw` → `cookies.getAll({ domain: '.shopee.tw' })`
+4. **All business logic in Zustand store** — `store.ts` is the single source of truth; React components are thin wrappers
+5. **Optimistic UI updates** — `isEnabling` set to true before START_ENABLE response, button changes immediately. On reopen, `checkBackgroundStatus` reads `_enableProgress` directly from `storage.local` instead of messaging.
+6. **Storage-based communication** — `browser.runtime.sendMessage` responses in MV3 can return `undefined` even on success. For critical flows (EXECUTE_COPY) and status checks (GET_ENABLE_STATUS), use `browser.storage.onChanged` or direct storage reads instead of relying on `sendMessage` response. Content script also uses `storage.onChanged` as backup for `_enableProgress` and `_copyCountdown` when message delivery fails.
+7. **Copy flow uses `get_shop_flash_sale_item/`** — Source item config is fetched via API, then applied to new flash sale via `set_shop_flash_sale_items/`. The `from` parameter via Referrer header approach (server-side auto-copy) is unreliable in fetch API context.
+8. **Button pattern for inline actions** — All text-style links (`underline hover:underline`) are converted to `<Button variant="outline" size="sm">` with compact custom sizing (`h-5 px-1.5 text-[10px]` for inline, `h-6 px-2 text-xs` for normal). Color-coded variants: green for positive actions (应用, 保存), red for destructive (删除, 停止), blue/primary for navigation (复制, 查看), neutral for cancel/close. Custom classes override the `h-9` default from `size="sm"`. Selected/highlighted states use `border-l-4 border-l-blue-500 bg-blue-50/50` matching ProductCard's modified-item indicator style.
+9. **Stale product state guard** — `loadFlashSaleProducts` clears `products`, `productIds`, `inputText` when the source flash sale has 0 items (early return), preventing stale data from previous queries. `handleOpenView` in CopyConfirmPanel always reloads source products regardless of current `products.length`.
+10. **SKU 直定价格 (v1.4.0)** — `SkuOverride.promoPrice` 允许直接指定限时价（如 8 元），绕过整数折扣率的两次取整损失（`Math.round` + `Math.floor`）。`promoPrice` 优先级最高，构建 `EnableItem` 时 `override?.promoPrice ?? Math.floor(price * rate / 100)`。与 `discountRate` 互斥：设置折扣%时清空 `promoPrice`，反之亦然。
+11. **模板编辑与分组折叠 (v1.5.0)** — `TemplateEditDialog` 按商品 ID 分组展示 SKU 覆盖参数，主商品行为可折叠行（▶/▼），展开后显示子 SKU 编辑行（折扣%、限时价、活动库存、限购数量）。支持全部展开/收起、行内快捷添加 SKU、底部全局新增。每页 8 个商品，超出时自动分页。`updateTemplate` store 方法支持部分更新模板（合并已有字段，自动设 `updatedAt`）。
+12. **复制活动数据一致性 (v1.6.0)** — `loadFlashSaleProducts` 正常 API 路径新增 `get_shop_flash_sale_item/` 调用获取每个 SKU 的实际 flash sale 参数。`promoPrice` 直接用 `configItems[].promotion_price`（非 `model_info_str[].price`）。`fetchProducts` 完成后反推 `discountRate` 填入每个 SKU 覆盖参数，确保 SkuTable 所有列显示实际值。复制数据加载路径同理。
+13. **enterCopyMode 不再自动选择模板 (v1.6.0)** — `selectedTemplate` 默认 `null`，避免首个模板的 `discountRate=60`/`flashSaleStock=200` 等默认值通过 `executeCopy` → `_copiedSaleData` 污染全局输入框显示。用户需手动选择模板。
+14. **SkuTable key prop (v1.6.0)** — 三处 `<SkuTable>` 渲染点必须加 `key={product.itemid}`，确保切换商品时 React 销毁旧实例创建新实例，内部 `priceEditValues` 等状态归零。
+15. **复制时段默认选择 (v1.6.1)** — CopyConfirmPanel 的 `useEffect` 默认选中 `slots[0]`（第一个可用时段），移除原来的 `当前时间+2小时` 最近时段启发式算法，该算法可能跳过第一场选到第二场。
+16. **定时任务两阶段 alarm 分离 (v1.6.1)** — `scheduled_copy` alarm（活动开始前 5 分钟）仅创建空活动并保存 `_enableParams`，同时创建 `scheduled_copy_enable` alarm（活动开始后 5 分钟）执行 `runEnableLoop`。旧代码在创建空活动后立即调用 `runEnableLoop`，因活动未开始 API 拒绝提交导致全部 SKU 失败后终止。`TRIGGER_SCHEDULED_COPY_NOW` 手动触发路径同样遵守此逻辑：若活动已开始超过 5 分钟则立即执行 enable，否则安排定时 alarm。
+17. **`_copiedSaleData` 缓存一致性验证 (v1.6.1)** — `loadFlashSaleProducts` 在找到 `_copiedSaleData` 后、使用前，先调用 `get_shop_flash_sale_item_id_list` API 获取当前活动实际商品 ID 列表，与缓存商品 ID 做 `Set` 双向对比。不一致则删除 `_copiedSaleData` 中该活动条目并重置 `copiedData=null`，自动回退到正常 API 路径获取最新数据。一致则继续使用缓存（保留 per-SKU 参数优势）。修复了用户手动替换商品 ID 后界面仍显示旧复制商品的 bug。
+18. **SKU 覆盖提示与详情搜索 (v1.6.2)** — `App.tsx` 在“开启限时特卖”标题和全局折扣/库存/限购输入行之间显示覆盖提示：`已有 X 个商品 / Y 个 SKU 手动修改过，不会使用下列折扣`。统计仅基于当前 `products` 中实际存在且命中 `skuOverrides` 的 SKU，避免显示过期缓存。点击“查看”打开父弹窗，可按商品标题、商品 ID、SKU 名称、SKU ID 搜索。父弹窗保持打开，点击“查看 SKU”时只打开 `SkuTable` 子弹窗；父弹窗使用 `z-40`，`SkuTable` 保持 `z-50`，确保子弹窗浮在父弹窗之上。
+19. **复制活动全量固化 SKU 覆盖 (v1.6.2)** — `executeCopy()` 在保存复制参数前会遍历当前 `products.modelList`，为没有显式覆盖的 SKU 也写入一条 `skuOverrides[key]`（包含 `discountRate`、按当前折扣计算的 `promoPrice`、`stock`、`purchaseLimit`）。因此复制限时特卖的源活动在新活动展示时视为所有 SKU 都已手动编辑，不会被后续全局折扣行覆盖。`loadFlashSaleProducts()` 读取旧 `_copiedSaleData` 时也会补齐缺失覆盖项，兼容旧缓存。
+20. **UX 优化 — 异步按钮统一反馈 (v1.6.3)** — 所有触发异步操作的按钮统一规则：点击后 100ms 内文案切换为 loading 状态（如「加载中」「清除中」「执行中」），按钮 `disabled` 防止重复点击，请求完成后 `finally` 块恢复。涉及按钮：清除缓存、重新获取 SPC_CDS、停止、手动触发定时任务、应用模板、删除模板、保存模板。开启限时特卖通过按钮切换（🚀 开启 → ⏹ 停止）提供即时反馈。
+21. **UX 优化 — 按钮颜色语义 (v1.6.3)** — 建立四色语义体系：蓝色 outline（普通操作：查看、刷新、复制、导入/加载模板）、绿色实心（主确认：开启限时特卖、创建复制任务、保存模板）、红色 outline（停止/危险：停止、清除缓存）、灰色（次要/取消）。hover 规则：`hover:bg-{color}-50 hover:text-{color}-600 hover:border-{color}-300`。危险操作禁止使用蓝色。
+22. **UX 优化 — 高级操作折叠 (v1.6.3)** — 「清除缓存」从 header 移至底部折叠区、「手动触发定时任务」从启用区移至折叠区。使用 `<details>` + `<summary>` 标签实现，默认收起，摘要文字「高级操作」（`text-xs text-gray-400`）。仅在 `isConnected` 为 true 时渲染。常用操作（获取商品、刷新、复制、开启/停止）保留在主界面。
+23. **UX 优化 — 当前活动上下文展示条 (v1.6.3)** — `Separator` 后新增蓝底上下文条（`bg-blue-50 border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-700`）：`当前活动：{name} · MM/DD HH:mm ~ HH:mm · {status} · N 个商品`。`name` 为空时回退 `活动 #{id}`，status 按时间判断为「即将开始/进行中/已结束」。仅在 `flashSaleId` 存在且非 `copyMode` 时显示，位于商品列表上方独立展示。
+24. **UX 优化 — 编辑痕迹强化 (v1.6.3)** — 商品列表区域顶部新增蓝底汇总行（`bg-blue-50 border-blue-200`）：`已手动编辑 X 个商品 / Y 个 SKU` + 蓝色「查看详情」按钮（复用 `overrideDetailOpen` 弹窗）。仅当 `overrideSummary.skuCount > 0` 时显示。SKU 输入框 `placeholder` 显示全局默认值作为来源提示。
+25. **UX 优化 — 复制流程步骤提示 (v1.6.3)** — `CopyConfirmPanel` 顶部新增三步提示：`● 选择源活动 → ● 选择目标时间 → ○ 创建复制任务`。前两步蓝色加粗（已完成），第三步灰色（待确认）。纯展示，不控制流程。
+26. **UX 优化 — 错误提示就近化 (v1.6.3)** — `CopyConfirmPanel` 的「查看」按钮旁新增 `viewError` 状态，失败时红色文字紧邻按钮显示。其余操作已有 inline 提示（`applyMessage`、`saveSuccess`、`importMessage`、时间段选择错误 `slotsError`）。
+27. **定时任务存活状态检测 (v1.6.4)** — 新增 `GET_SCHEDULED_STATUS` 消息类型，后台 handler 从 storage 读取 `_scheduledCopy` 参数并通过 `chrome.alarms.get('scheduled_copy')` 检查 alarm 是否仍然注册，返回 `ScheduledTaskStatus`（`exists`, `alarmActive`, `params`, `alarmScheduledTime`, `remainingSeconds`）。`checkScheduledCopy` store 方法增强为自动查询 alarm 状态，popup 通过琥珀色卡片展示：源活动名、目标时间、定时器存活/未注册状态、剩余时间倒计时、「刷新状态」按钮。触发时机：popup 打开、创建定时任务成功后、检测到 `_copyTaskStatus` 变化时。
+28. **布局信息分层重组 (v1.6.4)** — 将主界面按信息优先级重组为「上下文→操作→低频」三层：
+   - 首屏：当前活动上下文条（蓝底）+ 定时任务状态卡（琥珀底）作为信息群置于 Header 正下方，打开扩展第一眼可见
+   - 中层：活动列表（紧凑折叠头）+ 商品列表 + 开启限时特卖参数区连为一体，删除无意义的 `Separator`
+   - 底层：「更多」折叠区（`<details>`）收纳所有低频功能：商品 ID 输入、获取商品信息、加载列表、模板管理、手动触发定时任务、清除缓存
+   - 删除原有的两个独立折叠区（高级操作 + 商品ID区），统一为一个「更多」入口
+29. **自动模式 — CSS 3D 翻转动画 (v1.7.0)** — 主界面与自动模式面板通过 CSS 3D 翻转切换。使用 `perspective`, `transform-style: preserve-3d`, `rotateY(180deg)`, `backface-visibility: hidden` 实现整页翻转效果。`autoModeView` state 控制正反面切换。
+30. **自动模式 — 模板活动沿用链 (v1.7.0)** — 启动时使用用户选择的模板活动，每轮完成后自动将 `sourceFlashSaleId` 更新为当轮刚创建的活动 ID。第 N+1 轮沿用第 N 轮活动的商品+库存，实现活动链式传递，确保库存数据随售出自动递减。
+31. **自动模式 — 场次选择 (v1.7.0)** — `TimeSlotModal` 通过调用 Shopee API(`get_time_slot_id/`) 获取本月所有可用场次，按 `start_time` 升序排列，显示实时状态（未开始/进行中/已结束）。用户选择后在 `AutoModePanel` 蓝色信息条展示。启动时自动验证场次合法性（是否存在、开始时间是否变更、是否已开始），失败则拒绝启动。`scheduleNextRound` 第一轮优先使用用户选定场次。
+32. **自动模式 — 两阶段 alarm (v1.7.0)** — `auto_mode_create` alarm 在目标时间前 N 分钟触发创建空活动 + 保存数据；`auto_mode_enable` alarm 在目标时间后 delay 分钟触发执行 `runEnableLoop`。`auto_mode_heartbeat` alarm 定期更新状态保证 popup 可见最新进度。
+33. **自动模式 — 调试模式 (v1.7.0)** — 「⏩ 加速调试」checkbox，激活后 `scheduleNextRound` 跳过真实场次时间，伪造 `fakeTargetTime = now + advanceSec + 3`，使定时调度在数秒内触发而非等待真实时间段。底部调试状态条显示剩余秒数。
+34. **跨轮次库存自动刷新 (v1.7.0)** — `handleAutoModeEnable` 每轮传递商品参数前通过 GraphQL 重新拉取最新 `normalStock`/`totalNormalStock`/`originPrice`，同步写回 `status.enableParams.products` 和 `_copiedSaleData`。确保每轮使用最新实际库存，而非轮次开始时的一次性快照。
+35. **`_copiedSaleData` 缓存库存刷新 (v1.7.0)** — `loadFlashSaleProducts` 缓存路径（产品 ID 验证通过后）不再直接 `return`，而是追加 `await fetchProducts()` GraphQL 调用，将新鲜库存合并入缓存商品，再 `set({ products })`。确保两个「查看商品」入口都显示实时库存。
+36. **SkuTable 批量编辑框 (v1.7.0)** — 表格上方新增浅蓝底批量编辑行：`折扣% | 活动库存 | 限时价 | 限购数量`。输入数值后 `onBlur` 或 `Enter` 自动将值应用到当前商品所有 SKU 对应参数。限时价批量编辑时同步清空折扣%字段（互斥设计）。适用于手动模式和自动模式。
+37. **动态「已编辑」标记 (v1.7.0)** — `AutoModePanel` 维护 `editedProductIds: Set<string>` 状态，SkuTable 新增可选 `onEdit` prop。仅当用户点击商品并实际修改参数后，商品才显示蓝色左边框 + 「已编辑」badge。加载初始状态全部无标记，切换模板时清空。
+38. **自动模式 — 红色日志信息栏 (v1.7.0)** — 日志卡片顶部红底信息栏（`bg-red-50 border-red-200`），运行中显示：选择场次、场次状态、模板商品数、当前轮次/总轮次、当前阶段。未启动时显示「自动模式未启动」。
+39. **自动模式 — 错误参数重试阈值调整 (v1.7.0)** — 零进展僵局检测阈值从 5 轮提升到 10 轮，低失败僵局检测阈值从 3 个 SKU 提升到 5 个，以适配自动模式下参数传递的延迟。
+
+### Data Flow
+```
+Data loading (popup):
+  User Input → App.tsx → store.ts actions → injectedFetch() →
+    scripting.executeScript(MAIN world) → fetch() →
+    response → store state update → React re-render
+
+Enable loop (background):
+  Popup: build items → storage.local(params) → clear old _enableProgress → isEnabling=true → START_ENABLE fire-and-forget →
+    waitForBoot (storage.onChanged('_enableProgress.running=true'), 5s timeout + 4s retry) →
+    Background: retry-read params → runEnableLoop() → saveProgress(running=true immediately) →
+      loop(injectedFetch on any seller tab) → storage.local(progress) →
+      ENABLE_PROGRESS → runtime.sendMessage(popup) + tabs.sendMessage(content script)
+  (Popup can close; loop continues; reopen: checkBackgroundStatus reads _enableProgress directly from storage)
+
+Copy flash sale (background):
+  Popup: executeCopy() → clear _copyTaskStatus → send EXECUTE_COPY message (fire-and-forget) →
+    waitForStorage() listens for storage.onChanged('_copyTaskStatus')
+  Background: EXECUTE_COPY handler → step1(close active) → step2(get time slots) →
+    step3(create empty sale) → step4(save data locally) →
+    save _copyTaskStatus to storage → storage.onChanged triggers popup resolve
+
+Scheduled copy two-phase (background):
+  Phase 1 - scheduled_copy alarm (start_time - 5min):
+    getSpcCdsFromCookies() → executeScheduledCopyFlow() (close active → get slots → create empty sale → save data) →
+    save _enableParams to storage → remove _scheduledCopy → create scheduled_copy_enable alarm (start_time + 5min)
+  Phase 2 - scheduled_copy_enable alarm (start_time + 5min):
+    read _enableParams from storage → refresh SPC_CDS via getSpcCdsFromCookies() →
+    runEnableLoop() → ENABLE_PROGRESS/ENABLE_COMPLETE messages flow as normal
+
+_copiedSaleData cache validation:
+  loadFlashSaleProducts(fsId) → find _copiedSaleData entry →
+    call get_shop_flash_sale_item_id_list API → compare IDs (Set intersection) →
+    mismatch: delete entry + fallthrough to normal API path | match: use cached data →
+    (v1.7.0) always call fetchProducts() GraphQL to refresh stock after cache load
+
+Auto mode (background):
+  START_AUTO_MODE: validate slot → clear residual state → build status with enableParams →
+    logAutoMode → scheduleNextRound()
+  scheduleNextRound():
+    debug mode: fabricate fakeTargetTime | normal: find next slot (1st round prefers selectedSlotId) →
+    set phase='waiting_create' → auto_mode_create alarm at targetTime - advanceMinutes
+  auto_mode_create alarm: handleAutoModeCreate()
+    close active sales → get time slots → find best slot near nextTargetTime →
+    create empty flash sale → saveCopiedSaleData(new activity) → save status →
+    logAutoMode → auto_mode_enable alarm at targetTime + delayMinutes
+  auto_mode_enable alarm: handleAutoModeEnable()
+    refresh product stock via GraphQL → sync to _copiedSaleData →
+    build EnableParams → runEnableLoop() → logAutoMode →
+    sourceFlashSaleId = currentFlashSaleId (chain) → scheduleNextRound()
+  auto_mode_heartbeat alarm: sendAutoModeUpdate() → sync to popup/content
+  STOP_AUTO_MODE: clear alarms + _enableParams + save stopped status + remove _autoModeStatus
+```
+
+### Message Protocol
+- **Popup → Background:** `START_ENABLE`, `STOP_ENABLE`, `GET_ENABLE_STATUS`, `CLEAR_ENABLE_STATE`, `SPC_CDS_REQUEST`, `EXECUTE_COPY`, `SCHEDULE_COPY`, `TRIGGER_SCHEDULED_COPY_NOW`, `GET_TIME_SLOTS`, `GET_FLASH_SALE_ITEM_COUNT`, `CLOSE_FLASH_SALE`, `COPY_FLASH_SALE`, `APPLY_TEMPLATE_ITEMS`, `GET_SCHEDULED_STATUS`, `START_AUTO_MODE`, `STOP_AUTO_MODE`, `GET_AUTO_MODE_STATUS`
+- **Background → Popup:** `ENABLE_PROGRESS`, `ENABLE_COMPLETE`, `AUTO_MODE_UPDATE`
+- **Background → Content Script:** `ENABLE_PROGRESS`, `ENABLE_COMPLETE`, `COPY_SCHEDULED`, `COPY_PROGRESS`, `COPY_COMPLETE`, `AUTO_MODE_UPDATE`
+- **Content Script → Background:** `STOP_ENABLE` (via stop button in progress UI)
+- **Storage-based (reliable):** `_copyTaskStatus`, `_enableProgress`, `_enableParams`, `_copyCountdown`, `_copiedSaleData`, `_autoModeStatus`, `_autoModeLogs` — used when `sendMessage` response is unreliable (MV3 bug). Content script's `storage.onChanged` listener watches `_enableProgress`, `_copyCountdown`, and `_autoModeStatus` as backup for message delivery failures.
+
+### Key API Endpoints
+- **GraphQL:** `POST /api/marketing/v4/graphql/query/` — product/SKU details (query in `api.ts` PRODUCTS_QUERY)
+- **Flash Sale:** `/api/marketing/v4/shop_flash_sale/{get_shop_flash_sale_list,get_shop_flash_sale_item_id_list,set_shop_flash_sale_items,set_shop_flash_sale,get_time_slot_id,get_shop_flash_sale_item}`
+- **Required header:** `sc-fe-session` (CSRF token, extracted from page DOM/window)
+- **Required body field:** `use_global_category: true` (missing this causes code 1001 error)
+- **Price rules:** Must be integer, strictly less than origin price
+
+### Backend API Endpoints
+- **POST `/api/auth/register`** — Register (returns verification code)
+- **POST `/api/auth/verify`** — Activate account with code
+- **POST `/api/auth/login`** — Login, returns JWT
+- **POST `/api/auth/check-admin`** — Check admin role (JWT)
+- **GET `/api/stores`** — List store bindings (JWT)
+- **POST `/api/stores/bind`** — Bind store by SPC_CDS (JWT)
+- **DELETE `/api/stores/:id`** — Unbind store (JWT)
+- **POST `/api/analytics/events`** — Report usage event (JWT)
+- **GET `/api/analytics/summary`** — Personal usage summary (JWT)
+- **GET `/api/admin/users`** — User list (admin)
+- **PATCH `/api/admin/users/:id/store-limit`** — Adjust store limit (admin)
+- **GET `/api/admin/analytics`** — Global analytics (admin)
+- **GET `/api/admin/analytics/events`** — Event details (admin)
+- **GET `/api/health`** — Health check
+
+### Copy Flash Sale Flow
+1. `enterCopyMode(flashSale)` — loads source item count and products into store
+2. `CopyConfirmPanel` — 顶部三步提示（选择源活动 → 选择目标时间 → 创建复制任务），蓝底活动信息卡片 + 查看源活动商品（带 loading + 错误就近提示）
+3. `executeCopy(targetTime)` — one-stop-shop execution (4 steps):
+   - **Step 1:** Close any active flash sales (status=1)
+   - **Step 2:** Fetch available time slots via `get_time_slot_id/`
+   - **Step 3:** Create empty flash sale via `set_shop_flash_sale/` with `{ time_slot_id }`
+   - **Step 4:** Save source product data locally via `saveCopiedSaleData()` (for popup display)
+   - (Step 5 auto-submit removed in v1.5.0 — Demo button no longer submits products)
+4. `SCHEDULE_COPY` — uses `chrome.alarms` for timed execution
+   - Scheduled via `chrome.alarms.create('scheduled_copy', { delayInMinutes })`
+   - On alarm, `scheduled_copy` creates empty activity and schedules `scheduled_copy_enable`
+   - `scheduled_copy_enable` fires at `targetStartTime + 300` (5 min after activity starts) to run `runEnableLoop`
+5. `TRIGGER_SCHEDULED_COPY_NOW` — manually trigger a scheduled copy immediately
+   - Reads `_scheduledCopy` from storage, clears the alarm, calls `executeScheduledCopyFlow()` immediately
+   - Popup button "手动触发定时任务" moved to 更多折叠区 (v1.6.4)
+   - If `now >= targetStartTime + 300`: runs `runEnableLoop` immediately. Otherwise: creates `scheduled_copy_enable` alarm
+   - **`executeScheduledCopyFlow` sets `infiniteRetry: true`** so the enable loop doesn't stop after 10 rounds
+6. `GET_SCHEDULED_STATUS` (v1.6.4) — 查询定时任务存活状态
+   - Store `checkScheduledCopy` 发送消息到后台，后台检查 `chrome.alarms.get('scheduled_copy')` 是否仍注册
+   - 返回 `ScheduledTaskStatus` 包含 alarm 存活状态和剩余秒数
+   - Popup 琥珀色卡片实时展示，支持手动刷新
+
+### Auto Mode Flow (v1.7.0)
+1. **进入自动模式** — 点击主界面「自动模式」按钮 → CSS 3D 翻转动画切换到 `AutoModePanel`
+2. **配置参数**: 选择轮数/天数 → 设置提前/延迟分钟 → 可选「加速调试」
+3. **选择模板活动**: 从列表点击活动 → `loadFlashSaleProducts` 加载商品 → 显示模板商品列表
+4. **选择申报场次**: 点击「选择场次」→ `TimeSlotModal` 调用 API 获取场次 → 用户选择 → 蓝色信息条展示
+5. **编辑商品参数** (可选): 点击商品 → `SkuTable` 弹窗 → 批量编辑框 / 逐 SKU 编辑 → 动态「已编辑」标记
+6. **启动**: `validate()` → `startAutoMode(config, templateId, templateName, debug, slotId, slotTime)` → `START_AUTO_MODE` 消息
+7. **后台执行循环**:
+   - `scheduleNextRound()` → `auto_mode_create` alarm → `handleAutoModeCreate()` 创建空活动 + 保存数据
+   - `auto_mode_enable` alarm → `handleAutoModeEnable()` 刷新库存 + `runEnableLoop()` 传递商品
+   - 完成后 `sourceFlashSaleId` 指向当前活动 → 下一轮沿用 → 循环
+8. **停止**: `stopAutoMode()` → `STOP_AUTO_MODE` → 清除 alarms + `_enableParams` + 移除 `_autoModeStatus`
+9. **查看商品**: `ProductViewModal` 二级窗口，从 `_copiedSaleData` 加载（已刷新库存），支持搜索筛选
+
+### `get_shop_flash_sale_item/` Response Format
+The API returns two possible formats (check both):
+- `data.items` — SKU-level array with `item_id`, `model_id`, `stock`, `purchase_limit`, `promotion_price`
+- `data.item_info` — Product-level array with `itemid`, `price`, `stock`, `images`
+- `data.model_info_str` — JSON string with per-SKU regular prices in array format: `{"itemId":[{"modelid":123,"price":99,...},...]}`
+- If `model_info_str` is missing, use `item_info[].price` as fallback
+
+### Caching
+- 30-minute cache via `browser.storage.local` (`flashSaleCache` key, defined as `CacheData` in types.ts)
+- Persists: products, flashSaleList, flashSaleId, enableProgress, skuOverrides, global params
+- Auto-loads on popup open; auto-saves after fetch/enable operations
+- Manual clear via "清除缓存" button (v1.6.4: 已移至底部「更多」折叠区): `clearCache()` + `reset()` + `extractSpcCds()`
+
+### Flash Sale Enable Flow (background.ts `runEnableLoop`)
+1. Build `EnableItem[]` from params, filtering out 0-stock SKUs
+2. Save initial progress with `running: true` immediately (so popup reopen sees correct state)
+3. POST to `set_shop_flash_sale_items` with `use_global_category: true`
+4. Parse failed items from `response.data.failed_items`
+5. Retry failures (with adaptive stock halving for `NOT_ENOUGH_STOCK` errors)
+6. Run diagnosis query for small batches (≤10 failed items at a time)
+7. Track progress via `EnableProgress` interface (round/success/failure counts)
+8. Fatal errors (missing seller tab) auto-stop the loop
+
+### Enable Loop Guards
+- `_enableRunning` flag prevents concurrent loops (checked at function entry, always reset in finally)
+- `_enableStopRequested` flag enables clean stop via STOP_ENABLE message
+- **Zero-progress stall detection:** 5 consecutive rounds with 0 successful SKUs stops the loop (catches persistent API errors that don't resolve on retry)
+- **Periodic SPC_CDS refresh:** Every 3 rounds, `runEnableLoop` re-reads SPC_CDS from cookies via `getSpcCdsFromCookies()` to prevent token expiry (`code 1001 spex common error`)
+- **Low-failure stall detection:** ≤3 failing SKUs for 10 consecutive rounds without count change auto-stops
+- Fatal errors (no seller tab) stop loop immediately
+- Storage read retries (5 attempts) handle SW cold-start timing
+
+### State Shape (Store)
+- **SPC_CDS:** spcCds, spcCdsVer, isConnected, isExtracting
+- **Products:** productIds[], products[], inputText, isLoading, error
+- **Flash Sales:** flashSaleList[], flashSaleId, flashSaleInfo, isLoadingFlashSales
+- **Enable:** maxRetries, infiniteRetry, discountRate, flashSaleStock, purchaseLimit, isEnabling, enableProgress
+- **Copy:** copySource (flashSale + itemCount), copyMode, copyTaskStatus, isCopying, savedTemplates[], selectedTemplate, hasScheduledCopy, scheduledTaskStatus
+- **SKU Overrides:** `Record<string, SkuOverride>` keyed by `${itemId}-${modelId}` (fields: `discountRate?`, `promoPrice?`, `stock?`, `purchaseLimit?`)
+- **Auto Mode:** autoModeView, autoModeConfig, autoModeStatus, autoModeLogs, firstSelectedActivity
+
+### SKU Override System
+- Per-SKU discount rate, direct promo price, activity stock, or purchase limit
+- Overrides stored in `skuOverrides` record keyed by `${itemId}-${modelId}`
+- Empty fields = use global defaults
+- **`promoPrice` has highest priority** — when set, item building uses it directly instead of calculating from `discountRate`. This avoids double rounding loss (e.g., 原价 230, 输入限时价 8 → 如果走折扣率 `Math.round(8/230*100)=3%` → `Math.floor(230*3/100)=6`，丢了 2 元)
+- **`promoPrice` 与 `discountRate` 互斥** — 设置折扣%时清空 `promoPrice`, 设置限时价时仅保存 `promoPrice`（不反算折扣率），两个字段不同时存在于同一个 override 中
+- **覆盖提示 UI (v1.6.2)** — `App.tsx` 的 `overrideSummary` 只统计当前商品列表中存在的覆盖 SKU；详情父弹窗支持搜索商品标题、商品 ID、SKU 名称、SKU ID。点击“查看 SKU”不得关闭父弹窗，否则用户返回详情时搜索上下文会丢失。
+- **复制活动全量覆盖 (v1.6.2)** — 复制源活动时，所有 SKU 都必须固化为 `skuOverrides`。没有显式覆盖的 SKU 使用当前全局参数计算并写入覆盖项，确保加载新复制活动后提示为“全部手动修改过”，且全局折扣行不会影响这些 SKU。
+
+### Template System
+- Save/load full configuration (discount rate, stock, purchase limit, SKU overrides)
+- Product diff on apply: warns about removed (yellow) and added (blue) products
+- Templates stored in `browser.storage.local` under `flashSaleTemplates` key
+- **Export**: Each template row has a blue "导出" button that downloads a JSON file (`{ version: 1, type: 'flash_sale_template', name, exportedAt, data: { discountRate, flashSaleStock, purchaseLimit, skuOverrides, productInfo } }`)
+- **Import**: "导入模板" button in idle state opens a file picker, validates the JSON format (checks `version`, `type`, `data` fields), and saves via `importTemplate` store action. Supports `.json` files exported from any instance.
+- **Edit (v1.5.0)**: Each template row has a sky-blue "编辑" button that opens `TemplateEditDialog`. The dialog displays global params (折扣率%, 活动库存, 限购数量) and SKU overrides grouped by Item ID. Parent rows show ▶/▼ toggle, product name, SKU count, and an inline "Model ID + +SKU" quick-add. Expanded child rows show editable inputs for 折扣%, 限时价, 活动库存, 限购数量 with a 移除 button. Supports "全部展开/收起" for the current page. Paginated at 8 Item IDs per page with ‹上一页/下一页› controls. Bottom bar shows total product + SKU counts. Save calls `updateTemplate` which merges changes into existing template and sets `updatedAt`.
+
+### Content Script Progress UI
+- **Two separate floating panels:** enable progress (`__flash_sale_progress__`) and copy task (`__flash_sale_copy_progress__`), both positioned fixed right side at z-index 99999
+- Semi-transparent with backdrop-filter blur
+- Enable panel: shows success/failed counts, round number, progress bar, stop button; auto-fades 3s after completion
+- Copy panel: shows countdown when scheduled, step progress during execution, auto-fades 3s after completion
+- **Storage backup:** On init, reads `_enableProgress` and `_copyCountdown` from storage to show UI without waiting for messages. `storage.onChanged` listener updates UI in real-time when messages are missed.
+- **Stale DOM cleanup:** `createProgressUI()` and `createCopyUI()` remove leftover elements from content script reloads before creating new ones.
+- **Failed detail images (v1.5.0):** `renderFailedDetails()` uses `normalizeImageUrl()` to prepend `https://cf.shopee.tw/file/` to raw image IDs from the API. Checks for `http://`, `https://`, `data:` prefixes before prepending (supports mixed URL formats).
+
+### Type Definitions (types.ts full catalog)
+- **ShopeeModel** — SKU/Model data: modelid, name, originPrice, normalStock, totalNormalStock, enableShopFlashSaleNewStock, etc.
+- **ShopeeProduct** — Product data: itemid, name, images[], originPrice, modelList[], normalStock, status, etc.
+- **ProductsQueryVariables** — GraphQL input: productIds[], statusType
+- **ProductsQueryResponse** — GraphQL output: products.items[]
+- **ShopeeApiResponse\<T\>** — API wrapper: code, message, user_message, data
+- **FlashSale** — Activity: flash_sale_id, name, start_time, end_time, status
+- **FlashSaleListData** — List response: flash_sale_list[]
+- **FlashSaleItemIdListData** — Item ID list: item_ids[]
+- **SkuOverride** — Per-SKU params: discountRate?, promoPrice?, stock?, purchaseLimit?
+- **EnableItem** — Submit item: item_id, model_id, input_promo_price, stock, purchase_limit, status=1
+- **EnableResult** — Submit result: item_id, model_id, err_msg?, unqualified_conditions?
+- **EnableResponse** — Submit response: code?, data? (EnableResult[] | EnableResult)
+- **EnableProgress** — Loop progress: totalSkus, successSkus, failedSkus, currentRound, maxRetries, nextRetryItems, hardFailedSkus?, isComplete, lastResponsePreview?
+- **MessagePayload** — Union type for popup↔content communication
+- **InjectionPayload** — Content script injection messages
+- **CacheData** — 30-min cache schema (products, flashSaleList, enableProgress, skuOverrides, etc.)
+- **TimeSlot** — timeslot_id, start_time, end_time
+- **ScheduledCopyParams** — Scheduled copy task parameters
+- **CopyTaskStatus** — Task status: scheduled, executed, success, newFlashSaleId?, error?
+- **ScheduledTaskStatus** (v1.6.4) — GET_SCHEDULED_STATUS 返回: exists, alarmActive, params?, alarmScheduledTime?, remainingSeconds?
+- **AutoModeConfig** (v1.7.0) — 自动模式参数: mode ('rounds'|'days'), value, advanceMinutes, delayMinutes
+- **AutoModePhase** (v1.7.0) — 自动模式阶段: 'idle' | 'waiting_create' | 'creating' | 'waiting_enable' | 'enabling' | 'completed' | 'stopped'
+- **AutoModeStatus** (v1.7.0) — 自动模式状态: isRunning, sourceFlashSaleId, sourceFlashSaleName, config, currentRound, totalRounds, phase, nextTargetTime?, nextActionTime?, currentFlashSaleId?, lastError?, startedAt, debugMode?, selectedSlotId?, selectedSlotTime?, enableParams?
+- **AutoModeLog** (v1.7.0) — 自动模式日志: id, type ('info'|'success'|'warning'|'error'), message, timestamp
+- **CopiedSaleData** — `_copiedSaleData` storage schema (source info + products + skuOverrides)
+- **FlashSaleTemplate** — Named template: name, createdAt, updatedAt, discountRate, flashSaleStock, purchaseLimit, skuOverrides, productInfo[]
+- **TemplateProductInfo** — Template product reference: itemId, name
+
+### Config Files Reference
+- **`wxt.config.ts`**: `extensionApi: 'chrome'`, manifest permissions `['storage','cookies','scripting','alarms','unlimitedStorage']`, host_permissions `['https://*.shopee.tw/*']`, Vite alias `@ → .`
+- **`components.json`**: shadcn/ui config: `baseColor=slate`, `cssVariables=true`, `tsx=true`, aliases for `components/`, `utils`, `ui`
+- **`tsconfig.json`**: `target=ESNext`, `moduleResolution=Bundler`, `jsx=react-jsx`, `strict=true`, `baseUrl=.`, path alias `@/* → ./*`, includes `wxt.config.ts`
+- **`tailwind.config.ts`**: Content paths: `entrypoints/**/*.{ts,tsx}`, `components/**/*.{ts,tsx}`; theme extends empty; no plugins
+- **`postcss.config.js`**: Standard PostCSS with tailwindcss + autoprefixer plugins
+- **`package.json`**: name=`limited-time-sale`, version=`1.7.0` (main), node scripts for dev/build/zip/postinstall
+
+## Important Patterns & Gotchas
+- **injectedFetch timeout:** 30s default (vs 10s for sc-fe-session, 15s in background)
+- **Adaptive stock:** Failed SKUs with `NOT_ENOUGH_STOCK` get stock halved (min 1) on retry
+- **Background injectedFetch:** Queries `tabs.query({ url: '*://seller.shopee.tw/*' })` — finds any seller tab, not just active one
+- **Debug logging:** Uses `[bg:enable]`, `[bg:injectedFetch]`, `[START_ENABLE]`, `[enable]`, `[SPC_CDS]`, `[bg:executeCopy]`, `[bg:scheduled_copy]`, `[bg:scheduled_copy_enable]`, `[TRIGGER]`, `[loadFlashSaleProducts]`, `[fetchFlashSaleList]`, `[CopyConfirmPanel]`, `[bg:auto_mode]`, `[bg:START_AUTO_MODE]` tag prefixes
+- **Price calculation:** `Math.floor(price * discountRate / 100)`
+- **Component split:** `components/ui/` = generic shadcn/ui; `components/product/` = domain-specific (ProductCard, SkuTable, TemplateManager, TemplateEditDialog, CopyConfirmPanel, CopyResultPanel, SpcStatus)
+- **Cache clearing:** `clearCache()` + `reset()` + `extractSpcCds()` chained on "清除缓存" button (moved to 更多折叠区 v1.6.4)
+- **No test files** — testing is manual via Chrome extension reload
+- **Copy flow debug button:** `CopyConfirmPanel.tsx` has a "🛠 立即创建 Demo" button (debug only, remove before release)
+- **`enterCopyMode` loads products:** Always loads source flash sale's products into store for template path. Without this, `state.products` would be empty/stale and template application fails 100%.
+- **`get_shop_flash_sale_item/` response format varies:** Sometimes returns `data.items` (SKU-level), sometimes `data.item_info` (product-level). Always handle both. `model_info_str` (per-SKU prices) is optional.
+- **Referrer header approach unreliable:** The `from=sourceId` via Referrer header (server auto-copy) does NOT work with `fetch` API's `referrer` option in `executeScript` context. Always use manual copy (fetch items → apply via `set_shop_flash_sale_items/`).
+- **Popup vs background `injectedFetch`:** Store's `injectedFetch` targets `tabs.query({ active: true, currentWindow: true })` (requires seller tab to be active). Background's version finds any seller tab via `tabs.query({ url: '*://seller.shopee.tw/*' })` (can run while user switches tabs).
+- **Auto-submit removal (v1.5.0):** EXECUTE_COPY handler no longer auto-submits items as step 5. Demo button creates empty flash sale only. Submit happens manually when user clicks "开启限时特卖".
+- **Shared scheduled copy flow:** `executeScheduledCopyFlow()` is used by both the `chrome.alarms` handler and `TRIGGER_SCHEDULED_COPY_NOW` to avoid duplication. Same flow (close → slots → create → save).
+- **TRIGGER_SCHEDULED_COPY_NOW timeout:** Popup's `waitForStorage` for EXECUTE_COPY uses 120s timeout (vs 60s default) to accommodate auto-submit retries. If timeout fires, background continues and status can be checked by reopening popup.
+- **SPC_CDS reading in background:** Background handlers that run without a popup message (alarm, TRIGGER_SCHEDULED_COPY_NOW) must use `getSpcCdsFromCookies()` to read SPC_CDS directly from cookies via `browser.cookies.get()`. Do NOT read `spcCds` from `storage.local` — the popup store only saves it in Zustand memory state, not persistent storage. Message-based handlers (EXECUTE_COPY, etc.) receive SPC_CDS in the message and only fall back to storage.
+- **SPC_CDS expiry in enable loop:** `runEnableLoop` uses SPC_CDS from initial params as URL parameter. Long-running loops can hit token expiry, causing `code 1001 spex common error` on ALL items. Fix: periodic refresh from cookies every 3 rounds via `getSpcCdsFromCookies()`.
+- **Zero-progress stall detection:** When ALL submitted items fail for 5 consecutive rounds, the enable loop stops. This prevents infinite retry on persistent errors (expired token, invalid flash sale state, rate limit) while allowing transient errors to resolve between rounds.
+- **Content script message fallback:** Content script uses `storage.onChanged` as backup for `ENABLE_PROGRESS` messages. Both `_enableProgress` and `_copyCountdown` changes trigger UI updates in the content script regardless of message delivery success.
+- **enableFlashSaleItems boot confirmation (v1.4.0):** Changed from relying on `sendMessage` return value (MV3 bug, returns `undefined`) to fire-and-forget + `storage.onChanged('_enableProgress')` listener pattern. On enable click: clears old `_enableProgress` → saves `_enableParams` → sends START_ENABLE (fire-and-forget) → waits for `_enableProgress.running = true` via `storage.onChanged`. Timeout 5s with one retry (4s), then direct storage read as last resort. Same pattern as `executeCopy`'s `waitForStorage`.
+- **SkuTable 输入框字段保留规则 (v1.4.0):** 四个输入列编辑时，每个 `onChange`/`onBlur` 必须保留所有其他 override 字段。折扣%列清空 `promoPrice`（互斥设计）但保留 `stock` 和 `purchaseLimit`。活动库存和限购数量列须保留 `discountRate`、`promoPrice`。限时价列保留 `stock` 和 `purchaseLimit`。错误示例：在 `v1.3.0` 中，活动库存 `onChange` 缺少 `promoPrice` 保留，导致编辑库存后已设置的限时价丢失。
+- **`setSkuOverride` 缓存持久化 (v1.4.0):** `setSkuOverride` 之前仅更新 Zustand 内存状态，关闭 popup 后编辑丢失（下次打开时 `loadCache` 加载旧缓存）。现在每次编辑后自动调用 `saveCache()` 将 `skuOverrides` 持久化到 `flashSaleCache`。
+- **Content script 图片 URL 拼接 (v1.5.0):** Shopee API 返回的 `images[0]` 是原始图片 ID（如 `tw-11134207-820l6-mna42fatmeiqd7_tn`），不带域名前缀。`renderFailedDetails()` 渲染失败详情的缩略图时必须调用 `normalizeImageUrl()` 补全为 `https://cf.shopee.tw/file/` + ID。该函数兼容已有完整 URL（`http://`、`https://`、`data:` 开头则原样返回）。同样的问题在 `SkuTable.tsx` 也存在但已经通过 `_tn` 后缀拼接修复。
+- **`updateTemplate` 部分更新模板 (v1.5.0):** 新增 store 方法，接受 `name` + `Partial<FlashSaleTemplate>`。内部读取 `flashSaleTemplates` → 查找已有模板 → 合并字段（保留 `name`/`createdAt`，自动设 `updatedAt`）→ 写回 storage。与 `importTemplate`（全量替换）不同，此方法只修改传入的字段。
+- **TemplateEditDialog 数据分组与分页 (v1.5.0):** 数据加载时将 `skuOverrides` 按 `itemId` 分组为 `ItemGroup[]`（`itemId`, `productName`, `models[]`），排序后分页（`PAGE_SIZE=8`）。展开状态用 `Set<string>` 追踪，`useMemo` 计算当前页数据。新增 SKU 时自动加入展开集合并按 modelId 排序。删除最后一个 SKU 时自动移除整组。
+- **`model_info_str` 格式 (v1.6.0):** API 返回格式是 `{ itemId: [{ modelid, price, stock, ... }, ...] }`（数组而非嵌套对象）。解析时先 `JSON.parse` 得到 `Record<string, Array<...>>`，再构建 `priceLookup: Record<string, Record<string, number>>` 用于后续查找。旧代码误当作 `{ itemId: { modelId: { price } } }` 导致全部 430 条 `promoPrice` 缺失。
+- **`promoPrice` 来源 (v1.6.0):** `configItems[].promotion_price` 才是实际促销价，`model_info_str[].price` 是商品原价。`loadFlashSaleProducts` 正常 API 路径中直接用 `ci.promotion_price` 作为 `promoPrice`，不再从 `priceLookup` 取。430 条命中率从 0 → 430。
+- **Per-SKU `discountRate` 补全 (v1.6.0):** `loadFlashSaleProducts` 在 `await fetchProducts()` 完成后，遍历 `loadedProducts` 中每个 SKU，用 `Math.round(promoPrice / originPrice * 100)` 反推 `discountRate` 并填入 `skuOverrides[key]`。复制数据加载路径（`_copiedSaleData`）也做同样处理。确保 SkuTable 的折扣%列和限时价列同时显示实际值。
+- **SkuTable `key` prop (v1.6.0):** 三处渲染点（`ProductList.tsx`, `CopyConfirmPanel.tsx`, `App.tsx`）都需 `key={product.itemid}`。缺少 key 时切换商品 React 复用同一实例，内部 `priceEditValues` state 不重置，可能导致旧商品的编辑残留覆盖新商品字段。
+- **`enterCopyMode` 不再自动选择模板 (v1.6.0):** 旧代码 `selectedTemplate: names[0]` 自动选第一个模板，其 `discountRate=60`、`flashSaleStock=200` 等默认值进入 `executeCopy` → 保存到 `_copiedSaleData`，导致加载复制活动时全局输入框显示模板默认值而非实际 flash sale 配置。改为 `selectedTemplate: null`，用户需手动选择模板。
+- **`loadFlashSaleProducts` `fetchProducts` 改为 await (v1.6.0):** 正常 API 路径中 `fetchProducts()` 由 fire-and-forget 改为 `await`，确保产品详情加载完成后才能基于 originPrice 反推 `discountRate` 和全局显示值。
+- **CopyConfirmPanel 时段默认选择 (v1.6.1):** 移除 `当前时间+2小时` 最近时段启发式算法，改为直接选中 `slots[0]`（第一个可用时段）。避免因 `now+2h` 更接近第二场时段而跳过第一场。
+- **定时任务两阶段 alarm (v1.6.1):** `scheduled_copy` alarm 仅创建空活动并安排 `scheduled_copy_enable` alarm。后者在 `targetStartTime + 300`（活动开始后 5 分钟）触发并执行 `runEnableLoop`。避免活动未开始导致 API 拒绝提交全部 SKU 失败，触发零进展僵局检测后终止。
+- **`_copiedSaleData` 缓存验证 (v1.6.1):** `loadFlashSaleProducts` 找到缓存后先调 API 验证商品 ID 一致性。不一致则自动清除过期缓存并回退到 API 路径。解决用户手动替换商品 ID 后仍显示旧复制商品的问题。
+- **覆盖详情父/子弹窗层级 (v1.6.2):** 覆盖详情父弹窗使用 `z-40`，`SkuTable` 使用 `z-50`。点击父弹窗里的“查看 SKU”只调用 `setSelectedFailedProduct(product)`，不要关闭 `overrideDetailOpen`。若关闭父弹窗，会丢失搜索结果和当前查看上下文。
+- **覆盖详情搜索 (v1.6.2):** 搜索实现沿用 `ProductList` 的 `includes` 思路，但范围扩展为商品标题、商品 ID、SKU 名称、SKU ID。商品命中时展示该商品全部已覆盖 SKU；仅 SKU 命中时展示匹配 SKU。空结果显示“无匹配商品或 SKU”。
+- **复制活动 SKU 覆盖固化 (v1.6.2):** `executeCopy()` 必须在过滤当前商品前补齐每个 SKU 的 `skuOverrides[key]`。旧 `_copiedSaleData` 加载路径也要在 `copiedData.products` 遍历时补齐缺项。否则复制活动中未显式编辑过的 SKU 会继续吃全局折扣行，违背"复制源活动所有商品都等同手动编辑"的业务规则。
+- **异步按钮统一范式 (v1.6.3):** 所有触发异步操作的按钮必须：点击后用局部 `useState` 切换 loading 文案（`setXxx(true)` → `await action()` → `finally { setXxx(false) }`）、`disabled={isLoading}` 防重复点击。`extractSpcCds` 按钮用 store 的 `isExtracting` 状态而非局部。开启限时特卖例外：按钮从「🚀 开启」切换到「⏹ 停止」即为反馈。禁止在 loading 期间允许点击。
+- **按钮颜色四色体系 (v1.6.3):** 蓝色 outline（普通操作）、绿色实心（主确认）、红色 outline（停止/危险）、灰色（次要）。hover 规则：`hover:bg-{color}-50 hover:text-{color}-600 hover:border-{color}-300`。危险操作（停止、清除缓存）禁止用蓝色。
+- **高级操作折叠 (v1.6.3):** 「清除缓存」和「手动触发定时任务」在 `</CardContent>` 闭标签前的 `<details><summary>高级操作</summary>...</details>` 中。仅在 `isConnected` 时渲染，默认收起（不含 `open` 属性）。常用操作（获取商品、刷新、复制、开启/停止、模板）仍留在主界面。
+- **活动上下文展示条 (v1.6.3):** `Separator` 后、商品列表前渲染。显示条件：`flashSaleId && !copyMode`。从 `flashSaleList` 查找当前活动，`name` 为空时回退 `活动 #{id}`。样式：`bg-blue-50 border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-700`。
+- **编辑痕迹强化 (v1.6.3):** 商品列表 `div.max-h-48` 内顶部渲染，条件：`overrideSummary.skuCount > 0`。显示 `已手动编辑 X 个商品 / Y 个 SKU` + 蓝色「查看详情」按钮（`onClick={() => setOverrideDetailOpen(true)}`）。SKU 来源通过输入框 `placeholder` 暗示（全局默认值 vs 手动输入值）。
+- **复制步骤提示 (v1.6.3):** `CopyConfirmPanel` 返回按钮后、`Card` 前渲染。三步文字居中：`● 选择源活动 → ● 选择目标时间 → ○ 创建复制任务`。前两步 `text-blue-600 font-medium`，第三步 `text-gray-400`，箭头 `text-gray-300`。纯展示不控流程。
+- **错误提示就近化 (v1.6.3):** `CopyConfirmPanel` 新增 `viewError` 局部状态，查看按钮旁显示红色文字 `<span className="text-[10px] text-red-500">{viewError}</span>`。其他 inline 提示已存在：`applyMessage`（应用模板）、`saveSuccess`（保存模板）、`importMessage`（导入模板）、`slotsError`（时间段选择）。
+- **定时任务存活检测 (v1.6.4):** `checkScheduledCopy` 现在会自动调用后台 `GET_SCHEDULED_STATUS`。状态卡片仅在 `hasScheduledCopy && scheduledTaskStatus?.exists` 时渲染。若后台无响应（如 Service Worker 未就绪），catch 块会回退到仅设 `alarmActive: false`，不会清空 `_scheduledCopy` 数据。`checkCopyTaskStatus` 和 `executeCopy(SCHEDULE)` 成功路径都会触发 `checkScheduledCopy` 调用。
+- **布局信息分层 (v1.6.4):** 活动上下文条和定时任务卡是 `CardContent` 最顶层元素，始终在错误提示和活动列表之前渲染。「更多」折叠区是唯一 `<details>` 入口，收纳了商品 ID 输入、获取商品信息、模板管理、手动触发、清除缓存。原有的独立「高级操作」`<details>` 已删除。模板管理从独立区域移至「更多」内，不再占用主视图。
+- **自动模式 — `AutoModePanel` 状态重置 (v1.7.0):** `handleSelectTemplate` 切换模板活动时清空 `selectedSlot` 和 `editedProductIds`，防止新旧模板数据混淆。
+- **自动模式 — 启动前场次验证 (v1.7.0):** `START_AUTO_MODE` handler 启动前通过 API 验证选定场次：是否存在、开始时间是否变更、是否已开始。任一条件不满足则返回 error 拒绝启动。
+- **自动模式 — 停止彻底清理 (v1.7.0):** `STOP_AUTO_MODE` 在原有 alarms 清理基础上新增 `browser.storage.local.remove('_enableParams')`，防止重启后残留参数导致场次状态异常。
+- **自动模式 — `scheduleNextRound` 场次优先 (v1.7.0):** 第一轮若存在 `selectedSlotId` 且验证通过，直接使用用户选定场次而非调用 `pickNextTargetTime`。验证失败时自动回退到自动选择并写 warning 日志。
+- **`loadFlashSaleProducts` 缓存后刷新 (v1.7.0):** 缓存命中后追加 `await fetchProducts()` 调用，合并新鲜 `normalStock`/`totalNormalStock` 到缓存商品。两个「查看商品」入口 (`ProductViewModal`, `SkuTable`) 现在都显示实时库存。
+- **SkuTable `onEdit` 回调 (v1.7.0):** 可选 prop，任何用户触发的 `onChange`/`onBlur` 修改均调用。用于 `AutoModePanel` 的动态「已编辑」标记机制。不影响手动模式现有行为。
+- **Teal 主题色系统 (v1.8.0):** 主色调从 Shopee 橙 (#EE4D2D) 改为 Teal (#0D9488)。CSS 变量全部改为 teal HSL（hue 173），tailwind.config.ts 新增 `shopee-brand/brand-dark/brand-light` 色值。所有组件引用从 `orange` 改为 `brand`。
+- **.env 配置系统 (v1.8.0):** 新增 `.env.example` + `.env` 管理后端地址。`import.meta.env.VITE_BACKEND_URL` 提供默认值，`backend-api.ts` 和 `store.ts` 读取。`setBackendUrl` 只在地址非默认时持久化到 storage，`checkAuthOnStartup` 清理 storage 中的旧默认值，避免代码默认值变更后被旧 storage 覆盖。
+- **认证注册流程内联验证码 (v1.8.0):** 注册表单中验证码显示框和输入框与邮箱/密码同行展示，无需单独步骤。验证码显示区域可点击触发注册 API。输入 6 位验证码后自动调用 verify API 完成验证。成功页展示"前往登录"按钮。
+- **pre-commit build 自检钩子 (v1.8.0):** `.githooks/pre-commit` 在 `git commit` 前自动运行 `npm run build`，构建失败则阻止提交。使用 `git config core.hooksPath .githooks` 启用。
+
+## Known Issues / 待验证
+
+- **即时复制后偶发仍显示源活动:** 复制创建新活动成功后，`flashSaleId` 已切换为新 ID（`set({ flashSaleId: newId })`），但在频繁创建/删除活动的场景下偶发仍显示源活动。怀疑是虾皮服务端缓存/CDN 不一致导致 `get_shop_flash_sale_list` API 短时间内返回不稳定结果。需等待虾皮系统稳定后重新测试复现。若确认是服务端问题，需考虑增加更激进的重试+去重策略（如合并本地 `_copiedSaleData` 到列表中）。
+
+## Conventions
+- Use `@/` path alias for all imports (maps to project root, configured in `tsconfig.json` paths and `wxt.config.ts` Vite alias)
+- Use `browser.*` extension API (WXT shims to `chrome.*` under the hood)
+- Zustand store pattern: `create<AppState>((set, get) => ({ ... }))` — all actions defined inline
+- Async actions: `try/catch` with `console.log`/`console.error` prefix pattern for each action
+- Component naming: PascalCase files, domain files in `components/product/`, generic UI in `components/ui/`
+- shadcn/ui pattern: Components use `cva` + `cn()` + `React.forwardRef` + `VariantProps` for variants
+- Storage keys: underscore-prefixed for internal state (`_enableProgress`, `_copiedSaleData`), non-prefixed for caches (`flashSaleCache`)
+- Message passing: `browser.runtime.sendMessage()` for fire-and-forget, `browser.storage.onChanged` for critical status notifications
+- Tailwind classes: Functional utility classes directly in JSX; no separate CSS modules
+- Type definitions: All in `entrypoints/popup/types.ts`; shared between popup, background, and content script via WXT bundling
+
+### Backend Auth Flow
+- Registration accepts both email format and plain username (`/^[a-zA-Z0-9_.-]+$/`)
+- Two-step activation: register (returns 6-digit code) → verify (activates account) → login (returns JWT)
+- JWT stored in `chrome.storage.local` key `backendAuth`, auto-attached to `Authorization: Bearer` header
+- 401 response triggers automatic auth clearing and redirects to login
+
+### Login Gate (Extension)
+- `checkAuthOnStartup()` loads saved auth from storage on popup open
+- `isCheckingAuth` → loading spinner during startup validation
+- `!isLoggedIn` → full-screen AuthPanel (login/register forms)
+- Logged in + no store bindings → blocking "请先绑定店铺" message over main features
+- Admin panel accessible without personal store bindings
+
+### Store Binding
+- SPC_CDS serves as store identity token (extracted from Shopee cookies)
+- Each user has `users.max_stores` limit (default 1, admin-configurable)
+- Binding checks: limit not exceeded + SPC_CDS not bound by another user
+- `StoreStatus` component shows current count vs limit with bind/unbind controls
+- Store binding gate: main extension features blocked until at least one store bound
+
+### Analytics Event Reporting
+- Background SW uses `reportAnalyticsEvent()` helper (fire-and-forget `fetch()`)
+- Reads `backendAuth` + `backendUrl` from `storage.local`, POSTs to `/api/analytics/events`
+- Events: enable loop complete (`enable_loop`), copy flow (`copy_flow`), auto mode round (`auto_mode_round`), auto mode stop (`auto_mode_stop`)
+- Errors silently ignored (fire-and-forget pattern)
+
+### CORS Configuration
+- Hono CORS middleware uses an `origin` function (not wildcards)
+- Dynamically returns the exact `chrome-extension://<id>` origin
+- Also allows `https://seller.shopee.tw`
+- Static patterns like `chrome-extension://*` are NOT supported by Hono

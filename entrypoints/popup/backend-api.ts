@@ -7,7 +7,7 @@ interface AuthData {
   user: { id: number; email: string; role: string };
 }
 
-let _baseUrl = 'http://localhost:3001';
+let _baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5724';
 let _auth: AuthData | null = null;
 
 export function getBaseUrl() {
@@ -62,11 +62,17 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     headers['Authorization'] = `Bearer ${_auth.token}`;
   }
 
-  const response = await fetch(`${_baseUrl}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${_baseUrl}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (e: any) {
+    // fetch 网络错误（后端未启动、DNS 失败、连接被拒绝等）
+    throw new Error(`无法连接后端服务 (${_baseUrl})，请确认后端已启动: ${e.message}`);
+  }
 
   if (response.status === 401) {
     await clearAuth();

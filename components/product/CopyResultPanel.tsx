@@ -14,7 +14,7 @@ export function CopyResultPanel({ status, onBack, onRetry }: CopyResultPanelProp
     return (
       <Card>
         <CardHeader className='pb-2'>
-          <CardTitle className='text-base text-green-700'>✅ 复制成功！</CardTitle>
+          <CardTitle className='text-base text-shopee-green'>复制成功！</CardTitle>
         </CardHeader>
         <CardContent className='space-y-3'>
           <div className='text-sm space-y-1'>
@@ -23,7 +23,7 @@ export function CopyResultPanel({ status, onBack, onRetry }: CopyResultPanelProp
             </p>
             {status.warning && (
               <div className='mt-2 p-2 text-xs text-yellow-800 bg-yellow-50 border border-yellow-200 rounded-md whitespace-pre-wrap break-all'>
-                <span className='font-medium'>⚠ 警告：</span>
+                <span className='font-medium'>警告：</span>
                 {status.warning}
               </div>
             )}
@@ -41,7 +41,7 @@ export function CopyResultPanel({ status, onBack, onRetry }: CopyResultPanelProp
     return (
       <Card>
         <CardHeader className='pb-2'>
-          <CardTitle className='text-base text-red-700'>❌ 复制失败</CardTitle>
+          <CardTitle className='text-base text-destructive'>复制失败</CardTitle>
         </CardHeader>
         <CardContent className='space-y-3'>
           <div className='text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2 whitespace-pre-wrap break-all'>
@@ -66,7 +66,7 @@ export function CopyResultPanel({ status, onBack, onRetry }: CopyResultPanelProp
   return (
     <Card>
       <CardHeader className='pb-2'>
-        <CardTitle className='text-base text-blue-700'>⏳ 复制任务已安排</CardTitle>
+        <CardTitle className='text-base text-shopee-brand'>复制任务已安排</CardTitle>
       </CardHeader>
       <CardContent className='space-y-3'>
         <div className='text-sm space-y-1'>

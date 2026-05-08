@@ -171,14 +171,20 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-sm">
         <Button variant="outline" size="sm" className="h-7 px-3 text-xs font-normal" onClick={onBack}>
-          ← 返回
+          <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5m7-7-7 7 7 7"/>
+          </svg>
+          返回
         </Button>
-        <span className="font-medium">🤖 自动模式</span>
+        <span className="font-medium">自动模式</span>
         {isRunning && (
-          <span className="text-xs text-green-600 font-medium ml-1">● 运行中</span>
+          <span className="inline-flex items-center gap-1 text-xs text-shopee-green font-medium ml-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-shopee-green animate-pulse-dot" />
+            运行中
+          </span>
         )}
         {autoModeStatus?.debugMode && (
-          <span className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 ml-1">⏩ 加速</span>
+          <span className="text-[10px] text-shopee-brand bg-shopee-brand-light border border-shopee-brand/20 rounded px-1.5 py-0.5 ml-1">调试</span>
         )}
       </div>
 
@@ -191,11 +197,11 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
 
                 {/* 模式选择 */}
                 <div className="flex gap-3">
-                  <label className={`flex items-center gap-1.5 text-sm cursor-pointer ${mode === 'rounds' ? 'text-blue-600' : 'text-gray-400'}`}>
+                  <label className={`flex items-center gap-1.5 text-sm cursor-pointer ${mode === 'rounds' ? 'text-shopee-brand' : 'text-muted-foreground'}`}>
                     <input type="radio" name="autoMode" checked={mode === 'rounds'} onChange={() => setMode('rounds')} />
                     轮数
                   </label>
-                  <label className={`flex items-center gap-1.5 text-sm cursor-pointer ${mode === 'days' ? 'text-blue-600' : 'text-gray-400'}`}>
+                  <label className={`flex items-center gap-1.5 text-sm cursor-pointer ${mode === 'days' ? 'text-shopee-brand' : 'text-muted-foreground'}`}>
                     <input type="radio" name="autoMode" checked={mode === 'days'} onChange={() => setMode('days')} />
                     天数
                   </label>
@@ -244,7 +250,7 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
                     checked={debugMode}
                     onChange={e => setDebugMode(e.target.checked)}
                   />
-                  ⏩ 加速调试模式（延迟单位：秒，用于快速验证）
+                  加速调试模式（延迟单位：秒，用于快速验证）
                 </label>
               </div>
 
@@ -298,12 +304,12 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
                         <div
                           key={sale.flash_sale_id}
                           className={`flex items-center justify-between px-3 py-2 text-xs border rounded-md transition-colors cursor-pointer ${
-                            isSel ? 'border-l-4 border-l-blue-500 bg-blue-50/50' : 'hover:bg-accent/50'
+                            isSel ? 'border-l-4 border-l-shopee-brand bg-shopee-brand-light/50' : 'hover:bg-accent/50'
                           }`}
                           onClick={() => handleSelectTemplate(sale)}
                         >
                           <div className="flex flex-col min-w-0">
-                            <span className={`font-medium truncate ${isSel ? 'text-blue-600' : ''}`}>
+                            <span className={`font-medium truncate ${isSel ? 'text-shopee-brand' : ''}`}>
                               {sale.name || `活动 #${sale.flash_sale_id}`}
                             </span>
                             <span className="text-[10px] text-muted-foreground mt-0.5">
@@ -312,14 +318,14 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             {isSel && (
-                              <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full border border-blue-300 bg-blue-50 text-blue-600">
+                              <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full border border-shopee-brand/30 bg-shopee-brand-light text-shopee-brand">
                                 已选择
                               </span>
                             )}
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-5 px-1.5 text-[10px] font-normal text-violet-600 border-violet-300 hover:bg-violet-50"
+                              className="h-5 px-1.5 text-[10px] font-normal text-shopee-brand border-shopee-brand/30 hover:bg-shopee-brand-light"
                               onClick={(e) => { e.stopPropagation(); setProductViewSale(sale); }}
                               title="查看此活动的商品"
                             >
@@ -341,9 +347,9 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
                 <div className="space-y-2">
                   <h3 className="text-sm font-medium">申报场次</h3>
                   {selectedSlot ? (
-                    <div className="flex items-center justify-between rounded-md border border-blue-200 bg-blue-50/50 px-3 py-2">
+                    <div className="flex items-center justify-between rounded-md border border-shopee-brand/20 bg-shopee-brand-light/50 px-3 py-2">
                       <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-medium text-blue-700">
+                        <span className="text-xs font-medium text-shopee-brand-dark">
                           场次 #{selectedSlot.timeslot_id}
                         </span>
                         <span className="text-[10px] text-muted-foreground mt-0.5">
@@ -365,7 +371,7 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-6 px-2 text-[10px] font-normal text-blue-600 border-blue-300 shrink-0"
+                        className="h-6 px-2 text-[10px] font-normal text-shopee-brand border-shopee-brand/30 shrink-0"
                         onClick={() => setShowSlotModal(true)}
                       >
                         选择场次
@@ -402,7 +408,7 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
                       return (
                       <div
                         key={product.itemid}
-                        className={`flex items-center justify-between px-3 py-2 text-xs border rounded-md hover:bg-accent/30 cursor-pointer ${isEdited ? 'border-l-4 border-l-blue-500' : ''}`}
+                        className={`flex items-center justify-between px-3 py-2 text-xs border rounded-md hover:bg-accent/30 cursor-pointer ${isEdited ? 'border-l-4 border-l-shopee-brand' : ''}`}
                         onClick={() => setEditingProduct(product)}
                       >
                         <div className="flex items-center gap-2 min-w-0">
@@ -419,14 +425,14 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
                             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-0.5">
                               <span>ID: {product.itemid} · {product.modelList?.length || 0} SKU</span>
                               {isEdited && (
-                                <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full border border-blue-300 bg-blue-50 text-blue-600">
+                                <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full border border-shopee-brand/30 bg-shopee-brand-light text-shopee-brand">
                                   已编辑
                                 </span>
                               )}
                             </div>
                           </div>
                         </div>
-                        <span className="text-[10px] text-blue-600 shrink-0 ml-2">编辑 →</span>
+                        <span className="text-[10px] text-shopee-brand shrink-0 ml-2">编辑</span>
                       </div>
                       );
                     })}
@@ -448,17 +454,17 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
               )}
 
               <Button
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                className="w-full bg-shopee-brand hover:bg-shopee-brand-dark text-white shadow-sm"
                 disabled={isStarting || !!validationError}
                 onClick={handleStart}
               >
-                {isStarting ? '启动中...' : '🚀 启动自动模式'}
+                {isStarting ? '启动中...' : '启动自动模式'}
               </Button>
             </>
           ) : (
             <>
               <div className="space-y-3">
-                <h3 className="text-sm font-medium">📊 任务状态</h3>
+                <h3 className="text-sm font-medium">任务状态</h3>
                 <div className="space-y-1.5 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">源活动:</span>
@@ -473,13 +479,13 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
                       <span className="text-muted-foreground">下一场:</span>
                       <span>
                         {fmtTime(autoModeStatus.nextTargetTime)}{' '}
-                        <span className="text-xs text-blue-600">({countdownText(autoModeStatus.nextTargetTime)}后开始)</span>
+                        <span className="text-xs text-shopee-brand">({countdownText(autoModeStatus.nextTargetTime)}后开始)</span>
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">当前阶段:</span>
-                    <span className="text-blue-600">
+                    <span className="text-shopee-brand">
                       {autoModeStatus?.phase && PHASE_LABELS[autoModeStatus.phase] || autoModeStatus?.phase}
                     </span>
                   </div>
@@ -488,7 +494,7 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
                       <span className="text-muted-foreground">
                         {autoModeStatus.phase === 'waiting_create' ? '申报倒计时:' : '传递倒计时:'}
                       </span>
-                      <span className="text-amber-600 font-medium">{countdownText(autoModeStatus.nextActionTime)}</span>
+                      <span className="text-shopee-brand font-medium">{countdownText(autoModeStatus.nextActionTime)}</span>
                     </div>
                   )}
                   {autoModeStatus?.currentFlashSaleId && (
@@ -517,7 +523,10 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
                     </div>
                   </div>
                 ) : (
-                  <Button variant="outline" className="w-full border-red-300 text-red-600 hover:bg-red-50" onClick={handleStop}>⏹ 强制停止</Button>
+                  <Button variant="outline" className="w-full border-red-300 text-red-600 hover:bg-red-50" onClick={handleStop}>
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+                    强制停止
+                  </Button>
                 )}
               </div>
             </>
@@ -528,13 +537,18 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
       {/* 日志区 */}
       <Card>
         <CardContent className="p-4 space-y-2">
-          {/* 红色信息栏 */}
+          {/* 运行状态信息卡 */}
           {isRunning && autoModeStatus ? (
-            <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-medium text-red-600">● 活动信息简览</span>
+            <div className="rounded-md bg-shopee-brand-light border border-shopee-brand/15 px-3 py-2 space-y-1">
+              <div className="flex items-center gap-1.5">
+                <svg className="w-3 h-3 text-shopee-brand shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                <span className="text-[10px] font-medium text-shopee-brand-dark">活动信息</span>
               </div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[10px] text-red-700">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[10px] text-shopee-brand-dark/80">
                 <span>
                   选择场次: {selectedSlot ? `#${selectedSlot.timeslot_id} ${fmtTime(selectedSlot.start_time)} ~ ${fmtTime(selectedSlot.end_time)}` : (autoModeStatus.nextTargetTime ? fmtTime(autoModeStatus.nextTargetTime) : '—')}
                 </span>
@@ -561,8 +575,8 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
               </div>
             </div>
           ) : (
-            <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2">
-              <p className="text-[10px] text-red-500">自动模式未启动，暂无活动数据</p>
+            <div className="rounded-md bg-muted border px-3 py-2">
+              <p className="text-[10px] text-muted-foreground">自动模式未启动</p>
             </div>
           )}
 

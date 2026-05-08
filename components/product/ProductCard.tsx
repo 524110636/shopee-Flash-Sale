@@ -20,7 +20,7 @@ export function ProductCard({ product, onViewSkus }: ProductCardProps) {
 
   return (
     <Card
-      className={`hover:bg-accent/50 transition-colors cursor-pointer ${hasOverrides ? 'border-l-4 border-l-blue-500' : ''}`}
+      className={`hover:bg-accent/50 transition-colors cursor-pointer ${hasOverrides ? 'border-l-4 border-l-shopee-brand' : ''}`}
       onClick={() => onViewSkus(product)}
     >
       <CardContent className='p-3'>
@@ -50,7 +50,7 @@ export function ProductCard({ product, onViewSkus }: ProductCardProps) {
                 {product.modelList.length} SKU
               </Badge>
               {hasOverrides && (
-                <Badge variant='outline' className='text-[10px] text-blue-600 border-blue-300 bg-blue-50'>
+                <Badge variant='outline' className='text-[10px] text-shopee-brand border-shopee-brand/30 bg-shopee-brand-light'>
                   已编辑
                 </Badge>
               )}

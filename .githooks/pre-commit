@@ -1,0 +1,10 @@
+#!/bin/sh
+# Pre-commit hook: run build to catch errors before committing
+echo "🔍 Running pre-commit build check..."
+cd "$(git rev-parse --show-toplevel)" || exit 1
+npm run build 2>&1
+if [ $? -ne 0 ]; then
+  echo "❌ Build failed! Fix errors before committing."
+  exit 1
+fi
+echo "✅ Build passed."

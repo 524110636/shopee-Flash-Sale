@@ -79,7 +79,7 @@ export function AdminPanel() {
                   <div className="flex items-center gap-1.5">
                     <span className="font-medium truncate">{user.email}</span>
                     {user.role === 'admin' && (
-                      <span className="px-1 py-0.5 text-[10px] bg-purple-100 text-purple-700 rounded">管理员</span>
+                      <span className="px-1 py-0.5 text-[10px] bg-shopee-brand-light text-shopee-brand rounded">管理员</span>
                     )}
                   </div>
                   <div className="mt-0.5 text-muted-foreground">
@@ -146,11 +146,11 @@ export function AdminPanel() {
             <>
               <div className="grid grid-cols-2 gap-2">
                 <div className="p-3 rounded-md border text-center">
-                  <div className="text-2xl font-bold text-blue-600">{analytics.totalUsers}</div>
+                  <div className="text-2xl font-bold text-shopee-brand">{analytics.totalUsers}</div>
                   <div className="text-[10px] text-muted-foreground mt-0.5">注册用户</div>
                 </div>
                 <div className="p-3 rounded-md border text-center">
-                  <div className="text-2xl font-bold text-green-600">{analytics.totalBindings}</div>
+                  <div className="text-2xl font-bold text-shopee-green">{analytics.totalBindings}</div>
                   <div className="text-[10px] text-muted-foreground mt-0.5">店铺绑定</div>
                 </div>
               </div>

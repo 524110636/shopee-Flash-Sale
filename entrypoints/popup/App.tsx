@@ -40,7 +40,7 @@ export default function App() {
     checkBackgroundStatus,
     loadCache, clearCache, reset,
     hasScheduledCopy, checkScheduledCopy, triggerScheduledCopyNow, scheduledTaskStatus,
-    autoModeActive, enterAutoMode, exitAutoMode,
+    autoModeActive, autoModeStatus, enterAutoMode, exitAutoMode,
     loadAutoModeStatus,
   } = useAppStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -194,7 +194,7 @@ export default function App() {
     return (
       <div className="w-[500px] min-h-[500px] p-4 bg-background flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full mx-auto"></div>
+          <div className="animate-spin w-6 h-6 border-2 border-shopee-brand border-t-transparent rounded-full mx-auto"></div>
           <p className="mt-2 text-xs text-muted-foreground">检查登录状态...</p>
         </div>
       </div>
@@ -203,14 +203,37 @@ export default function App() {
 
   if (!isLoggedIn) {
     return (
-      <div className="w-[500px] min-h-[500px] bg-background">
+      <div className="w-[500px] min-h-[500px] bg-background flex items-center justify-center">
         <AuthPanel />
       </div>
     );
   }
 
   return (
-    <div className="w-[500px] min-h-[500px] p-4 bg-background" style={{ perspective: '1000px' }}>
+    <div className="w-[500px] min-h-[500px] bg-background" style={{ perspective: '1000px' }}>
+      {/* Brand Header */}
+      <div className="sticky top-0 z-30 bg-shopee-brand px-4 py-2.5 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <div className="w-6 h-6 rounded-md bg-white/20 flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+          </div>
+          <span className="text-sm font-semibold text-white tracking-wide">限时特卖助手</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {!autoModeActive && <SpcStatus />}
+          {backendApi.isAdmin() && !autoModeActive && (
+            <button
+              className="text-[10px] px-2 py-1 rounded text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+              onClick={() => setShowAdminPanel(true)}
+            >
+              管理
+            </button>
+          )}
+        </div>
+      </div>
+
       <div
         className="relative"
         style={{
@@ -224,74 +247,82 @@ export default function App() {
           {isLoggedIn && <StoreStatus />}
 
           {isLoggedIn && storeBindings.filter(b => b.isActive).length === 0 && !showAdminPanel ? (
-            <Card>
-              <CardContent className="py-6">
-                <div className="text-center space-y-2">
-                  <div className="text-xl">🔗</div>
-                  <div className="text-sm font-medium text-amber-600">请先绑定店铺</div>
-                  <div className="text-xs text-muted-foreground">使用扩展功能前需要先绑定一个 Shopee 店铺</div>
+            <Card className="mx-4 mt-3">
+              <CardContent className="py-8">
+                <div className="text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-shopee-brand-light flex items-center justify-center mx-auto">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EE4D2D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </div>
+                  <div className="text-sm font-medium text-shopee-brand">请先绑定店铺</div>
+                  <div className="text-xs text-muted-foreground max-w-[280px] mx-auto">使用扩展功能前需要先绑定一个 Shopee 店铺</div>
                 </div>
               </CardContent>
             </Card>
           ) : showAdminPanel ? (
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">管理后台</CardTitle>
-                  <Button variant="outline" size="sm" className="h-7 px-2 text-xs font-normal" onClick={() => setShowAdminPanel(false)}>
-                    返回
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <AdminPanel />
-              </CardContent>
-            </Card>
+            <div className="p-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base font-semibold">管理后台</CardTitle>
+                    <Button variant="outline" size="sm" className="h-7 px-2 text-xs font-normal" onClick={() => setShowAdminPanel(false)}>
+                      返回
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <AdminPanel />
+                </CardContent>
+              </Card>
+            </div>
           ) : copyMode === 'confirm' && copySource ? (
-            <CopyConfirmPanel
-              source={copySource}
-              savedTemplates={savedTemplates}
-              selectedTemplate={selectedTemplate}
-              isCopying={isCopying}
-              onConfirm={(targetTime, templateName) => executeCopy(targetTime, templateName)}
-              onCancel={exitCopyMode}
-              onSelectTemplate={setSelectedTemplate}
-              onFetchTimeSlots={fetchTimeSlots}
-            />
+            <div className="p-4">
+              <CopyConfirmPanel
+                source={copySource}
+                savedTemplates={savedTemplates}
+                selectedTemplate={selectedTemplate}
+                isCopying={isCopying}
+                onConfirm={(targetTime, templateName) => executeCopy(targetTime, templateName)}
+                onCancel={exitCopyMode}
+                onSelectTemplate={setSelectedTemplate}
+                onFetchTimeSlots={fetchTimeSlots}
+              />
+            </div>
           ) : copyMode === 'result' && copyTaskStatus ? (
-            <CopyResultPanel
-              status={copyTaskStatus}
-              onBack={exitCopyMode}
-              onRetry={() => {
-                if (copySource) enterCopyMode(copySource.flashSale);
-              }}
-            />
+            <div className="p-4">
+              <CopyResultPanel
+                status={copyTaskStatus}
+                onBack={exitCopyMode}
+                onRetry={() => {
+                  if (copySource) enterCopyMode(copySource.flashSale);
+                }}
+              />
+            </div>
           ) : (
+            <div className="p-4">
             <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-lg">限时特卖助手</CardTitle>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-7 px-2 text-xs font-normal border-blue-300 text-blue-600"
+                    className="h-7 px-2.5 text-xs font-normal border-shopee-brand/30 text-shopee-brand hover:bg-shopee-brand-light"
                     onClick={() => enterAutoMode()}
                   >
-                    🤖 自动模式
+                    <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                    自动模式
                   </Button>
-                  {backendApi.isAdmin() && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 px-2 text-xs font-normal border-purple-300 text-purple-600"
-                      onClick={() => setShowAdminPanel(true)}
-                    >
-                      管理后台
-                    </Button>
+                  {autoModeActive && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-shopee-green/10 text-shopee-green border border-shopee-green/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-shopee-green animate-pulse-dot" />
+                      {autoModeStatus?.currentRound ? `第 ${autoModeStatus.currentRound} 轮` : '运行中'}
+                    </span>
                   )}
                 </div>
-                <SpcStatus />
               </div>
             </CardHeader>
         <CardContent className="space-y-3">
@@ -303,18 +334,33 @@ export default function App() {
             const isActive = now >= currentSale.start_time && now < currentSale.end_time;
             const isUpcoming = currentSale.start_time > now;
             const statusText = isActive ? '进行中' : isUpcoming ? '即将开始' : '已结束';
+            const statusDot = isActive ? 'bg-shopee-green' : isUpcoming ? 'bg-shopee-brand' : 'bg-muted-foreground';
             return (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-700">
-                当前活动：{currentSale.name || `活动 #${currentSale.flash_sale_id}`} · {fmtTime(currentSale.start_time)} ~ {fmtTime(currentSale.end_time)} · {statusText} · {products.length} 个商品
+              <div className="bg-shopee-brand-light border border-shopee-brand/15 rounded-lg px-3 py-2.5">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${statusDot} shrink-0`} />
+                  <span className="text-xs font-medium text-shopee-brand-dark">{currentSale.name || `活动 #${currentSale.flash_sale_id}`}</span>
+                  <span className="text-[10px] text-muted-foreground">·</span>
+                  <span className="text-[10px] text-muted-foreground">{fmtTime(currentSale.start_time)} ~ {fmtTime(currentSale.end_time)}</span>
+                  <span className="text-[10px] text-muted-foreground">·</span>
+                  <span className="text-[10px] font-medium text-foreground/70">{statusText}</span>
+                  <span className="text-[10px] text-muted-foreground">·</span>
+                  <span className="text-[10px] text-muted-foreground">{products.length} 个商品</span>
+                </div>
               </div>
             );
           })()}
 
           {/* ===== P0: 定时任务状态 — 紧跟活动条 ===== */}
           {hasScheduledCopy && scheduledTaskStatus && scheduledTaskStatus.exists && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm">
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 text-sm">
               <div className="flex items-center justify-between mb-1">
-                <span className="font-medium text-amber-800">📋 定时复制任务</span>
+                <div className="flex items-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  <span className="font-medium text-amber-800 text-xs">定时复制任务</span>
+                </div>
                 <button
                   className="text-[10px] text-amber-600 hover:text-amber-800 underline"
                   onClick={() => checkScheduledCopy()}
@@ -332,9 +378,9 @@ export default function App() {
                 <div>
                   定时器状态：
                   {scheduledTaskStatus.alarmActive ? (
-                    <span className="text-green-700 font-medium">✅ 存活</span>
+                    <span className="text-shopee-green font-medium">存活</span>
                   ) : (
-                    <span className="text-red-600 font-medium">⚠️ 未注册（可能已被清除）</span>
+                    <span className="text-red-600 font-medium">未注册（可能已被清除）</span>
                   )}
                   {scheduledTaskStatus.remainingSeconds !== undefined && scheduledTaskStatus.alarmActive && (
                     <span className="ml-1 text-amber-600">
@@ -349,8 +395,10 @@ export default function App() {
           {/* ===== 错误提示 — 紧跟上下文（有错误时这是最高优先级信息）===== */}
           {error && (
             <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md whitespace-pre-line">
-              <div className="flex items-start gap-2">
-                <span className="mt-0.5 shrink-0">⚠</span>
+                <div className="flex items-start gap-2">
+                <svg className="w-4 h-4 mt-0.5 shrink-0 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
                 <div>
                   <p className="font-medium">错误</p>
                   <p className="mt-1 text-red-600">{error}</p>
@@ -392,7 +440,7 @@ export default function App() {
                   {flashSaleId && !flashSaleListOpen && (() => {
                     const sel = flashSaleList.find(s => s.flash_sale_id === flashSaleId);
                     return sel ? (
-                      <span className="text-xs text-blue-600 truncate font-medium">{sel.name || `活动 #${sel.flash_sale_id}`}</span>
+                      <span className="text-xs text-shopee-brand truncate font-medium">{sel.name || `活动 #${sel.flash_sale_id}`}</span>
                     ) : null;
                   })()}
                 </div>
@@ -404,7 +452,11 @@ export default function App() {
                     disabled={isLoadingFlashSaleList}
                     onClick={e => { e.stopPropagation(); fetchFlashSaleList(); setFlashSaleListOpen(true); }}
                   >
-                    <span className={isLoadingFlashSaleList ? 'inline-block animate-spin mr-1' : 'mr-1'}>↻</span>
+                    <span className={isLoadingFlashSaleList ? 'mr-1' : 'mr-1'}>
+                      <svg className={`w-3 h-3 ${isLoadingFlashSaleList ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                      </svg>
+                    </span>
                     {isLoadingFlashSaleList ? '刷新中' : '刷新'}
                   </Button>
                   <span className={`text-muted-foreground transition-transform ${flashSaleListOpen ? 'rotate-180' : ''}`}>▼</span>
@@ -421,15 +473,15 @@ export default function App() {
 
                     let statusLabel = '已结束';
                     let statusClass = 'text-gray-500 bg-gray-50 border-gray-200';
-                    if (isActive) { statusLabel = '进行中'; statusClass = 'text-green-600 bg-green-50 border-green-200'; }
-                    else if (isUpcoming) { statusLabel = '即将开始'; statusClass = 'text-blue-600 bg-blue-50 border-blue-200'; }
+                    if (isActive) { statusLabel = '进行中'; statusClass = 'text-shopee-green bg-shopee-green/5 border-shopee-green/20'; }
+                    else if (isUpcoming) { statusLabel = '即将开始'; statusClass = 'text-shopee-brand bg-shopee-brand-light border-shopee-brand/20'; }
 
                     return (
                       <div
                         key={sale.flash_sale_id}
                         className={`w-full flex items-center justify-between px-3 py-2 text-xs border rounded-md transition-colors cursor-pointer ${
                           isSelected
-                            ? 'border-l-4 border-l-blue-500 bg-blue-50/50'
+                            ? 'border-l-4 border-l-shopee-brand bg-shopee-brand-light/50'
                             : 'hover:bg-accent/50'
                         } ${isLoadingFlashSales ? 'opacity-50 pointer-events-none' : ''}`}
                         aria-current={isSelected ? 'true' : undefined}
@@ -440,7 +492,7 @@ export default function App() {
                         }}
                       >
                         <div className="flex flex-col items-start min-w-0">
-                          <span className={`font-medium truncate w-full text-left ${isSelected ? 'text-blue-600' : ''}`}>
+                          <span className={`font-medium truncate w-full text-left ${isSelected ? 'text-shopee-brand' : ''}`}>
                             {sale.name || `活动 #${sale.flash_sale_id}`}
                           </span>
                           <span className="text-[10px] text-muted-foreground mt-0.5">
@@ -449,14 +501,14 @@ export default function App() {
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
                           {isSelected && (
-                            <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full border border-blue-300 bg-blue-50 text-blue-600">
+                            <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full border border-shopee-brand/30 bg-shopee-brand-light text-shopee-brand">
                               当前选中
                             </span>
                           )}
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-5 px-1.5 text-[10px] font-normal text-blue-600 border-blue-300 hover:bg-blue-50"
+                            className="h-5 px-1.5 text-[10px] font-normal text-shopee-brand border-shopee-brand/30 hover:bg-shopee-brand-light"
                             onClick={(e) => { e.stopPropagation(); enterCopyMode(sale); }}
                             title="复制此限时特卖"
                           >
@@ -486,12 +538,12 @@ export default function App() {
           {products.length > 0 && (
             <div className="max-h-48 overflow-y-auto space-y-1">
               {overrideSummary.skuCount > 0 && (
-                <div className="flex items-center justify-between text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1.5 mb-1">
+                <div className="flex items-center justify-between text-xs text-shopee-brand-dark bg-shopee-brand-light border border-shopee-brand/15 rounded px-2 py-1.5 mb-1">
                   <span>已手动编辑 {overrideSummary.productCount} 个商品 / {overrideSummary.skuCount} 个 SKU</span>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-5 px-1.5 text-[10px] font-normal border-blue-300 text-blue-600 hover:bg-blue-100"
+                    className="h-5 px-1.5 text-[10px] font-normal border-shopee-brand/30 text-shopee-brand hover:bg-shopee-brand-light"
                     onClick={() => setOverrideDetailOpen(true)}
                   >
                     查看详情
@@ -517,14 +569,14 @@ export default function App() {
               <div className="text-sm font-medium">开启限时特卖</div>
 
               {overrideSummary.skuCount > 0 && (
-                <div className="flex items-center justify-between gap-2 rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5 text-xs text-blue-800">
+                <div className="flex items-center justify-between gap-2 rounded-md border border-shopee-brand/15 bg-shopee-brand-light px-2 py-1.5 text-xs text-shopee-brand-dark">
                   <span>
                     已有 {overrideSummary.productCount} 个商品 / {overrideSummary.skuCount} 个 SKU 手动修改过，不会使用下列折扣
                   </span>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-6 px-2 text-xs font-normal border-blue-300 bg-white text-blue-700 hover:bg-blue-100"
+                    className="h-6 px-2 text-xs font-normal border-shopee-brand/30 bg-white text-shopee-brand hover:bg-shopee-brand-light"
                     onClick={() => setOverrideDetailOpen(true)}
                   >
                     查看
@@ -597,11 +649,11 @@ export default function App() {
               {/* 开启 / 停止 */}
               {!isEnabling ? (
                 <button
-                  className="w-full py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-2.5 text-sm font-semibold text-white bg-shopee-brand rounded-md hover:bg-shopee-brand-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
                   disabled={isEnabling}
                   onClick={() => enableFlashSaleItems()}
                 >
-                  🚀 开启限时特卖
+                  开启限时特卖
                 </button>
               ) : (
                 <button
@@ -613,7 +665,7 @@ export default function App() {
                     setIsStopping(false);
                   }}
                 >
-                  {isStopping ? '⏳ 停止中...' : '⏹ 停止'}
+                  {isStopping ? '停止中...' : '停止'}
                 </button>
               )}
 
@@ -624,17 +676,17 @@ export default function App() {
                     <span>第 {enableProgress.currentRound}/{infiniteRetry ? '∞' : enableProgress.maxRetries} 轮</span>
                     <span>成功 {enableProgress.successSkus} / 失败 {enableProgress.failedSkus} / 共 {enableProgress.totalSkus}</span>
                   </div>
-                  <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-shopee-brand/10 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-green-500 rounded-full transition-all"
+                      className="h-full bg-shopee-brand rounded-full transition-all"
                       style={{ width: `${(enableProgress.successSkus / enableProgress.totalSkus) * 100}%` }}
                     />
                   </div>
                   {enableProgress.isComplete && (
-                    <p className="text-green-700 font-medium">
+                    <p className="text-shopee-green font-medium">
                       {enableProgress.failedSkus === 0
-                        ? '✅ 全部 SKU 开启成功！'
-                        : `⚠️ 已完成，剩余 ${enableProgress.failedSkus} 个 SKU 无法开启`}
+                        ? '全部 SKU 开启成功！'
+                        : `已完成，剩余 ${enableProgress.failedSkus} 个 SKU 无法开启`}
                     </p>
                   )}
                   {enableProgress.nextRetryItems.length > 0 && (
@@ -665,7 +717,9 @@ export default function App() {
                   {enableProgress.hardFailedSkus && enableProgress.hardFailedSkus.length > 0 && (
                     <div className="mt-2 p-2 text-xs bg-orange-50 border border-orange-200 rounded-md">
                       <div className="flex items-start gap-1.5">
-                        <span className="mt-0.5 shrink-0">⚠️</span>
+                        <svg className="w-4 h-4 mt-0.5 shrink-0 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                          </svg>
                         <div>
                           <p className="font-medium text-orange-800">价格超出限时特卖上限</p>
                           <p className="mt-0.5 text-orange-700">
@@ -735,7 +789,7 @@ export default function App() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-5 px-1.5 text-[10px] font-normal text-muted-foreground/40 border-muted-foreground/20 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300"
+                    className="h-5 px-1.5 text-[10px] font-normal text-muted-foreground/40 border-muted-foreground/20 hover:bg-shopee-brand-light hover:text-shopee-brand hover:border-shopee-brand/30"
                     onClick={handlePaste}
                   >
                     粘贴
@@ -752,7 +806,7 @@ export default function App() {
 
               {/* 获取商品信息 */}
               <button
-                className="w-full py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-2 text-sm font-medium text-white bg-shopee-brand rounded-md hover:bg-shopee-brand-dark shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={!isConnected || isLoading || inputText.trim().length === 0}
                 onClick={handleFetch}
               >
@@ -762,7 +816,7 @@ export default function App() {
               {/* 加载限时特卖列表（无列表时） */}
               {isConnected && flashSaleList.length === 0 && (
                 <button
-                  className="w-full py-1.5 text-sm font-medium border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-2 text-sm font-medium border border-shopee-brand/30 text-shopee-brand rounded-md hover:bg-shopee-brand-light disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={isLoadingFlashSaleList || isLoading}
                   onClick={() => fetchFlashSaleList()}
                 >
@@ -776,7 +830,7 @@ export default function App() {
               {/* 高级操作 */}
               <div className="pt-1 space-y-2">
                 <button
-                  className="w-full py-2 text-sm font-medium border border-dashed border-muted-foreground/30 text-muted-foreground/60 rounded-md hover:border-primary/30 hover:text-primary hover:bg-primary/5 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="w-full py-2 text-sm font-medium border border-dashed border-muted-foreground/30 text-muted-foreground/60 rounded-md hover:border-shopee-brand/30 hover:text-shopee-brand hover:bg-shopee-brand-light/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   disabled={!hasScheduledCopy || isEnabling || isTriggeringScheduled}
                   onClick={async () => {
                     setIsTriggeringScheduled(true);
@@ -790,7 +844,7 @@ export default function App() {
                   {isTriggeringScheduled ? '执行中...' : (isEnabling ? '限时特卖进行中...' : '手动触发定时任务')}
                 </button>
                 <button
-                  className="w-full py-2 text-sm font-medium border border-red-300 text-red-500 bg-white rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-full py-2 text-sm font-medium border border-red-200 text-red-500 bg-white rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   disabled={isClearingCache}
                   onClick={async () => {
                     setIsClearingCache(true);
@@ -810,6 +864,7 @@ export default function App() {
           </details>
         </CardContent>
       </Card>
+      </div>
       )}
         </div>
 
@@ -898,7 +953,7 @@ export default function App() {
                     {skus.map(sku => (
                       <span
                         key={sku.modelid}
-                        className="max-w-full truncate rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] text-blue-700"
+                        className="max-w-full truncate rounded border border-shopee-brand/15 bg-shopee-brand-light px-1.5 py-0.5 text-[10px] text-shopee-brand-dark"
                         title={`${sku.name || '默认规格'} / ${sku.modelid}`}
                       >
                         {sku.name || '默认规格'} ({sku.modelid})

@@ -3,13 +3,12 @@ dist/
 .output/
 .wxt/
 *.local
+.env
 backup/
 docs/
 .joycode/
 .codex/
 .trae/
-CLAUDE.md
-AGENTS.md
 *.zip
 .harness/
 harness/
@@ -17,3 +16,8 @@ test/
 tests/
 playwright-report/
 vitest-report/
+test-results/
+backend/data/
+.agents/
+.claude/skills/
+skills-lock.json

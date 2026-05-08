@@ -13,9 +13,9 @@ export function StoreStatus() {
   const maxStores = activeBindings[0]?.maxStores ?? 1;
 
   return (
-    <div className="px-3 py-2 bg-blue-50/50 border-b text-xs space-y-1.5">
+    <div className="px-3 py-2 bg-shopee-brand-light/50 border-b border-shopee-brand/10 text-xs space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="font-medium text-blue-800">店铺绑定</span>
+        <span className="font-medium text-shopee-brand-dark">店铺绑定</span>
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">
             {activeBindings.length} / {maxStores}

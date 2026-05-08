@@ -1,0 +1,156 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+Chrome extension (MV3) for automating Shopee Taiwan seller center flash sale operations. Built with **WXT** + **React 19** + **TypeScript 6.0** + **Tailwind CSS 3.4** + **shadcn/ui** + **Zustand 5**.
+
+Plus a standalone **backend** (Node.js + Hono + Drizzle ORM + SQLite) for user auth, store binding, usage analytics, and admin management.
+
+## Environment
+
+Copy `.env.example` to `.env` to configure the backend URL. The default is `http://localhost:5724`.
+
+```
+cp .env.example .env
+```
+
+## Development Commands
+
+| Command | Description |
+|---------|-------------|
+| `cp .env.example .env` | Create local env config (default backend URL `http://localhost:5724`) |
+| `npm run dev` | Start WXT dev server with hot reload |
+| `npm run build` | Production build |
+| `npm run zip` | Build + create zip for Chrome Web Store |
+| `npm run lint` | Run ESLint |
+| `npm run lint:fix` | Run ESLint with auto-fix |
+| `npm run format` | Format with Prettier |
+| `npm run format:check` | Check formatting |
+| `npx tsc --noEmit` | TypeScript type checking |
+| `cd backend && npm run dev` | Start backend server on port 5724 |
+| `cd backend && npx kill-port 5724` | Kill backend if port in use |
+| `git config core.hooksPath .githooks` | Enable pre-commit build check hook |
+
+## Project Structure
+
+```
+entrypoints/                  # WXT entrypoints
+├── popup/                    # Popup UI (React, viewport=420px)
+│   ├── App.tsx               # Main React component (layout, conditional panels)
+│   ├── main.tsx              # React mount entry
+│   ├── store.ts              # Zustand single store (all business logic + API calls)
+│   ├── api.ts                # GraphQL product query fetcher
+│   ├── backend-api.ts        # Backend REST API client (auth, stores, analytics)
+│   ├── types.ts              # All shared TypeScript interfaces
+│   ├── index.html            # HTML template
+│   └── style.css             # Tailwind directives
+├── background.ts             # Service Worker (enable loop, copy flows, alarm scheduling, message relay, auto mode, analytics events)
+└── content.ts                # Content script (floating progress panel, message relay)
+
+components/
+├── ui/                       # shadcn/ui primitives
+├── lib/
+│   └── utils.ts              # cn() utility
+└── product/                  # Business components
+    ├── AuthPanel.tsx          # Login/register with inline verification/settings UI (login gate)
+    ├── StoreStatus.tsx        # Store binding status + bind button
+    ├── AdminPanel.tsx         # Admin: user list, quota adjustment, analytics
+    ├── AutoModePanel.tsx      # Auto mode panel
+    ├── CopyConfirmPanel.tsx   # Copy flow
+    ├── CopyResultPanel.tsx    # Copy result display
+    ├── ProductCard.tsx        # Single product card
+    ├── ProductList.tsx        # Product list with inline SKU table modal
+    ├── ProductViewModal.tsx   # Product detail popup for auto mode
+    ├── SkuTable.tsx           # SKU parameter table
+    ├── SpcStatus.tsx          # SPC_CDS connection status
+    ├── TemplateEditDialog.tsx # Template edit dialog
+    ├── TemplateManager.tsx    # Template save/load/export/import/edit
+    └── TimeSlotModal.tsx      # Time slot selection modal
+
+backend/                      # Standalone backend service
+├── src/
+│   ├── index.ts              # Entry: Hono app with CORS, routes mount, health check
+│   ├── db/
+│   │   ├── schema.ts         # Drizzle ORM schema (users, verification_codes, store_bindings, analytics_events)
+│   │   └── index.ts          # SQLite init + migration (ALTER TABLE for schema upgrades)
+│   ├── routes/
+│   │   ├── auth.ts           # POST /register, /verify, /login, /check-admin
+│   │   ├── stores.ts         # GET /, POST /bind, DELETE /:id (JWT-protected)
+│   │   ├── analytics.ts      # POST /events, GET /summary (JWT-protected)
+│   │   └── admin.ts          # GET /users, PATCH /:id/store-limit, GET /analytics (admin-only)
+│   ├── middleware/
+│   │   └── auth.ts           # JWT verification + admin role guard
+│   └── utils/
+│       ├── jwt.ts            # JWT sign/verify (jose, HS256, 7-day expiry)
+│       └── code.ts           # 6-digit verification code generator (5-min expiry)
+├── package.json
+└── tsconfig.json
+```
+
+## Backend Architecture
+
+### Authentication Flow
+1. User registers with email/username + password → backend returns 6-digit verification code
+2. User enters code to verify → activates account (`isActive=1`)  
+3. User logs in → receives JWT (7-day expiry)
+4. Extension stores JWT in `chrome.storage.local` via `backend-api.ts`
+5. All subsequent API calls auto-attach `Authorization: Bearer` header
+6. On 401 response, auth is cleared and user is redirected to login
+
+### Store Binding
+- SPC_CDS serves as the store identity token
+- Each user has `max_stores` limit on the `users` table (default 1)
+- Binding API checks: limit not exceeded, SPC_CDS not bound by another user
+- Admin can adjust per-user limits; changes persist in `users.max_stores`
+
+### Analytics
+- Background SW reports events after enable loop, copy flow, and auto mode rounds
+- Fire-and-forget pattern: `reportAnalyticsEvent()` reads auth from storage, POSTs to backend, ignores errors
+- Reported events: `enable_loop`, `copy_flow`, `auto_mode_round`, `auto_mode_stop`
+
+### CORS
+- Hono CORS middleware uses a function to dynamically return the exact `chrome-extension://<id>` origin
+- Also allows `https://seller.shopee.tw`
+- No wildcard pattern; the function checks `origin.startsWith('chrome-extension://')`
+
+## Login Gate (Extension)
+- `App.tsx` checks `isCheckingAuth` on mount → shows loading spinner
+- If `!isLoggedIn` → full-screen AuthPanel (login/register)
+- If logged in but no store bindings → blocking "请先绑定店铺" message over main features
+- Admin panel is accessible even without personal store bindings
+
+## Important Patterns
+
+- **SKU Override System**: `Record<string, SkuOverride>` keyed by `{itemId}-{modelId}`
+- **`injectedFetch()`**: Uses `scripting.executeScript({ world: 'MAIN' })` to bypass CSP
+- **Storage-based communication**: `storage.onChanged` for critical flows when `sendMessage` is unreliable
+- **Fire-and-forget analytics**: Background SW reports events without awaiting or error handling
+- **No test files**: Testing is manual via Chrome extension reload
+
+## Backend API Endpoints
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/auth/register` | Public | Register (returns verification code) |
+| POST | `/api/auth/verify` | Public | Activate account with code |
+| POST | `/api/auth/login` | Public | Login, returns JWT |
+| POST | `/api/auth/check-admin` | JWT | Check admin role |
+| GET | `/api/stores` | JWT | List user's store bindings |
+| POST | `/api/stores/bind` | JWT | Bind a store (SPC_CDS) |
+| DELETE | `/api/stores/:id` | JWT | Unbind store |
+| POST | `/api/analytics/events` | JWT | Report usage event |
+| GET | `/api/analytics/summary` | JWT | Personal usage summary |
+| GET | `/api/admin/users` | Admin | User list with binding counts |
+| PATCH | `/api/admin/users/:id/store-limit` | Admin | Adjust store binding limit |
+| GET | `/api/admin/analytics` | Admin | Global analytics |
+| GET | `/api/admin/analytics/events` | Admin | Event details |
+| GET | `/api/health` | Public | Health check |
+
+## Config Files
+
+- `wxt.config.ts`: `extensionApi: 'chrome'`, permissions `['storage','cookies','scripting','alarms','unlimitedStorage']`, host_permissions `['https://*.shopee.tw/*']`
+- `tsconfig.json` (root): `strict=true`, `moduleResolution=Bundler`, `baseUrl=.`, `paths: @/* → ./*`
+- `tsconfig.json` (backend): `strict=true`, `moduleResolution=Bundler`, `outDir: ./dist`
+- `tailwind.config.ts`: Content paths `entrypoints/**/*.{ts,tsx}`, `components/**/*.{ts,tsx}`

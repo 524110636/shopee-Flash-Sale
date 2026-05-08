@@ -7,7 +7,7 @@ import storesRoutes from './routes/stores.js';
 import analyticsRoutes from './routes/analytics.js';
 import adminRoutes from './routes/admin.js';
 
-const PORT = parseInt(process.env.PORT || '3001', 10);
+const PORT = parseInt(process.env.PORT || '5724', 10);
 
 async function main() {
   await initializeDatabase();

@@ -235,7 +235,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   // 后端管理初始值
   isLoggedIn: false,
   authUser: null,
-  backendUrl: 'http://localhost:3001',
+  backendUrl: import.meta.env.VITE_BACKEND_URL || 'http://localhost:5724',
   storeBindings: [],
   isCheckingAuth: false,
 
@@ -1544,16 +1544,27 @@ export const useAppStore = create<AppState>((set, get) => ({
   setBackendUrl: async (url: string) => {
     backendApi.setBaseUrl(url);
     set({ backendUrl: url });
-    await browser.storage.local.set({ backendUrl: url });
+    // 只在非默认值时持久化，避免旧 storage 覆盖代码默认值
+    const defaultUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5724';
+    if (url !== defaultUrl) {
+      await browser.storage.local.set({ backendUrl: url });
+    } else {
+      await browser.storage.local.remove('backendUrl');
+    }
   },
 
   checkAuthOnStartup: async () => {
     set({ isCheckingAuth: true });
     try {
+      const defaultUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5724';
       const result = await browser.storage.local.get('backendUrl');
-      if (result.backendUrl) {
+      if (result.backendUrl && result.backendUrl !== defaultUrl) {
+        // 用户手动设置过非默认地址，恢复该设置
         backendApi.setBaseUrl(result.backendUrl);
         set({ backendUrl: result.backendUrl });
+      } else if (result.backendUrl === defaultUrl) {
+        // storage 中存的是旧默认值，清理掉（避免代码默认值变更后被覆盖）
+        await browser.storage.local.remove('backendUrl');
       }
       const hasAuth = await backendApi.loadAuthFromStorage();
       if (hasAuth) {
