@@ -176,6 +176,35 @@ async function reportAnalyticsEvent(eventType: string, eventData: Record<string,
   }
 }
 
+// ===== Shop access validation (backend check) =====
+async function validateShopAccess(spcCds: string, action: string): Promise<{ allowed: boolean; error?: string }> {
+  try {
+    const result = await browser.storage.local.get(['backendAuth', 'backendUrl']);
+    const auth = result.backendAuth as { token?: string } | undefined;
+    const backendUrl = result.backendUrl as string | undefined;
+    if (!auth?.token) {
+      return { allowed: false, error: '未登录后端系统，请先登录' };
+    }
+    // fallback to default URL (store.ts 仅持久化非默认值)
+    const baseUrl = backendUrl || 'http://localhost:5724';
+    const response = await fetch(`${baseUrl}/api/stores/validate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${auth.token}`,
+      },
+      body: JSON.stringify({ spcCds, action }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      return { allowed: false, error: data.error || `验证失败 (${response.status})` };
+    }
+    return { allowed: true };
+  } catch (e: any) {
+    return { allowed: false, error: `无法连接后端服务: ${e.message}` };
+  }
+}
+
 // ===== Session Keepalive（参考 shopee-plugin 的自动刷新机制）=====
 const HEARTBEAT_ALARM = 'session-heartbeat';
 const HEARTBEAT_INTERVAL_MINUTES = 4;
@@ -640,6 +669,12 @@ async function executeScheduledCopyFlow(
   cds: string,
   cdsVer: string,
 ): Promise<{ newFlashSaleId: number; enableParams: EnableParams }> {
+  // 校验店铺访问权限
+  const validation = await validateShopAccess(cds, 'scheduled_copy');
+  if (!validation.allowed) {
+    throw new Error(`店铺验证失败: ${validation.error}`);
+  }
+
   // Step 1: 关闭进行中的活动
   sendCopyMessage('COPY_PROGRESS', { currentStep: 1, totalSteps: 4, description: '关闭进行中的活动...' });
   const listData = await injectedFetch<any>(
@@ -1116,6 +1151,19 @@ async function handleAutoModeEnable() {
       skuOverrides: ep.skuOverrides,
     };
 
+    // 校验店铺访问权限
+    const validation = await validateShopAccess(spcCds, 'auto_mode_enable');
+    if (!validation.allowed) {
+      await logAutoMode('error', `店铺验证失败，自动模式已停止: ${validation.error}`);
+      status.lastError = `店铺验证失败: ${validation.error}`;
+      status.isRunning = false;
+      status.phase = 'stopped';
+      await saveAutoModeStatus(status);
+      await sendAutoModeUpdate(status);
+      await clearAutoModeAlarms();
+      return;
+    }
+
     await logAutoMode('info', `开始传递商品参数到活动 #${flashSaleId}`);
     await runEnableLoop(enableParams);
 
@@ -1235,6 +1283,18 @@ export default defineBackground({
             return { success: false, error: '未找到启动参数' };
           }
           console.log('[START_ENABLE] ✅ 参数已找到，启动循环');
+
+          // 校验店铺访问权限
+          const validation = await validateShopAccess(params.spcCds, 'enable');
+          if (!validation.allowed) {
+            console.log('[START_ENABLE] ❌ 店铺验证失败:', validation.error);
+            // 写入 _enableProgress 让 popup 能读取错误信息
+            await browser.storage.local.set({
+              _enableProgress: { progress: null, error: validation.error, running: false }
+            }).catch(() => {});
+            return { success: false, error: validation.error };
+          }
+
           // 异步启动循环（不 await）
           runEnableLoop(params).catch(err => {
             console.error('[bg:enable] 循环异常:', err);
@@ -1455,6 +1515,16 @@ export default defineBackground({
             const result = await browser.storage.local.get(['spcCds', 'spcCdsVer']);
             finalCds = result.spcCds;
             finalVer = result.spcCdsVer || '2';
+          }
+
+          // 校验店铺访问权限
+          const validation = await validateShopAccess(finalCds, 'copy');
+          if (!validation.allowed) {
+            console.log('[EXECUTE_COPY] ❌ 店铺验证失败:', validation.error);
+            const failStatus = { scheduled: true, executed: true, success: false, error: validation.error };
+            await browser.storage.local.set({ _copyTaskStatus: failStatus }).catch(() => {});
+            sendCopyMessage('COPY_COMPLETE', { success: false, error: validation.error });
+            return { success: false, error: validation.error };
           }
 
           // 步骤 1: 检查并关闭进行中的活动
@@ -1917,6 +1987,15 @@ export default defineBackground({
           }
 
           await browser.storage.local.set({ _enableParams: params });
+
+          // 校验店铺访问权限
+          const validation = await validateShopAccess(params.spcCds, 'scheduled_copy_enable');
+          if (!validation.allowed) {
+            console.log('[scheduled_copy_enable] ❌ 店铺验证失败:', validation.error);
+            await browser.storage.local.remove('_enableParams');
+            return;
+          }
+
           runEnableLoop(params).catch(err => {
             console.error('[scheduled_copy_enable] runEnableLoop 异常:', err);
           });

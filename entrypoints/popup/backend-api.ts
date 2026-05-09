@@ -120,6 +120,10 @@ export async function unbindStore(id: number) {
   return request<{ message: string }>('DELETE', `/api/stores/${id}`);
 }
 
+export async function validateShopAccess(spcCds: string, action: string) {
+  return request<{ allowed: boolean }>('POST', '/api/stores/validate', { spcCds, action });
+}
+
 // ===== Analytics API =====
 
 export async function reportEvent(eventType: string, eventData?: Record<string, unknown>) {

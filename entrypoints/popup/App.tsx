@@ -273,16 +273,16 @@ export default function App() {
               </CardContent>
             </Card>
           ) : isLoggedIn && isCurrentStoreBound === false && !showAdminPanel ? (
-            <Card className="mx-4 mt-3 border-red-200">
+            <Card className="mx-4 mt-3 border-amber-200">
               <CardContent className="py-8">
                 <div className="text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                  <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center mx-auto">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
                     </svg>
                   </div>
-                  <div className="text-sm font-medium text-red-600">店铺绑定数量已达到上限</div>
-                  <div className="text-xs text-muted-foreground max-w-[280px] mx-auto">当前店铺未在绑定列表中，请增加绑定套餐</div>
+                  <div className="text-sm font-medium text-amber-700">当前店铺未绑定</div>
+                  <div className="text-xs text-muted-foreground max-w-[280px] mx-auto">请在上方点击「绑定当前店铺」将此店铺加入绑定列表</div>
                 </div>
               </CardContent>
             </Card>
@@ -495,6 +495,7 @@ export default function App() {
                     const now = Math.floor(Date.now() / 1000);
                     const isActive = now >= sale.start_time && now < sale.end_time;
                     const isUpcoming = sale.start_time > now;
+                    const isEnded = now >= sale.end_time;
                     const isSelected = flashSaleId === sale.flash_sale_id;
 
                     let statusLabel = '已结束';
@@ -505,14 +506,19 @@ export default function App() {
                     return (
                       <div
                         key={sale.flash_sale_id}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-xs border rounded-md transition-colors cursor-pointer ${
-                          isSelected
+                        className={`w-full flex items-center justify-between px-3 py-2 text-xs border rounded-md transition-colors ${
+                          isEnded
+                            ? 'opacity-50 border-dashed'
+                            : 'cursor-pointer hover:bg-accent/50'
+                        } ${
+                          isSelected && !isEnded
                             ? 'border-l-4 border-l-shopee-brand bg-shopee-brand-light/50'
-                            : 'hover:bg-accent/50'
+                            : ''
                         } ${isLoadingFlashSales ? 'opacity-50 pointer-events-none' : ''}`}
                         aria-current={isSelected ? 'true' : undefined}
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (isEnded) return;
                           loadFlashSaleProducts(sale.flash_sale_id);
                           setFlashSaleListOpen(false);
                         }}

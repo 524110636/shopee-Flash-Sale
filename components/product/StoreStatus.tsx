@@ -72,6 +72,32 @@ export function StoreStatus() {
               ) : null}
             </div>
           ))}
+          {/* 当前店铺未绑定时显示绑定按钮（仍有剩余容量） */}
+          {(() => {
+            const isCurrentBound = shopId
+              ? activeBindings.some(b => b.shopId === shopId)
+              : activeBindings.some(b => b.spcCds === spcCds);
+            if (isCurrentBound) return null;
+            if (activeBindings.length >= maxStores) return null;
+            return (
+              <div className="flex items-center justify-between pt-1 border-t border-shopee-brand/10">
+                <span className="text-shopee-brand text-[10px]">当前店铺未绑定</span>
+                <Button
+                  size="sm"
+                  className="h-6 px-2 text-[10px]"
+                  disabled={binding || !spcCds}
+                  onClick={async () => {
+                    setBinding(true); setError('');
+                    const err = await bindCurrentStore();
+                    if (err) setError(err);
+                    setBinding(false);
+                  }}
+                >
+                  {binding ? '绑定中...' : '绑定当前店铺'}
+                </Button>
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>

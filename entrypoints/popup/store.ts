@@ -1008,9 +1008,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         // 最后尝试：直接读 storage
         await new Promise(r => setTimeout(r, 1500));
         const stored = await browser.storage.local.get('_enableProgress').catch(() => ({}));
-        const data = stored._enableProgress as { progress?: EnableProgress; running?: boolean } | undefined;
+        const data = stored._enableProgress as { progress?: EnableProgress; error?: string; running?: boolean } | undefined;
         if (!data?.progress || !data.running) {
-          set({ error: '后台启动失败，请重试' });
+          set({ error: data?.error || '后台启动失败，请重试' });
         }
         // 如果 storage 显示 running=true，说明 loop 在工作，popup 的 ENABLE_PROGRESS 监听器会更新 UI
       }

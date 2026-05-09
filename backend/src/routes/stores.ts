@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, and, count } from 'drizzle-orm';
 import { getDb } from '../db/index.js';
-import { storeBindings, users } from '../db/schema.js';
+import { storeBindings, users, analyticsEvents } from '../db/schema.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const stores = new Hono();
@@ -23,6 +23,57 @@ stores.get('/', async (c) => {
     );
 
   return c.json({ stores: bindings });
+});
+
+/** 校验店铺访问权限（防破解：关键操作前调用） */
+stores.post('/validate', async (c) => {
+  const user = c.get('user');
+  const { spcCds, action } = await c.req.json<{ spcCds: string; action: string }>();
+
+  if (!spcCds) {
+    return c.json({ error: 'SPC_CDS 不能为空' }, 400);
+  }
+
+  const db = getDb();
+
+  // 1. 检查用户是否激活
+  const userRecord = await db.select()
+    .from(users)
+    .where(eq(users.id, user.userId))
+    .limit(1);
+
+  if (userRecord.length === 0) {
+    return c.json({ error: '用户不存在' }, 403);
+  }
+
+  if (!userRecord[0].isActive) {
+    return c.json({ error: '账号未激活，请联系管理员' }, 403);
+  }
+
+  // 2. 检查该店铺是否仍绑定在当前用户下且绑定有效
+  const binding = await db.select()
+    .from(storeBindings)
+    .where(
+      and(
+        eq(storeBindings.userId, user.userId),
+        eq(storeBindings.spcCds, spcCds),
+        eq(storeBindings.isActive, 1),
+      )
+    )
+    .limit(1);
+
+  if (binding.length === 0) {
+    return c.json({ error: '店铺未绑定或绑定已失效，请重新绑定店铺' }, 403);
+  }
+
+  // 记录验证事件（fire-and-forget）
+  await db.insert(analyticsEvents).values({
+    userId: user.userId,
+    eventType: 'validate_shop_access',
+    eventData: JSON.stringify({ spcCds: spcCds.slice(0, 8), action }),
+  }).catch(() => {});
+
+  return c.json({ allowed: true });
 });
 
 /** 绑定店铺 */
