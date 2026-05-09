@@ -159,3 +159,7 @@ export async function getAdminBindings(userId?: number) {
 export async function adminUnbindStore(bindingId: number) {
   return request<{ message: string }>('DELETE', `/api/admin/bindings/${bindingId}`);
 }
+
+export async function adminDeleteUser(userId: number) {
+  return request<{ message: string }>('DELETE', `/api/admin/users/${userId}`);
+}

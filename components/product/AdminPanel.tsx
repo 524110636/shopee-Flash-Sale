@@ -18,6 +18,8 @@ export function AdminPanel() {
   const [bindings, setBindings] = useState<(BackendStoreBinding & { userEmail?: string })[]>([]);
   const [unbindingId, setUnbindingId] = useState<number | null>(null);
 
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
+
   const loadUsers = async () => {
     setLoading(true); setError('');
     try {
@@ -68,6 +70,20 @@ export function AdminPanel() {
       setError(e.message);
     }
     setUnbindingId(null);
+  };
+
+  const handleDeleteUser = async (userId: number) => {
+    if (!confirm('确定要删除该用户吗？该用户的所有绑定和操作记录将被永久删除，此操作不可恢复！')) return;
+    setDeletingUserId(userId);
+    setError('');
+    try {
+      await backendApi.adminDeleteUser(userId);
+      setDeletingUserId(null);
+      loadUsers();
+    } catch (e: any) {
+      setError(e.message);
+      setDeletingUserId(null);
+    }
   };
 
   return (
@@ -158,17 +174,28 @@ export function AdminPanel() {
                       </Button>
                     </div>
                   ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-6 px-2 text-[10px] font-normal"
-                      onClick={() => {
-                        setAdjustingUserId(user.id);
-                        setAdjustLimit(user.bindingCount ?? 1);
-                      }}
-                    >
-                      调整限额
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 px-2 text-[10px] font-normal"
+                        onClick={() => {
+                          setAdjustingUserId(user.id);
+                          setAdjustLimit(user.bindingCount ?? 1);
+                        }}
+                      >
+                        调整限额
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 px-2 text-[10px] font-normal text-red-500 border-red-200 hover:bg-red-50"
+                        disabled={deletingUserId === user.id}
+                        onClick={() => handleDeleteUser(user.id)}
+                      >
+                        {deletingUserId === user.id ? '删除中...' : '删除'}
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>

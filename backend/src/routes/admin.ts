@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, sql } from 'drizzle-orm';
 import { getDb } from '../db/index.js';
-import { users, storeBindings, analyticsEvents } from '../db/schema.js';
+import { users, storeBindings, analyticsEvents, verificationCodes } from '../db/schema.js';
 import { authMiddleware, adminMiddleware } from '../middleware/auth.js';
 
 const admin = new Hono();
@@ -55,6 +55,31 @@ admin.patch('/users/:id/store-limit', async (c) => {
     .where(eq(storeBindings.userId, userId));
 
   return c.json({ message: `用户 ${user[0].email} 的店铺限额已更新为 ${maxStores}` });
+});
+
+/** 管理员删除用户（级联删除绑定、事件、验证码） */
+admin.delete('/users/:id', async (c) => {
+  const userId = parseInt(c.req.param('id'), 10);
+  const db = getDb();
+
+  // 从 JWT 获取当前操作的管理员 ID
+  const payload = c.get('user');
+  if (payload.id === userId) {
+    return c.json({ error: '不能删除自己的账号' }, 400);
+  }
+
+  const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (user.length === 0) {
+    return c.json({ error: '用户不存在' }, 404);
+  }
+
+  // 级联删除关联数据
+  await db.delete(storeBindings).where(eq(storeBindings.userId, userId));
+  await db.delete(analyticsEvents).where(eq(analyticsEvents.userId, userId));
+  await db.delete(verificationCodes).where(eq(verificationCodes.email, user[0].email));
+  await db.delete(users).where(eq(users.id, userId));
+
+  return c.json({ message: `用户 ${user[0].email} 已删除` });
 });
 
 /** 获取所有绑定记录（可按 userId 过滤） */
