@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ShopeeProduct, FlashSale, EnableItem, EnableProgress, SkuOverride, CacheData, FlashSaleTemplate, TemplateProductInfo, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, TimeSlot, ScheduledTaskStatus, AutoModeConfig, AutoModeStatus, AutoModeLog, BackendAuthState, BackendStoreBinding } from './types';
+import type { ShopeeProduct, FlashSale, EnableItem, EnableProgress, SkuOverride, CacheData, FlashSaleTemplate, TemplateProductInfo, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, TimeSlot, ScheduledTaskStatus, AutoModeConfig, AutoModeStatus, AutoModeLog, BackendAuthState, BackendStoreBinding, UndiscountedSku, PendingFlashSaleData, CompletedCopyInfo } from './types';
 import * as backendApi from './backend-api';
 
 // ===== 注入页面执行 fetch（MAIN world）=====
@@ -139,6 +139,17 @@ interface AppState {
   accountId: number | null;
   shopUsername: string;
 
+  // 复制活动后内存预置商品数据（优先级高于 _copiedSaleData storage）
+  _pendingFlashSaleData: PendingFlashSaleData | null;
+
+  // 复制完成后的提示信息（供主界面展示"立即查看"按钮）
+  _completedCopyInfo: CompletedCopyInfo | null;
+
+  // 未打折 SKU 拦截
+  pendingUndiscountedSkus: UndiscountedSku[];
+  showUndiscountedModal: boolean;
+  _enableSkipSkuKeys: string[];
+
   // Actions
   setSpcCds: (spcCds: string, spcCdsVer: string) => void;
   setConnected: (connected: boolean) => void;
@@ -151,7 +162,7 @@ interface AppState {
   extractSpcCds: () => Promise<void>;
   fetchShopInfo: () => Promise<void>;
   fetchProducts: () => Promise<void>;
-  fetchFlashSaleProducts: () => Promise<void>;
+  loadFlashSaleProducts: (flashSaleId: number) => Promise<void>;
   fetchTimeSlots: () => Promise<TimeSlot[]>;
   fetchFlashSaleItemCount: (flashSaleId: number) => Promise<number>;
   setMaxRetries: (n: number) => void;
@@ -174,6 +185,7 @@ interface AppState {
   loadCache: () => Promise<boolean>;
   clearCache: () => Promise<void>;
   reset: () => void;
+  acknowledgeCompletedCopy: () => void;
 
   // 复制功能 Actions
   enterCopyMode: (flashSale: FlashSale) => Promise<void>;
@@ -200,6 +212,7 @@ interface AppState {
   refreshStoreBindings: () => Promise<void>;
   bindCurrentStore: () => Promise<string | null>;
   setShopInfo: (shopId: number | null, accountId: number | null, shopUsername: string) => void;
+  resolveUndiscountedSkus: (editedPrices: Record<string, number>, skippedKeys: string[]) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -253,6 +266,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   shopId: null,
   accountId: null,
   shopUsername: '',
+
+  // 复制活动后内存预置商品数据初始值
+  _pendingFlashSaleData: null,
+
+  // 复制完成后持久化提示信息初始值
+  _completedCopyInfo: null,
+
+  // 未打折 SKU 拦截初始值
+  pendingUndiscountedSkus: [],
+  showUndiscountedModal: false,
+  _enableSkipSkuKeys: [],
 
   setSpcCds: (spcCds, spcCdsVer) => set({ spcCds, spcCdsVer }),
   setConnected: (isConnected) => set({ isConnected }),
@@ -543,6 +567,67 @@ export const useAppStore = create<AppState>((set, get) => ({
       ? (sale.start_time > now ? '即将开始' : (now >= sale.end_time ? '已结束' : '进行中'))
       : '';
 
+    // 第一优先级：检查内存中是否有 executeCopy 设置的预置商品数据
+    const pending = get()._pendingFlashSaleData;
+    if (pending && pending.flashSaleId === flashSaleId && pending.products.length > 0) {
+      console.log(`[loadFlashSaleProducts] 从内存预置数据加载: ${pending.products.length} 个商品, 源活动: ${pending.sourceFlashSaleName}`);
+      const ids = pending.products.map(p => p.itemid);
+      const label = sale?.name || `活动 #${flashSaleId}`;
+
+      // 从 skuOverrides 反推每个 SKU 的 discountRate 用于显示
+      const enrichedOverrides: Record<string, SkuOverride> = { ...pending.skuOverrides };
+      for (const p of pending.products) {
+        for (const m of p.modelList || []) {
+          const key = `${p.itemid}-${m.modelid}`;
+          const ov = enrichedOverrides[key];
+          if (ov && ov.discountRate === undefined && ov.promoPrice) {
+            const op = Number(m.originPrice || p.originPrice || 0);
+            if (op > 0) enrichedOverrides[key] = { ...ov, discountRate: Math.round(ov.promoPrice / op * 100) };
+          }
+        }
+      }
+
+      set({
+        productIds: ids, inputText: ids.join('\n'), flashSaleId,
+        products: pending.products,
+        skuOverrides: enrichedOverrides,
+        discountRate: pending.discountRate,
+        flashSaleStock: pending.flashSaleStock,
+        purchaseLimit: pending.purchaseLimit,
+        isLoadingFlashSales: false,
+        flashSaleInfo: `📦 ${label} [${timeStatus}] — ${ids.length} 个商品 (源: ${pending.sourceFlashSaleName || '复制活动'})`,
+        error: null,
+      });
+      get().saveCache();
+
+      // 异步刷新实时库存
+      try {
+        await get().fetchProducts();
+        const freshProducts = get().products;
+        if (freshProducts.length > 0) {
+          const freshMap = new Map(freshProducts.map(p => [String(p.itemid), p]));
+          for (const p of pending.products) {
+            const fresh = freshMap.get(String(p.itemid));
+            if (fresh) {
+              p.normalStock = fresh.normalStock;
+              for (const m of (p.modelList || [])) {
+                const freshSku = (fresh.modelList || []).find(sm => String(sm.modelid) === String(m.modelid));
+                if (freshSku) {
+                  m.normalStock = freshSku.normalStock;
+                  m.totalNormalStock = freshSku.totalNormalStock;
+                }
+              }
+            }
+          }
+          set({ products: pending.products });
+        }
+      } catch {}
+
+      console.log(`[loadFlashSaleProducts] 内存预置数据加载完成，清除 _pendingFlashSaleData`);
+      set({ _pendingFlashSaleData: null });
+      return;
+    }
+
     try {
       // 检查是否有复制的源活动商品数据（本地存储的，不是从 Shopee API 拉的）
       let copiedData: CopiedSaleData | null = null;
@@ -675,18 +760,85 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
 
       // 正常 API 路径：从 Shopee 获取活动商品列表
-      const itemResp = await injectedFetch<{ code: number; data?: { item_ids: number[] } }>(
+      let itemResp = await injectedFetch<{ code: number; data?: { item_ids: number[] } }>(
         `${FLASH_SALE_API}/get_shop_flash_sale_item_id_list/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&flash_sale_id=${flashSaleId}`,
       );
 
       console.log(`[loadFlashSaleProducts] item_id_list API: code=${itemResp.code}, item_ids=${itemResp.data?.item_ids?.length ?? 0} 个`);
 
       if (itemResp.code !== 0 || !itemResp.data?.item_ids?.length) {
+        // Fallback: 尝试从 get_shop_flash_sale_item 提取商品 ID（该 API 返回含 model 级别的完整 item 列表）
+        console.log('[loadFlashSaleProducts] item_id_list 为空，尝试从 get_shop_flash_sale_item 获取商品 ID');
+        try {
+          const fallbackResp = await injectedFetch<any>(
+            `${FLASH_SALE_API}/get_shop_flash_sale_item/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&flash_sale_id=${flashSaleId}&offset=0&limit=100`,
+          );
+          if (fallbackResp?.data?.items?.length) {
+            const fallbackIds = [...new Set(fallbackResp.data.items.map((ci: any) => String(ci.item_id)))];
+            if (fallbackIds.length > 0) {
+              console.log(`[loadFlashSaleProducts] fallback 获取到 ${fallbackIds.length} 个商品 ID`);
+              itemResp = { code: 0, data: { item_ids: fallbackIds.map(id => Number(id)) } };
+            }
+          }
+        } catch (e: any) {
+          console.warn('[loadFlashSaleProducts] fallback 也失败了:', e?.message);
+        }
+      }
+
+      if (itemResp.code !== 0 || !itemResp.data?.item_ids?.length) {
         const currentSale = sale;
         const isStarted = currentSale ? now >= currentSale.start_time : false;
         let autoMatched = false;
 
-        if (isStarted && currentSale) {
+        // 优先检查 _copiedSaleData 是否有当前活动的复制数据（不依赖时间条件）
+        try {
+          const result = await browser.storage.local.get('_copiedSaleData');
+          const allData: Record<string, CopiedSaleData> = result._copiedSaleData || {};
+          const directEntry = allData[String(flashSaleId)];
+          if (directEntry?.products?.length) {
+            const ids = directEntry.products.map(p => p.itemid);
+            const label = currentSale?.name || `活动 #${flashSaleId}`;
+            console.log(`[loadFlashSaleProducts] 从复制数据加载: 源活动 ${directEntry.sourceFlashSaleName}, ${ids.length} 个商品`);
+            set({
+              flashSaleId: flashSaleId as number,
+              productIds: ids,
+              inputText: ids.join('\n'),
+              products: directEntry.products,
+              skuOverrides: directEntry.skuOverrides ?? {},
+              discountRate: directEntry.discountRate ?? get().discountRate,
+              flashSaleStock: directEntry.flashSaleStock ?? get().flashSaleStock,
+              purchaseLimit: directEntry.purchaseLimit ?? get().purchaseLimit,
+              isLoadingFlashSales: false,
+              flashSaleInfo: `📦 ${label} [${timeStatus}] — ${ids.length} 个商品 (源: ${directEntry.sourceFlashSaleName || '复制数据'})`,
+              error: null,
+            });
+            try {
+              await get().fetchProducts();
+              const freshProducts = get().products;
+              if (freshProducts.length > 0) {
+                const freshMap = new Map(freshProducts.map(p => [String(p.itemid), p]));
+                for (const p of directEntry.products) {
+                  const fresh = freshMap.get(String(p.itemid));
+                  if (fresh) {
+                    p.normalStock = fresh.normalStock;
+                    for (const m of (p.modelList || [])) {
+                      const freshSku = (fresh.modelList || []).find(sm => String(sm.modelid) === String(m.modelid));
+                      if (freshSku) {
+                        m.normalStock = freshSku.normalStock;
+                        m.totalNormalStock = freshSku.totalNormalStock;
+                      }
+                    }
+                  }
+                }
+                set({ products: directEntry.products });
+              }
+            } catch {}
+            get().saveCache();
+            autoMatched = true;
+          }
+        } catch {}
+
+        if (!autoMatched && isStarted && currentSale) {
           const sortedSales = [...flashSaleList]
             .filter(s => s.flash_sale_id !== flashSaleId && s.start_time < currentSale.start_time)
             .sort((a, b) => b.start_time - a.start_time);
@@ -883,7 +1035,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       console.log('[enable] 已在运行中，忽略重复启动');
       return;
     }
-    const { products, flashSaleId, discountRate, flashSaleStock, purchaseLimit, skuOverrides, spcCds, spcCdsVer, maxRetries, infiniteRetry } = state;
+    const { products, flashSaleId, discountRate, flashSaleStock, purchaseLimit, skuOverrides, spcCds, spcCdsVer, maxRetries, infiniteRetry, _enableSkipSkuKeys } = state;
 
     if (!flashSaleId) { set({ error: '没有限时特卖活动 ID，请先加载限时特卖' }); return; }
     if (!products.length) { set({ error: '没有商品数据' }); return; }
@@ -895,10 +1047,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       return;
     }
 
-    // 构建所有 SKU 的提交数据
-    const allItems: EnableItem[] = products.flatMap(p =>
+    const skipSet = new Set(_enableSkipSkuKeys || []);
+
+    // 构建所有 SKU 的提交数据（包含临时字段用于检测未打折）
+    const allItems: (EnableItem & { _key?: string; _originPrice?: number; _usedDiscount?: number })[] = products.flatMap(p =>
       (p.modelList || [])
         .filter(sku => (sku.normalStock || 0) > 0)
+        .filter(sku => !skipSet.has(`${p.itemid}-${sku.modelid}`))
         .map(sku => {
           const key = `${p.itemid}-${sku.modelid}`;
           const override = skuOverrides[key];
@@ -908,37 +1063,96 @@ export const useAppStore = create<AppState>((set, get) => ({
           const promoPrice = override?.promoPrice ?? Math.floor(Number(sku.originPrice || p.originPrice || 0) * usedDiscount / 100);
           return {
             item_id: Number(p.itemid), status: 1, model_id: Number(sku.modelid),
-            item_display_image: p.images?.[0] || '', input_promo_price: promoPrice,
+            item_display_image: p.images?.[0] || '',
+            input_promo_price: promoPrice,
             stock: usedStock, purchase_limit: usedPurchaseLimit,
+            _key: key,
+            _originPrice: Number(sku.originPrice || p.originPrice || 0),
+            _usedDiscount: usedDiscount,
           };
         })
     );
-    const skippedCount = products.reduce((sum, p) =>
+    const skippedByStock = products.reduce((sum, p) =>
       sum + (p.modelList || []).filter(sku => !sku.normalStock || sku.normalStock <= 0).length, 0
     );
+    const skippedByUser = _enableSkipSkuKeys?.length || 0;
 
     if (allItems.length === 0) {
-      set({ error: `没有找到可提交的 SKU${skippedCount > 0 ? `（${skippedCount} 个 SKU 因库存为 0 已跳过）` : ''}` });
+      const parts: string[] = [];
+      if (skippedByStock > 0) parts.push(`${skippedByStock} 个因库存为0跳过`);
+      if (skippedByUser > 0) parts.push(`${skippedByUser} 个已手动跳过`);
+      set({ error: `没有找到可提交的 SKU${parts.length > 0 ? `（${parts.join('，')}）` : ''}` });
+      set({ _enableSkipSkuKeys: [] });
       return;
     }
 
-    const withPromoPrice = allItems.filter((_, i) => {
-      const p = products.find(pp => pp.itemid === String(allItems[i].item_id));
-      const m = p?.modelList?.find(mm => String(mm.modelid) === String(allItems[i].model_id));
+    // 检测未打折 SKU
+    const undiscountedSkus: UndiscountedSku[] = [];
+    const itemsForSubmit: (EnableItem & { _key?: string; _originPrice?: number; _usedDiscount?: number })[] = [];
+
+    for (const item of allItems) {
+      if (item.input_promo_price >= (item._originPrice ?? 0)) {
+        const p = products.find(pp => pp.itemid === String(item.item_id));
+        const model = p?.modelList?.find(m => String(m.modelid) === String(item.model_id));
+        undiscountedSkus.push({
+          key: item._key ?? `${item.item_id}-${item.model_id}`,
+          itemId: String(item.item_id),
+          modelId: item.model_id,
+          productName: p?.name ?? `商品 #${item.item_id}`,
+          skuName: model?.name ?? `SKU #${item.model_id}`,
+          originPrice: item._originPrice ?? 0,
+          promoPrice: item.input_promo_price,
+          image: p?.images?.[0] || '',
+        });
+      } else {
+        // 实际输入价格有折扣，但检查"意图价格"（基于折扣率而非 override promoPrice）
+        const ratePromoPrice = Math.floor((item._originPrice ?? 0) * (item._usedDiscount ?? discountRate) / 100);
+        if (ratePromoPrice >= (item._originPrice ?? 0)) {
+          const p = products.find(pp => pp.itemid === String(item.item_id));
+          const model = p?.modelList?.find(m => String(m.modelid) === String(item.model_id));
+          undiscountedSkus.push({
+            key: item._key ?? `${item.item_id}-${item.model_id}`,
+            itemId: String(item.item_id),
+            modelId: item.model_id,
+            productName: p?.name ?? `商品 #${item.item_id}`,
+            skuName: model?.name ?? `SKU #${item.model_id}`,
+            originPrice: item._originPrice ?? 0,
+            promoPrice: ratePromoPrice,
+            image: p?.images?.[0] || '',
+          });
+        } else {
+          itemsForSubmit.push(item);
+        }
+      }
+    }
+
+    if (undiscountedSkus.length > 0) {
+      console.log(`[enable] 发现 ${undiscountedSkus.length} 个未打折SKU，需要用户确认`);
+      set({ pendingUndiscountedSkus: undiscountedSkus, showUndiscountedModal: true });
+      return;
+    }
+
+    // 无未打折SKU：去除临时字段继续
+    const cleanItems: EnableItem[] = itemsForSubmit.map(({ _key, _originPrice, _usedDiscount, ...item }) => item);
+
+    const withPromoPrice = cleanItems.filter((_, i) => {
+      const p = products.find(pp => pp.itemid === String(cleanItems[i].item_id));
+      const m = p?.modelList?.find(mm => String(mm.modelid) === String(cleanItems[i].model_id));
       if (!p || !m) return false;
       return skuOverrides[`${p.itemid}-${m.modelid}`]?.promoPrice !== undefined;
     }).length;
-    const withDiscountRate = allItems.filter((_, i) => {
-      const p = products.find(pp => pp.itemid === String(allItems[i].item_id));
-      const m = p?.modelList?.find(mm => String(mm.modelid) === String(allItems[i].model_id));
+    const withDiscountRate = cleanItems.filter((_, i) => {
+      const p = products.find(pp => pp.itemid === String(cleanItems[i].item_id));
+      const m = p?.modelList?.find(mm => String(mm.modelid) === String(cleanItems[i].model_id));
       if (!p || !m) return false;
       return skuOverrides[`${p.itemid}-${m.modelid}`]?.discountRate !== undefined;
     }).length;
-    console.log(`[enable] 准备启动，共 ${allItems.length} 个 SKU${skippedCount > 0 ? `，${skippedCount} 个跳过` : ''}`);
+    const totalSkipped = skippedByStock + skippedByUser;
+    console.log(`[enable] 准备启动，共 ${cleanItems.length} 个 SKU${totalSkipped > 0 ? `，${totalSkipped} 个跳过` : ''}`);
     console.log(`[enable] 其中 ${withPromoPrice} 个有 promoPrice 覆盖, ${withDiscountRate} 个有 discountRate 覆盖`);
     console.log('[enable] skuOverrides 总数:', Object.keys(skuOverrides).length);
-    if (allItems.length > 0) {
-      const sample = allItems.slice(0, 5).map(item => {
+    if (cleanItems.length > 0) {
+      const sample = cleanItems.slice(0, 5).map(item => {
         const p = products.find(pp => pp.itemid === String(item.item_id));
         const m = p?.modelList?.find(mm => String(mm.modelid) === String(item.model_id));
         return {
@@ -1175,7 +1389,16 @@ export const useAppStore = create<AppState>((set, get) => ({
     copyMode: null, copySource: null, copyTaskStatus: null, isCopying: false, savedTemplates: [], selectedTemplate: null, hasScheduledCopy: false, scheduledTaskStatus: null,
     autoModeActive: false, autoModeStatus: null, autoModeLogs: [], firstSelectedActivity: null,
     shopId: null, accountId: null, shopUsername: '',
+    pendingUndiscountedSkus: [], showUndiscountedModal: false, _enableSkipSkuKeys: [],
+    _pendingFlashSaleData: null,
+    _completedCopyInfo: null,
   }),
+
+  /** 标记复制完成通知为已读 */
+  acknowledgeCompletedCopy: () => {
+    set({ _completedCopyInfo: null });
+    browser.storage.local.remove('_completedCopyInfo').catch(() => {});
+  },
 
   // ===== 复制功能 =====
   enterCopyMode: async (flashSale: FlashSale) => {
@@ -1325,6 +1548,18 @@ export const useAppStore = create<AppState>((set, get) => ({
               if (attempt < 4) await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
             }
             await get().saveCache();
+            // 将复制数据写入内存，loadFlashSaleProducts 会优先使用
+            set({
+              _pendingFlashSaleData: {
+                flashSaleId: newId,
+                products: state.products,
+                skuOverrides: effectiveSkuOverrides,
+                discountRate: effectiveDiscountRate,
+                flashSaleStock: effectiveFlashSaleStock,
+                purchaseLimit: effectivePurchaseLimit,
+                sourceFlashSaleName: state.copySource?.flashSale?.name || '',
+              },
+            });
             // 加载已保存的复制商品数据，返回主界面时直接可用
             await get().loadFlashSaleProducts(newId);
           }
@@ -1398,6 +1633,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   exitCopyMode: () => {
+    const status = get().copyTaskStatus;
+    // 如果复制成功，保留完成信息供主界面展示"立即查看"通知
+    if (status?.success === true && status.newFlashSaleId) {
+      const info: CompletedCopyInfo = {
+        newFlashSaleId: status.newFlashSaleId,
+        sourceFlashSaleName: get().copySource?.flashSale?.name || '',
+        isNew: true,
+      };
+      set({ _completedCopyInfo: info });
+      browser.storage.local.set({ _completedCopyInfo: info }).catch(() => {});
+    }
     set({
       copyMode: null,
       copySource: null,
@@ -1419,6 +1665,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       const hasTask = !!scheduledResult._scheduledCopy;
       set({ hasScheduledCopy: hasTask });
       if (hasTask) get().checkScheduledCopy();
+
+      // 恢复复制完成通知
+      const completedResult = await browser.storage.local.get('_completedCopyInfo');
+      if (completedResult._completedCopyInfo) {
+        set({ _completedCopyInfo: completedResult._completedCopyInfo as CompletedCopyInfo });
+      }
     } catch {}
   },
 
@@ -1465,7 +1717,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ firstSelectedActivity: { flashSaleId: sale.flash_sale_id, flashSaleName: sale.name } });
   },
 
-  startAutoMode: async (config: AutoModeConfig, flashSaleId?: number, flashSaleName?: string, debugMode?: boolean, selectedSlotId?: number, selectedSlotTime?: number) => {
+  startAutoMode: async (config: AutoModeConfig, flashSaleId?: number, flashSaleName?: string, debugMode?: boolean, selectedSlotId?: number, selectedSlotTime?: number, skipSkuKeys?: string[]) => {
     const sourceId = flashSaleId || get().firstSelectedActivity?.flashSaleId;
     const sourceName = flashSaleName || get().firstSelectedActivity?.flashSaleName;
     if (!sourceId) {
@@ -1500,6 +1752,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         debugMode: !!debugMode,
         selectedSlotId,
         selectedSlotTime,
+        skipSkuKeys: skipSkuKeys || [],
       });
 
       console.log('[startAutoMode] sendMessage 响应:', JSON.stringify(response));
@@ -1667,6 +1920,44 @@ export const useAppStore = create<AppState>((set, get) => ({
     } catch (e: any) {
       return e.message || '绑定失败';
     }
+  },
+
+  // ===== 未打折 SKU 拦截 =====
+  resolveUndiscountedSkus: async (editedPrices, skippedKeys) => {
+    const state = get();
+    const { pendingUndiscountedSkus, skuOverrides } = state;
+
+    // 应用编辑的价格到 skuOverrides
+    for (const sku of pendingUndiscountedSkus) {
+      if (editedPrices[sku.key] !== undefined) {
+        const newPromoPrice = editedPrices[sku.key];
+        const existing = skuOverrides[sku.key] || {};
+        set(state2 => ({
+          skuOverrides: {
+            ...state2.skuOverrides,
+            [sku.key]: {
+              ...existing,
+              promoPrice: newPromoPrice,
+              discountRate: undefined,
+            },
+          },
+        }));
+      }
+    }
+
+    // 隐藏弹窗，设置跳过列表
+    set({
+      showUndiscountedModal: false,
+      pendingUndiscountedSkus: [],
+      _enableSkipSkuKeys: skippedKeys,
+    });
+
+    await get().saveCache();
+
+    // 重新触发 enable 流程
+    setTimeout(() => {
+      get().enableFlashSaleItems();
+    }, 100);
   },
 
 }));

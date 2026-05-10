@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SkuTable } from '@/components/product/SkuTable';
 import { ProductViewModal } from '@/components/product/ProductViewModal';
 import { TimeSlotModal } from '@/components/product/TimeSlotModal';
+import { UndiscountedSkuModal } from '@/components/product/UndiscountedSkuModal';
 import { useAppStore } from '@/entrypoints/popup/store';
-import type { AutoModeConfig, FlashSale, ShopeeProduct, TimeSlot } from '@/entrypoints/popup/types';
+import type { AutoModeConfig, FlashSale, ShopeeProduct, TimeSlot, UndiscountedSku } from '@/entrypoints/popup/types';
 
 interface AutoModePanelProps {
   onBack: () => void;
@@ -28,6 +29,7 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
     startAutoMode, stopAutoMode,
     flashSaleList, fetchFlashSaleList, isLoadingFlashSaleList,
     loadFlashSaleProducts, products, isLoadingFlashSales,
+    skuOverrides, discountRate, flashSaleStock, purchaseLimit, setSkuOverride,
   } = useAppStore();
 
   const [mode, setMode] = useState<'rounds' | 'days'>('rounds');
@@ -47,6 +49,9 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [showSlotModal, setShowSlotModal] = useState(false);
   const [editedProductIds, setEditedProductIds] = useState<Set<string>>(new Set());
+  const [pendingUndiscountedSkus, setPendingUndiscountedSkus] = useState<UndiscountedSku[]>([]);
+  const [showUndiscountedModal, setShowUndiscountedModal] = useState(false);
+  const pendingStartRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -114,30 +119,89 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
     await loadFlashSaleProducts(sale.flash_sale_id);
   };
 
-  const handleStart = async () => {
-    if (validationError || !selectedTemplate || !selectedSlot) return;
+  // 实际启动函数（接受跳过列表）
+  const doStart = async (skipSkuKeys: string[]) => {
+    if (!selectedTemplate || !selectedSlot) return;
     setStartError(null);
     setIsStarting(true);
-    console.log('[AutoModePanel] handleStart 触发, 开始启动自动模式...');
+    console.log('[AutoModePanel] doStart 触发, skipSkuKeys:', JSON.stringify(skipSkuKeys));
     try {
-      const config: AutoModeConfig = {
-        mode,
-        value,
-        advanceMinutes,
-        delayMinutes,
-      };
-      const result = await startAutoMode(config, selectedTemplate.flash_sale_id, selectedTemplate.name, debugMode, selectedSlot.timeslot_id, selectedSlot.start_time);
+      const config: AutoModeConfig = { mode, value, advanceMinutes, delayMinutes };
+      const result = await startAutoMode(config, selectedTemplate.flash_sale_id, selectedTemplate.name, debugMode, selectedSlot.timeslot_id, selectedSlot.start_time, skipSkuKeys);
       console.log('[AutoModePanel] startAutoMode 返回:', JSON.stringify(result));
       if (!result?.success) {
         setStartError(result?.error || '启动失败，请查看后台日志');
-        console.error('[AutoModePanel] 启动失败:', result?.error);
       }
     } catch (e: any) {
       setStartError(e?.message || '启动异常');
-      console.error('[AutoModePanel] handleStart 异常:', e?.message, e?.stack);
     } finally {
       setIsStarting(false);
     }
+  };
+
+  // 用户点击启动按钮 → 先检测未打折 SKU
+  const handleStart = async () => {
+    if (validationError || !selectedTemplate || !selectedSlot) return;
+
+    // 遍历所有商品 SKU，检测未打折
+    const undiscountedItems: UndiscountedSku[] = [];
+    for (const p of products) {
+      for (const m of p.modelList || []) {
+        if (!m.normalStock || m.normalStock <= 0) continue;
+        const key = `${p.itemid}-${m.modelid}`;
+        const override = skuOverrides[key];
+        const usedDiscount = override?.discountRate ?? discountRate;
+        const promoPrice = override?.promoPrice ??
+          Math.floor(Number(m.originPrice || p.originPrice || 0) * usedDiscount / 100);
+        const originPrice = Number(m.originPrice || p.originPrice || 0);
+
+        // 同时检查"意图价格"（基于折扣率，不受 override promoPrice 影响）
+        const ratePromoPrice = Math.floor(originPrice * usedDiscount / 100);
+        if (promoPrice >= originPrice || ratePromoPrice >= originPrice) {
+          undiscountedItems.push({
+            key,
+            itemId: p.itemid,
+            modelId: Number(m.modelid) || 0,
+            productName: p.name,
+            skuName: m.name,
+            originPrice,
+            promoPrice,
+            image: p.images?.[0] || '',
+          });
+        }
+      }
+    }
+
+    if (undiscountedItems.length > 0) {
+      console.log(`[AutoModePanel] 发现 ${undiscountedItems.length} 个未打折SKU`);
+      setPendingUndiscountedSkus(undiscountedItems);
+      setShowUndiscountedModal(true);
+      pendingStartRef.current = () => doStart([]);
+    } else {
+      await doStart([]);
+    }
+  };
+
+  // 弹窗确认后的回调（编辑价格 + 跳过列表）
+  const handleAutoResolve = (editedPrices: Record<string, number>, skippedKeys: string[]) => {
+    for (const sku of pendingUndiscountedSkus) {
+      if (editedPrices[sku.key] !== undefined) {
+        const existing = skuOverrides[sku.key] || {};
+        setSkuOverride(sku.itemId, String(sku.modelId), {
+          ...existing,
+          promoPrice: editedPrices[sku.key],
+          discountRate: undefined,
+        });
+      }
+    }
+
+    setShowUndiscountedModal(false);
+    setPendingUndiscountedSkus([]);
+
+    pendingStartRef.current = null;
+    setTimeout(() => {
+      doStart(skippedKeys);
+    }, 100);
   };
 
   const handleStop = async () => {
@@ -621,6 +685,20 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
         <ProductViewModal
           sale={productViewSale}
           onClose={() => setProductViewSale(null)}
+        />
+      )}
+
+      {/* 未打折 SKU 确认弹窗 */}
+      {showUndiscountedModal && pendingUndiscountedSkus.length > 0 && (
+        <UndiscountedSkuModal
+          skus={pendingUndiscountedSkus}
+          autoSkipSeconds={10}
+          onResolve={handleAutoResolve}
+          onClose={() => {
+            setShowUndiscountedModal(false);
+            setPendingUndiscountedSkus([]);
+            pendingStartRef.current = null;
+          }}
         />
       )}
     </div>

@@ -1,8 +1,19 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(wmic process *)",
+      "Bash(/c/Windows/System32/tasklist.exe //FI \"PID eq 37640\" //FO CSV //NH)",
+      "Bash(kill -9 37640 14836)",
+      "Bash(npx kill-port *)"
+    ]
+  },
   "mcpServers": {
     "extension-harness": {
       "command": "npx",
-      "args": ["tsx", "harness/mcp-server.ts"]
+      "args": [
+        "tsx",
+        "harness/mcp-server.ts"
+      ]
     }
   }
 }

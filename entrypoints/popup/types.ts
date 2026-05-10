@@ -273,6 +273,7 @@ export interface AutoModeStatus {
     discountRate: number;
     flashSaleStock: number;
     purchaseLimit: number;
+    skipSkuKeys?: string[];
   };
 }
 
@@ -281,6 +282,39 @@ export interface AutoModeLog {
   timestamp: number;
   type: 'info' | 'success' | 'error' | 'warning';
   message: string;
+}
+
+// ===== 复制活动后内存预置商品数据 =====
+
+export interface PendingFlashSaleData {
+  flashSaleId: number;
+  products: ShopeeProduct[];
+  skuOverrides: Record<string, SkuOverride>;
+  discountRate: number;
+  flashSaleStock: number;
+  purchaseLimit: number;
+  sourceFlashSaleName: string;
+}
+
+// ===== 复制完成后的持久化提示信息 =====
+
+export interface CompletedCopyInfo {
+  newFlashSaleId: number;
+  sourceFlashSaleName: string;
+  isNew: boolean;
+}
+
+// ===== 未打折 SKU 拦截相关类型 =====
+
+export interface UndiscountedSku {
+  key: string;           // `${itemId}-${modelId}`
+  itemId: string;
+  modelId: number;
+  productName: string;
+  skuName: string;
+  originPrice: number;
+  promoPrice: number;
+  image: string;
 }
 
 // ===== 后端管理系统类型 =====

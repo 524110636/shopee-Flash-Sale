@@ -12,8 +12,10 @@ import { SkuTable } from '@/components/product/SkuTable';
 import { AuthPanel } from '@/components/product/AuthPanel';
 import { StoreStatus } from '@/components/product/StoreStatus';
 import { AdminPanel } from '@/components/product/AdminPanel';
+import { UndiscountedSkuModal } from '@/components/product/UndiscountedSkuModal';
+import { ScheduledTaskCard } from '@/components/product/ScheduledTaskCard';
 import { useAppStore, setupBackgroundListener } from './store';
-import type { ShopeeProduct } from './types';
+import type { ShopeeProduct, CompletedCopyInfo } from './types';
 import * as backendApi from './backend-api';
 
 export default function App() {
@@ -40,6 +42,7 @@ export default function App() {
     checkBackgroundStatus,
     loadCache, clearCache, reset,
     hasScheduledCopy, checkScheduledCopy, triggerScheduledCopyNow, scheduledTaskStatus,
+    _completedCopyInfo, acknowledgeCompletedCopy,
     autoModeActive, autoModeStatus, enterAutoMode, exitAutoMode,
     loadAutoModeStatus,
   } = useAppStore();
@@ -53,7 +56,7 @@ export default function App() {
   const [isTriggeringScheduled, setIsTriggeringScheduled] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
-  const { checkAuthOnStartup, isLoggedIn, isCheckingAuth, storeBindings, shopId } = useAppStore();
+  const { checkAuthOnStartup, isLoggedIn, isCheckingAuth, storeBindings, shopId, pendingUndiscountedSkus, showUndiscountedModal } = useAppStore();
 
   // 检测当前店铺 SPC_CDS 是否在用户绑定列表中
   const isCurrentStoreBound = useMemo(() => {
@@ -377,46 +380,39 @@ export default function App() {
             );
           })()}
 
-          {/* ===== P0: 定时任务状态 — 紧跟活动条 ===== */}
-          {hasScheduledCopy && scheduledTaskStatus && scheduledTaskStatus.exists && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 text-sm">
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-1.5">
-                  <svg className="w-3.5 h-3.5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                  </svg>
-                  <span className="font-medium text-amber-800 text-xs">定时复制任务</span>
+          {/* ===== P0: 复制完成通知 ===== */}
+          {_completedCopyInfo && _completedCopyInfo.isNew && (
+            <div className="bg-gradient-to-r from-shopee-green/10 to-shopee-brand-light border border-shopee-green/30 rounded-lg px-3 py-2.5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-7 h-7 rounded-full bg-shopee-green/15 flex items-center justify-center shrink-0">
+                    <svg className="w-3.5 h-3.5 text-shopee-green" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-shopee-green">复制完成</p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      来自 {_completedCopyInfo.sourceFlashSaleName || '历史活动'} · 活动 #{_completedCopyInfo.newFlashSaleId}
+                    </p>
+                  </div>
                 </div>
                 <button
-                  className="text-[10px] text-amber-600 hover:text-amber-800 underline"
-                  onClick={() => checkScheduledCopy()}
+                  className="h-7 px-3 text-xs font-medium text-white bg-shopee-brand rounded-md hover:bg-shopee-brand-dark shadow-sm shrink-0 ml-2"
+                  onClick={async () => {
+                    await fetchFlashSaleList(true);
+                    await loadFlashSaleProducts(_completedCopyInfo.newFlashSaleId);
+                    acknowledgeCompletedCopy();
+                  }}
                 >
-                  刷新状态
+                  立即查看
                 </button>
-              </div>
-              <div className="text-xs text-amber-700 space-y-0.5">
-                {scheduledTaskStatus.params && (
-                  <>
-                    <div>源活动：{scheduledTaskStatus.params.sourceFlashSaleName || `活动 #${scheduledTaskStatus.params.sourceFlashSaleId}`}</div>
-                    <div>目标时间：{fmtTime(scheduledTaskStatus.params.targetStartTime)}</div>
-                  </>
-                )}
-                <div>
-                  定时器状态：
-                  {scheduledTaskStatus.alarmActive ? (
-                    <span className="text-shopee-green font-medium">存活</span>
-                  ) : (
-                    <span className="text-red-600 font-medium">未注册（可能已被清除）</span>
-                  )}
-                  {scheduledTaskStatus.remainingSeconds !== undefined && scheduledTaskStatus.alarmActive && (
-                    <span className="ml-1 text-amber-600">
-                      （{Math.floor(scheduledTaskStatus.remainingSeconds / 3600) > 0 ? `${Math.floor(scheduledTaskStatus.remainingSeconds / 3600)}时` : ''}{Math.floor((scheduledTaskStatus.remainingSeconds % 3600) / 60)}分钟后执行）
-                    </span>
-                  )}
-                </div>
               </div>
             </div>
           )}
+
+          {/* ===== P1: 定时任务状态 ===== */}
+          <ScheduledTaskCard />
 
           {/* ===== 错误提示 — 紧跟上下文（有错误时这是最高优先级信息）===== */}
           {error && (
@@ -538,14 +534,19 @@ export default function App() {
                             </span>
                           )}
                           <Button
-                            variant="outline"
+                            variant="default"
                             size="sm"
-                            className="h-5 px-1.5 text-[10px] font-normal text-shopee-brand border-shopee-brand/30 hover:bg-shopee-brand-light"
+                            className="h-6 px-2 text-[11px] font-semibold bg-shopee-brand text-white hover:bg-shopee-brand-dark shadow-sm"
                             onClick={(e) => { e.stopPropagation(); enterCopyMode(sale); }}
-                            title="复制此限时特卖"
+                            title="复制此限时特卖到新的时间段"
                           >
                             复制
                           </Button>
+                          {_completedCopyInfo && sale.flash_sale_id === _completedCopyInfo.newFlashSaleId && _completedCopyInfo.isNew && (
+                            <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-amber-50 text-amber-700 border border-amber-300">
+                              新/待开启
+                            </span>
+                          )}
                           <span className={`px-1.5 py-0.5 text-[10px] rounded-full border ${statusClass}`}>
                             {statusLabel}
                           </span>
@@ -555,6 +556,21 @@ export default function App() {
                   })}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ===== 复制引导提示 ===== */}
+          {flashSaleList.length > 0 && !hasScheduledCopy && !copyMode && !_completedCopyInfo && (
+            <div className="bg-gradient-to-r from-shopee-brand-light to-teal-50 border border-shopee-brand/20 rounded-lg px-3 py-2.5 text-xs text-shopee-brand-dark">
+              <div className="flex items-start gap-2">
+                <svg className="w-4 h-4 mt-0.5 shrink-0 text-shopee-brand" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                <div>
+                  <p className="font-medium">复制活动到新时间段</p>
+                  <p className="mt-0.5 text-shopee-brand-dark/70">点击活动右侧的「复制」按钮，将此活动的商品复制到新的时间段</p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -923,6 +939,17 @@ export default function App() {
           key={selectedFailedProduct.itemid}
           product={selectedFailedProduct}
           onClose={() => setSelectedFailedProduct(null)}
+        />
+      )}
+
+      {showUndiscountedModal && pendingUndiscountedSkus.length > 0 && (
+        <UndiscountedSkuModal
+          skus={pendingUndiscountedSkus}
+          onClose={() => useAppStore.setState({
+            showUndiscountedModal: false,
+            pendingUndiscountedSkus: [],
+            _enableSkipSkuKeys: [],
+          })}
         />
       )}
 

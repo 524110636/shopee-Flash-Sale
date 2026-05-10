@@ -34,6 +34,7 @@ interface EnableParams {
   flashSaleStock: number;
   purchaseLimit: number;
   skuOverrides: Record<string, SkuOverride>;
+  skipSkuKeys?: string[];
 }
 
 interface FailedItemDetail {
@@ -347,17 +348,19 @@ async function runEnableLoop(params: EnableParams) {
   }
   _enableRunning = true;
   try {
-    const { products, flashSaleId, spcCds: initialSpcCds, spcCdsVer: initialSpcCdsVer, maxRetries, infiniteRetry, discountRate, flashSaleStock, purchaseLimit, skuOverrides } = params;
+    const { products, flashSaleId, spcCds: initialSpcCds, spcCdsVer: initialSpcCdsVer, maxRetries, infiniteRetry, discountRate, flashSaleStock, purchaseLimit, skuOverrides, skipSkuKeys } = params;
     let currentSpcCds = initialSpcCds;
     let currentSpcCdsVer = initialSpcCdsVer;
 
   // 构建所有 SKU 的提交数据
+  const skipSet = new Set(skipSkuKeys || []);
   console.log('[bg:enable] skuOverrides 总数:', Object.keys(skuOverrides).length);
   const withPromoPrice = Object.values(skuOverrides).filter(o => o?.promoPrice !== undefined).length;
   console.log('[bg:enable] 其中 promoPrice 覆盖:', withPromoPrice, '/', Object.keys(skuOverrides).length);
   const allItems: EnableItem[] = products.flatMap(p =>
     (p.modelList || [])
       .filter(sku => (sku.normalStock || 0) > 0)
+      .filter(sku => !skipSet.has(`${p.itemid}-${sku.modelid}`))
       .map(sku => {
         const key = `${p.itemid}-${sku.modelid}`;
         const override = skuOverrides[key];
@@ -1149,6 +1152,7 @@ async function handleAutoModeEnable() {
       flashSaleStock: ep.flashSaleStock,
       purchaseLimit: ep.purchaseLimit,
       skuOverrides: ep.skuOverrides,
+      skipSkuKeys: ep.skipSkuKeys,
     };
 
     // 校验店铺访问权限
@@ -1833,6 +1837,7 @@ export default defineBackground({
               discountRate: sourceData.discountRate,
               flashSaleStock: sourceData.flashSaleStock,
               purchaseLimit: sourceData.purchaseLimit,
+              skipSkuKeys: msg.skipSkuKeys || [],
             },
           };
 

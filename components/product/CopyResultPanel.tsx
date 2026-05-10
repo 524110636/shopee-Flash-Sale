@@ -27,7 +27,7 @@ export function CopyResultPanel({ status, onBack, onRetry }: CopyResultPanelProp
                 {status.warning}
               </div>
             )}
-            <p className='text-muted-foreground mt-2'>商品已自动提交到虾皮，可在活动列表中查看。</p>
+            <p className='text-muted-foreground mt-2'>新活动已创建。返回活动列表后，在活动中选中此活动并点击「开启限时特卖」提交商品参数到虾皮。</p>
           </div>
           <Button className='w-full' onClick={onBack}>
             返回活动列表
