@@ -60,6 +60,8 @@ components/
     ├── AutoModePanel.tsx      # Auto mode panel
     ├── CopyConfirmPanel.tsx   # Copy flow
     ├── CopyResultPanel.tsx    # Copy result display
+    ├── ScheduledTaskCard.tsx  # Live countdown + 4-step progress for scheduled copy
+    ├── UndiscountedSkuModal.tsx # Modal for reviewing undiscounted SKUs before auto-mode enable
     ├── ProductCard.tsx        # Single product card
     ├── ProductList.tsx        # Product list with inline SKU table modal
     ├── ProductViewModal.tsx   # Product detail popup for auto mode
@@ -138,6 +140,12 @@ backend/                      # Standalone backend service
 - **fetchFlashSaleList force param**: Passing `force=true` bypasses the "API returned fewer items" cache protection, used on user-initiated refresh and after copy flow completes
 - **Copy flow auto-load products**: `executeCopy` now calls `loadFlashSaleProducts(newId)` after creating a new activity, so products from `_copiedSaleData` are immediately available when returning to main view
 - **Ended activity inline error**: Button-area check shows "该活动已结束无法开启" red banner below the enable button when selected sale has ended
+- **`_pendingFlashSaleData` in-memory transfer**: After copy flow creates a new activity, product data is stored directly in Zustand state (not storage) so `loadFlashSaleProducts` reads it immediately, bypassing storage race conditions
+- **`_completedCopyInfo` post-copy notification**: When `exitCopyMode` detects a successful copy, it saves `CompletedCopyInfo` to both Zustand state and `browser.storage.local`. The main page shows a green notification card with "立即查看" button that auto-navigates to the new activity
+- **`ScheduledTaskCard` live countdown**: Replaces the static amber scheduled-task box. Uses 1-second tick (like AutoModePanel) to show real-time countdown, plus a 4-step visual progress indicator (复制模板 → 创建任务 → 等待开始 → 手动开启)
+- **Guide banner**: When the activity list is shown with no scheduled/active copy, a brand-color info banner guides users to click the "复制" button
+- **`skipSkuKeys` in auto-mode**: `AutoModePanel` can detect undiscounted SKUs and let user skip them before starting. The `runEnableLoop` in background.ts filters out skipped SKUs via a `skipSet`
+- **Copy button visibility**: The "复制" button in the activity list uses filled brand color (`bg-shopee-brand text-white`) instead of outline, with a "新/待开启" badge for newly created activities
 - **No test files**: Testing is manual via Chrome extension reload
 
 ## Backend API Endpoints
