@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Chrome extension (MV3) for automating Shopee Taiwan seller center flash sale operations. Built with **WXT** + **React 19** + **TypeScript 6.0** + **Tailwind CSS 3.4** + **shadcn/ui** + **Zustand 5**.
 
-Plus a standalone **backend** (Node.js + Hono + Drizzle ORM + SQLite) for user auth, store binding (backed by shop_id), usage analytics, and admin management (including admin unbind).
+Plus a standalone **backend** (Node.js + Hono + Drizzle ORM + SQLite) for user auth, store binding (backed by shop_id), usage analytics, admin management, and pre-operation access validation (anti-cracking).
 
 ## Environment
 
@@ -77,9 +77,9 @@ backend/                      # Standalone backend service
 │   │   └── index.ts          # SQLite init + migration (ALTER TABLE for schema upgrades)
 │   ├── routes/
 │   │   ├── auth.ts           # POST /register, /verify, /login, /check-admin
-│   │   ├── stores.ts         # GET /, POST /bind, DELETE /:id (JWT-protected)
+│   │   ├── stores.ts         # GET /, POST /bind, POST /validate, DELETE /:id (JWT-protected)
 │   │   ├── analytics.ts      # POST /events, GET /summary (JWT-protected)
-│   │   └── admin.ts          # GET /users, PATCH /:id/store-limit, GET /analytics (admin-only)
+│   │   └── admin.ts          # GET /users, PATCH /:id/store-limit, DELETE /:id, GET /analytics, GET /analytics/events, GET /bindings, DELETE /bindings/:id (admin-only)
 │   ├── middleware/
 │   │   └── auth.ts           # JWT verification + admin role guard
 │   └── utils/
@@ -106,6 +106,7 @@ backend/                      # Standalone backend service
 - `isCurrentStoreBound` in App.tsx: **shop_id first, SPC_CDS fallback** for old records
 - Each user has `max_stores` limit on the `users` table (default 1)
 - Admin can adjust per-user limits and **force-unbind** any user's store
+- `StoreStatus` component: when current shop is not bound and capacity remains, shows inline "绑定当前店铺" button
 
 ### Analytics
 - Background SW reports events after enable loop, copy flow, and auto mode rounds
@@ -121,7 +122,7 @@ backend/                      # Standalone backend service
 - `App.tsx` checks `isCheckingAuth` on mount → shows loading spinner
 - If `!isLoggedIn` → full-screen AuthPanel (login/register)
 - If logged in but no store bindings → blocking "请先绑定店铺" message over main features
-- If logged in + has bindings + current shop SPC_CDS/shop_id NOT in bindings → "店铺绑定数量已达到上限" gate
+- If logged in + has bindings + current shop SPC_CDS/shop_id NOT in bindings → amber "当前店铺未绑定" hint (no longer a hard block)
 - Admin panel is accessible even without personal store bindings
 - `isCurrentStoreBound` uses `shopId` match first, falls back to `spcCds` match for legacy data
 
@@ -131,6 +132,12 @@ backend/                      # Standalone backend service
 - **`injectedFetch()`**: Uses `scripting.executeScript({ world: 'MAIN' })` to bypass CSP
 - **Storage-based communication**: `storage.onChanged` for critical flows when `sendMessage` is unreliable
 - **Fire-and-forget analytics**: Background SW reports events without awaiting or error handling
+- **Pre-operation validation (anti-cracking)**: Background SW calls `POST /api/stores/validate` before every critical operation (enable, copy, auto-mode, scheduled copy) via `validateShopAccess()` inline function — reads auth from storage, validates binding+user status on backend, cannot be bypassed by modifying frontend code
+- **Settings security**: AuthPanel settings view shows backend URL only for admin users (`authUser.role === 'admin'`); non-admin users see only a "测试连接" button that calls `healthCheck()`
+- **checkAuthOnStartup sync**: `setTimeout(() => refreshStoreBindings(), 500)` removed in favor of `await refreshStoreBindings()` to eliminate 500ms race window where `isLoggedIn=true` but `storeBindings=[]`
+- **fetchFlashSaleList force param**: Passing `force=true` bypasses the "API returned fewer items" cache protection, used on user-initiated refresh and after copy flow completes
+- **Copy flow auto-load products**: `executeCopy` now calls `loadFlashSaleProducts(newId)` after creating a new activity, so products from `_copiedSaleData` are immediately available when returning to main view
+- **Ended activity inline error**: Button-area check shows "该活动已结束无法开启" red banner below the enable button when selected sale has ended
 - **No test files**: Testing is manual via Chrome extension reload
 
 ## Backend API Endpoints
@@ -142,12 +149,15 @@ backend/                      # Standalone backend service
 | POST | `/api/auth/login` | Public | Login, returns JWT |
 | POST | `/api/auth/check-admin` | JWT | Check admin role |
 | GET | `/api/stores` | JWT | List user's store bindings |
-| POST | `/api/stores/bind` | JWT | Bind a store (SPC_CDS) |
+| POST | `/api/stores/bind` | JWT | Bind a store (SPC_CDS + shop_id) |
+| POST | `/api/stores/validate` | JWT | Validate store binding + user is active (anti-cracking) |
 | DELETE | `/api/stores/:id` | JWT | Unbind store |
 | POST | `/api/analytics/events` | JWT | Report usage event |
+| GET | `/api/health` | Public | Health check (used by `healthCheck()` in backend-api.ts) |
 | GET | `/api/analytics/summary` | JWT | Personal usage summary |
 | GET | `/api/admin/users` | Admin | User list with binding counts |
 | PATCH | `/api/admin/users/:id/store-limit` | Admin | Adjust store binding limit |
+| DELETE | `/api/admin/users/:id` | Admin | Delete user (cascade: bindings, events, verification codes) |
 | GET | `/api/admin/analytics` | Admin | Global analytics |
 | GET | `/api/admin/analytics/events` | Admin | Event details |
 | GET | `/api/admin/bindings` | Admin | List all store bindings (optional `?userId=`) |

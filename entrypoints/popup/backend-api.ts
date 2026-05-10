@@ -153,6 +153,15 @@ export async function getAdminAnalyticsEvents(type?: string) {
   return request<{ events: Array<{ id: number; userId: number; eventType: string; eventData: string | null; createdAt: string; email: string }> }>('GET', `/api/admin/analytics/events${query}`);
 }
 
+// ===== Health Check =====
+
+export async function healthCheck(): Promise<void> {
+  const response = await fetch(`${_baseUrl}/api/health`);
+  if (!response.ok) {
+    throw new Error(`后端返回错误状态 (HTTP ${response.status})`);
+  }
+}
+
 // ===== Admin Binding Management API =====
 
 export async function getAdminBindings(userId?: number) {

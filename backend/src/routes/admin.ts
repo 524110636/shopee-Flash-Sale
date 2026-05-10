@@ -166,35 +166,22 @@ admin.get('/analytics/events', async (c) => {
   const db = getDb();
   const eventType = c.req.query('type');
 
-  let events;
-  if (eventType) {
-    events = await db.select({
-      id: analyticsEvents.id,
-      userId: analyticsEvents.userId,
-      eventType: analyticsEvents.eventType,
-      eventData: analyticsEvents.eventData,
-      createdAt: analyticsEvents.createdAt,
-      email: users.email,
-    })
-      .from(analyticsEvents)
-      .leftJoin(users, eq(analyticsEvents.userId, users.id))
-      .where(eq(analyticsEvents.eventType, eventType))
-      .orderBy(analyticsEvents.createdAt)
-      .limit(100);
-  } else {
-    events = await db.select({
-      id: analyticsEvents.id,
-      userId: analyticsEvents.userId,
-      eventType: analyticsEvents.eventType,
-      eventData: analyticsEvents.eventData,
-      createdAt: analyticsEvents.createdAt,
-      email: users.email,
-    })
-      .from(analyticsEvents)
-      .leftJoin(users, eq(analyticsEvents.userId, users.id))
-      .orderBy(analyticsEvents.createdAt)
-      .limit(100);
-  }
+  const query = db.select({
+    id: analyticsEvents.id,
+    userId: analyticsEvents.userId,
+    eventType: analyticsEvents.eventType,
+    eventData: analyticsEvents.eventData,
+    createdAt: analyticsEvents.createdAt,
+    email: users.email,
+  })
+    .from(analyticsEvents)
+    .leftJoin(users, eq(analyticsEvents.userId, users.id))
+    .orderBy(analyticsEvents.createdAt)
+    .limit(100);
+
+  const events = eventType
+    ? await query.where(eq(analyticsEvents.eventType, eventType))
+    : await query;
 
   return c.json({ events });
 });

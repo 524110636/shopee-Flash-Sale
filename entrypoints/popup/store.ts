@@ -449,9 +449,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   // ===== 获取限时特卖活动列表 =====
-  fetchFlashSaleList: async () => {
+  fetchFlashSaleList: async (force?: boolean) => {
     const { spcCds, spcCdsVer } = get();
-    console.log('[fetchFlashSaleList] 开始', { spcCds: !!spcCds, spcCdsVer });
+    console.log('[fetchFlashSaleList] 开始', { spcCds: !!spcCds, spcCdsVer, force });
     if (!spcCds) { set({ error: '请先获取 SPC_CDS' }); return; }
 
     set({ isLoadingFlashSaleList: true, error: null });
@@ -476,11 +476,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       const currentList = get().flashSaleList;
       const newList = listResp.data.flash_sale_list;
       if (currentList.length > 0 && newList.length < currentList.length) {
-        // 虾皮 API 存在服务端缓存不一致问题：新创建的活动可能在几次查询中时有时无
-        // 如果新列表比当前列表小，说明可能漏掉了活动，保留当前列表下次再试
-        console.warn('[fetchFlashSaleList] API 返回数量减少', { 之前: currentList.length, 现在: newList.length, 保留: true });
-        set({ isLoadingFlashSaleList: false });
-        return;
+        // force=true 时（用户主动刷新或创建活动后）跳过此保护，直接使用最新数据
+        if (!force) {
+          console.warn('[fetchFlashSaleList] API 返回数量减少', { 之前: currentList.length, 现在: newList.length, 保留: true });
+          set({ isLoadingFlashSaleList: false });
+          return;
+        }
+        console.warn('[fetchFlashSaleList] API 返回数量减少，但 force=true 强制更新', { 之前: currentList.length, 现在: newList.length });
       }
       set({ flashSaleList: newList, isLoadingFlashSaleList: false });
       get().saveCache();
@@ -885,6 +887,13 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     if (!flashSaleId) { set({ error: '没有限时特卖活动 ID，请先加载限时特卖' }); return; }
     if (!products.length) { set({ error: '没有商品数据' }); return; }
+
+    // 检查所选活动是否已结束
+    const currentSale = state.flashSaleList.find(s => s.flash_sale_id === flashSaleId);
+    if (currentSale && Math.floor(Date.now() / 1000) >= currentSale.end_time) {
+      set({ error: '该活动已结束无法开启，请点击「复制」复制此活动而不是选中此活动' });
+      return;
+    }
 
     // 构建所有 SKU 的提交数据
     const allItems: EnableItem[] = products.flatMap(p =>
@@ -1316,6 +1325,8 @@ export const useAppStore = create<AppState>((set, get) => ({
               if (attempt < 4) await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
             }
             await get().saveCache();
+            // 加载已保存的复制商品数据，返回主界面时直接可用
+            await get().loadFlashSaleProducts(newId);
           }
         } else {
           console.error('[executeCopy] EXECUTE_COPY 无响应');
@@ -1612,8 +1623,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           await backendApi.checkAdmin();
           const user = backendApi.getAuthUser();
           set({ isLoggedIn: true, authUser: user });
-          // 刷新店铺绑定
-          setTimeout(() => get().refreshStoreBindings(), 500);
+          // 同步刷新店铺绑定（避免 UI 先渲染空列表导致误操作）
+          await get().refreshStoreBindings();
         } catch {
           // Token invalid or server unavailable — log out silently
           await backendApi.clearAuth();

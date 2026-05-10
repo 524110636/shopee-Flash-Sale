@@ -14,6 +14,7 @@ export function AuthPanel() {
   const [displayedCode, setDisplayedCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [connected, setConnected] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
   const [regVerified, setRegVerified] = useState(false);
 
@@ -48,38 +49,39 @@ export function AuthPanel() {
           {error && (
             <div className="p-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded">{error}</div>
           )}
-          <div className="text-xs font-medium text-muted-foreground">后端服务地址</div>
-          <input
-            type="url"
-            placeholder="http://localhost:5724"
-            value={backendUrl}
-            onChange={e => setBackendUrl(e.target.value)}
-            className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary"
-          />
+          {connected && (
+            <div className="p-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded">✅ 后端连接正常</div>
+          )}
+          {authUser.role === 'admin' && (
+            <>
+              <div className="text-xs font-medium text-muted-foreground">后端服务地址</div>
+              <input
+                type="url"
+                placeholder="http://localhost:5724"
+                value={backendUrl}
+                onChange={e => setBackendUrl(e.target.value)}
+                className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </>
+          )}
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
               className="h-7 text-xs"
+              disabled={loading}
               onClick={async () => {
-                setLoading(true); setError('');
+                setLoading(true); setError(''); setConnected(false);
                 try {
-                  const hasAuth = await backendApi.loadAuthFromStorage();
-                  if (hasAuth) {
-                    await backendApi.checkAdmin();
-                    const user = backendApi.getAuthUser();
-                    useAppStore.setState({ isLoggedIn: true, authUser: user });
-                    setView('login');
-                  } else {
-                    setView('login');
-                  }
+                  await backendApi.healthCheck();
+                  setConnected(true);
                 } catch (e: any) {
                   setError(`无法连接后端: ${e.message}`);
                 }
                 setLoading(false);
               }}
             >
-              测试连接
+              {loading ? '检测中...' : '测试连接'}
             </Button>
             <Button size="sm" className="h-7 text-xs" onClick={() => setView('login')}>
               返回
@@ -278,43 +280,33 @@ export function AuthPanel() {
 
       {view === 'settings' && (
         <div className="space-y-2">
-          <div className="text-xs font-medium text-muted-foreground">后端服务地址</div>
-          <input
-            type="url"
-            placeholder="http://localhost:5724"
-            value={backendUrl}
-            onChange={e => setBackendUrl(e.target.value)}
-            className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={async () => {
-                setLoading(true); setError('');
-                try {
-                  const hasAuth = await backendApi.loadAuthFromStorage();
-                  if (hasAuth) {
-                    await backendApi.checkAdmin();
-                    const user = backendApi.getAuthUser();
-                    useAppStore.setState({ isLoggedIn: true, authUser: user });
-                    setView('login');
-                  } else {
-                    setView('login');
-                  }
-                } catch (e: any) {
-                  setError(`无法连接后端: ${e.message}`);
-                }
-                setLoading(false);
-              }}
-            >
-              测试连接
-            </Button>
-            <Button size="sm" className="h-7 text-xs" onClick={() => setView('login')}>
-              返回
-            </Button>
-          </div>
+          {error && (
+            <div className="p-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded">{error}</div>
+          )}
+          {connected && (
+            <div className="p-2 text-xs text-green-700 bg-green-50 border border-green-200 rounded">✅ 后端连接正常</div>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs w-full"
+            disabled={loading}
+            onClick={async () => {
+              setLoading(true); setError(''); setConnected(false);
+              try {
+                await backendApi.healthCheck();
+                setConnected(true);
+              } catch (e: any) {
+                setError(`无法连接后端: ${e.message}`);
+              }
+              setLoading(false);
+            }}
+          >
+            {loading ? '检测中...' : '测试连接'}
+          </Button>
+          <Button size="sm" className="h-7 text-xs w-full" onClick={() => setView('login')}>
+            返回
+          </Button>
         </div>
       )}
     </div>

@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # 限时特卖助手 (Limited Time Sale Helper)
 
-**版本:** 1.8.1
-**状态:** 功能完善阶段 + 后端管理系统
-**最近更新:** 2026-05-09 — 店铺绑定增强（shop_id/account_id/shop_username）、SPC_CDS 自动续期、管理员解绑、SPC_CDS 匹配门改用 shop_id 优先
+**版本:** 1.8.3
+**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 1
+**最近更新:** 2026-05-10 — 强制刷新列表、复制活动后自动加载商品、设置页安全加固、已结束活动内联提示、checkAuthOnStartup 竞态修复、healthCheck API、admin 查询重构
 
 ## 相关文档
 - `docs/shopee-flash-sale-api.md` — Shopee API endpoints and response formats
@@ -92,9 +92,9 @@ backend/                      # 独立后端服务
 │   │   └── index.ts          # SQLite 初始化 + 自动迁移
 │   ├── routes/
 │   │   ├── auth.ts           # 注册/验证/登录/管理员检查
-│   │   ├── stores.ts         # 店铺绑定/列表/解绑 (shop_id 唯一性, 同用户自动续期 SPC_CDS)
+│   │   ├── stores.ts         # 店铺绑定/列表/校验/解绑 (shop_id 唯一性, 同用户自动续期 SPC_CDS, validate 防破解)
 │   │   ├── analytics.ts      # 事件上报/个人摘要
-│   │   └── admin.ts          # 管理员接口 (用户列表, 限额调整, 全局统计, 绑定查询/解绑)
+│   │   └── admin.ts          # 管理员接口 (用户列表, 限额调整, 用户删除, 全局统计, 绑定查询/解绑)
 │   ├── middleware/
 │   │   └── auth.ts           # JWT 验证 + admin 角色守卫
 │   └── utils/
@@ -141,6 +141,54 @@ Built with WXT + React 19 + TypeScript + Tailwind CSS + shadcn/ui + Zustand (ext
 - **`entrypoints/popup/`** — Popup UI (viewport=420px). `main.tsx` mounts `<App />` into `index.html` root div. `style.css` contains Tailwind directives (`@tailwind base/components/utilities`). App.tsx renders layout with conditional panel switching (copyMode='confirm'/'result' vs default dashboard, CSS 3D flip animation to auto mode). `store.ts` is Zustand single store with all business logic including auto mode state. `api.ts` exports `fetchProducts()` GraphQL query fetcher. `types.ts` defines all shared TypeScript interfaces.
 - **`entrypoints/background.ts`** — Service Worker: SPC_CDS cookie extraction, flash sale enable loop (`runEnableLoop` with `injectedFetch`), copy flash sale flows (EXECUTE_COPY/SCHEDULE_COPY/TRIGGER_SCHEDULED_COPY_NOW), auto mode (START_AUTO_MODE/STOP_AUTO_MODE/GET_AUTO_MODE_STATUS, alarms: auto_mode_create/auto_mode_enable/auto_mode_heartbeat), message relay
 - **`entrypoints/content.ts`** — Content script: unified floating panel (`#__flash_sale_panel__`) merging enable progress, copy progress, and auto mode status. Listens for `ENABLE_PROGRESS`/`ENABLE_COMPLETE`/`COPY_SCHEDULED`/`COPY_PROGRESS`/`COPY_COMPLETE`/`AUTO_MODE_UPDATE` messages. Also watches `storage.onChanged` as backup path for `_enableProgress`, `_copyCountdown`, and `_autoModeStatus` when messages fail.
+
+### Anti-Cracking Phase 1 — 后端验证 (v1.8.2)
+- 所有关键操作（开限时特卖、复制活动、自动模式、定时复制）执行前，调用 `POST /api/stores/validate` 校验店铺绑定是否仍有效 + 用户账号是否激活
+- `validateShopAccess()` inline 函数在 background.ts 中，从 storage 读取 `backendAuth` + `backendUrl`，URL 不存在时自动回退默认值 `http://localhost:5724`
+- 5 个注入点: START_ENABLE, EXECUTE_COPY, executeScheduledCopyFlow, handleAutoModeEnable, scheduled_copy_enable
+- 验证失败时根据注入点分别处理: return error / throw / stop auto mode / log + return
+- 无法通过修改前端代码绕过（验证在后端执行）
+- `reportAnalyticsEvent` fire-and-forget 记录 `validate_shop_access` 事件
+
+### 多店铺绑定修复 (v1.8.2)
+- StoreStatus 组件原仅当 `activeBindings.length === 0` 时显示绑定按钮，绑定首个店铺后按钮消失
+- 修复: 在绑定列表底部检测当前店铺是否已绑定 + 检查 `activeBindings.length < maxStores`，有剩余容量时显示 "绑定当前店铺" 按钮
+- App.tsx 门禁从红色硬阻断改为琥珀色提示，引导用户去 StoreStatus 区域操作
+
+### 已结束活动不可选 (v1.8.2)
+- App.tsx 活动列表卡片的 `onClick` 在 `isEnded` 时直接 `return`，不再调用 `loadFlashSaleProducts`
+- 已结束活动使用虚线边框 + `opacity-50` 视觉弱化，移除 `cursor-pointer`
+- 复制按钮不受影响（独立 `onClick` + `stopPropagation`）
+
+### 设置页安全加固 (v1.8.3)
+- AuthPanel 设置视图中的后端服务地址输入框仅在 `authUser.role === 'admin'` 时显示
+- 普通用户只看到"测试连接"按钮，点击调用 `healthCheck()` 检测连通性
+- 成功显示绿色"后端连接正常"，失败显示红色错误详情
+- 未登录状态下的设置视图同样隐藏地址输入框
+
+### checkAuthOnStartup 竞态修复 (v1.8.3)
+- `checkAuthOnStartup` 中原 `setTimeout(() => refreshStoreBindings(), 500)` 改用 `await refreshStoreBindings()`
+- 消除 500ms 窗口期中 `isLoggedIn=true` 但 `storeBindings=[]` 的状态，防止用户快速点击"绑定当前店铺"造成重复绑定
+
+### 强制刷新列表 + 缓存保护优化 (v1.8.3)
+- `fetchFlashSaleList` 新增 `force` 参数，`force=true` 时跳过虾皮 API "返回数量减少"的缓存保护逻辑
+- 用户点击"刷新"按钮时传入 `force=true`，删除活动后也能实时更新列表
+- 复制流程确认新活动出现在列表后同样强制刷新
+- 保护逻辑在非主动刷新时（`!force`）继续保持，防范服务端缓存不一致
+
+### 复制活动后自动加载商品 (v1.8.3)
+- `executeCopy` 复制流程在确认新活动 ID 出现在列表后，追加 `loadFlashSaleProducts(newId)` 调用
+- 从 `_copiedSaleData` 读取复制时保存的商品数据（含 SKU 覆盖参数）
+- 用户返回主界面时直接可见已加载的商品，不再出现"该活动中没有找到商品"
+
+### 已结束活动内联提示 (v1.8.3)
+- 在"开启限时特卖"按钮正下方新增已结束活动检查
+- 如果 `now >= currentSale.end_time`，显示红色提示框：`该活动已结束无法开启，请点击「复制」复制此活动而不是选中此活动`
+- 纯 UI 层判断，不依赖 `error` 状态，不干扰其他错误提示
+
+### healthCheck API + admin 查询重构 (v1.8.3)
+- `backend-api.ts` 新增 `healthCheck()` 函数，调用 `GET /api/health` 公共端点
+- `admin.ts` 中 `/analytics/events` 两个 if-else 分支提取公共查询部分，消除代码重复
 
 ### Critical Design Decisions
 1. **Enable loop runs in background Service Worker** — `runEnableLoop` is in `background.ts`, not popup. Popup builds items, saves params via `storage.local`, sends `START_ENABLE` message. Background sends `ENABLE_PROGRESS`/`ENABLE_COMPLETE` messages back. Loop continues after popup closes. Uses `_enableRunning` flag + try/finally to prevent concurrent loops.
@@ -262,11 +310,13 @@ Auto mode (background):
 - **POST `/api/auth/check-admin`** — Check admin role (JWT)
 - **GET `/api/stores`** — List store bindings (JWT)
 - **POST `/api/stores/bind`** — Bind store by SPC_CDS + shop_id/account_id/username (JWT)
+- **POST `/api/stores/validate`** — Validate store binding + user is active (JWT, anti-cracking)
 - **DELETE `/api/stores/:id`** — Unbind store (JWT)
 - **POST `/api/analytics/events`** — Report usage event (JWT)
 - **GET `/api/analytics/summary`** — Personal usage summary (JWT)
 - **GET `/api/admin/users`** — User list (admin)
 - **PATCH `/api/admin/users/:id/store-limit`** — Adjust store limit (admin)
+- **DELETE `/api/admin/users/:id`** — Delete user with cascade (bindings, events, verification codes) (admin)
 - **GET `/api/admin/analytics`** — Global analytics (admin)
 - **GET `/api/admin/analytics/events`** — Event details (admin)
 - **GET `/api/admin/bindings?userId=X`** — List store bindings with user info (admin)
@@ -501,7 +551,7 @@ The API returns two possible formats (check both):
 - `isCheckingAuth` → loading spinner during startup validation
 - `!isLoggedIn` → full-screen AuthPanel (login/register forms)
 - Logged in + no store bindings → blocking "请先绑定店铺" message over main features
-- Logged in + has bindings + current shop_id/SPC_CDS not in bindings → "店铺绑定数量已达到上限" message
+- Logged in + has bindings + current shop_id/SPC_CDS not in bindings → amber "当前店铺未绑定" hint (不再是硬阻断, 引导用户点击绑定按钮)
 - Admin panel accessible without personal store bindings
 - `isCurrentStoreBound` uses `shopId` match first, falls back to `spcCds` match for legacy data
 
@@ -509,10 +559,11 @@ The API returns two possible formats (check both):
 - **shop_id** is the stable binding anchor (from `GET /api/v2/login/`), SPC_CDS is only for API calls
 - `storeBindings` table has `shop_id`, `account_id`, `shop_username` for stable identification
 - Same shop_id + same user = auto-update SPC_CDS (session refresh, no re-binding needed)
-- Different shop_id = blocked with "店铺绑定数量已达到上限" message
+- Different shop_id = shows "当前店铺未绑定" hint (amber) if capacity remains; "绑定当前店铺" button appears inline
 - `isCurrentStoreBound` in App.tsx: **shop_id first, SPC_CDS fallback** for legacy records
 - Each user has `users.max_stores` limit (default 1, admin-configurable)
 - `StoreStatus` component shows current count vs limit, displays shop_id/shopUsername
+- When current shop is not bound + `activeBindings.length < maxStores`: inline "绑定当前店铺" button shown below binding list
 - Admin can force-unbind any user's store via AdminPanel "绑定管理" tab
 - `GET /api/v2/login/?SPC_CDS=xx` is called after SPC_CDS extraction to get shop info
 

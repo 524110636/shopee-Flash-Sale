@@ -476,7 +476,7 @@ export default function App() {
                     size="sm"
                     className="h-6 px-2 text-xs font-normal"
                     disabled={isLoadingFlashSaleList}
-                    onClick={e => { e.stopPropagation(); fetchFlashSaleList(); setFlashSaleListOpen(true); }}
+                    onClick={e => { e.stopPropagation(); fetchFlashSaleList(true); setFlashSaleListOpen(true); }}
                   >
                     <span className={isLoadingFlashSaleList ? 'mr-1' : 'mr-1'}>
                       <svg className={`w-3 h-3 ${isLoadingFlashSaleList ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -700,6 +700,18 @@ export default function App() {
                   {isStopping ? '停止中...' : '停止'}
                 </button>
               )}
+
+              {/* 已结束活动提示 */}
+              {(() => {
+                const currentSale = flashSaleList.find(s => s.flash_sale_id === flashSaleId);
+                if (!currentSale) return null;
+                if (Math.floor(Date.now() / 1000) < currentSale.end_time) return null;
+                return (
+                  <div className="p-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded">
+                    该活动已结束无法开启，请点击「复制」复制此活动而不是选中此活动
+                  </div>
+                );
+              })()}
 
               {/* 进度 */}
               {enableProgress && (
