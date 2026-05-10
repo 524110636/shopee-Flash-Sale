@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import type { ShopeeProduct, FlashSale, EnableItem, EnableProgress, SkuOverride, CacheData, FlashSaleTemplate, TemplateProductInfo, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, TimeSlot, ScheduledTaskStatus, AutoModeConfig, AutoModeStatus, AutoModeLog, BackendAuthState, BackendStoreBinding, UndiscountedSku, PendingFlashSaleData, CompletedCopyInfo } from './types';
+import type { ShopeeProduct, FlashSale, EnableItem, EnableProgress, SkuOverride, CacheData, FlashSaleTemplate, TemplateProductInfo, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, TimeSlot, ScheduledTaskStatus, AutoModeConfig, AutoModeStatus, AutoModeLog, BackendAuthState, BackendStoreBinding, UndiscountedSku, PendingFlashSaleData, CompletedCopyInfo, OneDaySkuFlowState, OneDaySkuItemStatus } from './types';
 import * as backendApi from './backend-api';
+import { getHighestModelPrice, hasDedicatedOneDaySku, buildOneDaySkuProductInfo } from './one-day-sku';
 
 // ===== 注入页面执行 fetch（MAIN world）=====
 async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -150,6 +151,10 @@ interface AppState {
   showUndiscountedModal: boolean;
   _enableSkipSkuKeys: string[];
 
+  // 一键补充 1 天备货 SKU
+  oneDaySkuSelectedIds: string[];
+  oneDaySkuFlow: OneDaySkuFlowState;
+
   // Actions
   setSpcCds: (spcCds: string, spcCdsVer: string) => void;
   setConnected: (connected: boolean) => void;
@@ -162,6 +167,7 @@ interface AppState {
   extractSpcCds: () => Promise<void>;
   fetchShopInfo: () => Promise<void>;
   fetchProducts: () => Promise<void>;
+  fetchFlashSaleList: (force?: boolean) => Promise<void>;
   loadFlashSaleProducts: (flashSaleId: number) => Promise<void>;
   fetchTimeSlots: () => Promise<TimeSlot[]>;
   fetchFlashSaleItemCount: (flashSaleId: number) => Promise<number>;
@@ -199,7 +205,7 @@ interface AppState {
   // 自动模式 Actions
   enterAutoMode: () => void;
   exitAutoMode: () => void;
-  startAutoMode: (config: AutoModeConfig, flashSaleId?: number, flashSaleName?: string, debugMode?: boolean, selectedSlotId?: number, selectedSlotTime?: number) => Promise<{ success: boolean; error?: string }>;
+  startAutoMode: (config: AutoModeConfig, flashSaleId?: number, flashSaleName?: string, debugMode?: boolean, selectedSlotId?: number, selectedSlotTime?: number, skipSkuKeys?: string[]) => Promise<{ success: boolean; error?: string }>;
   stopAutoMode: () => Promise<void>;
   setFirstSelectedActivity: (sale: FlashSale) => void;
   loadAutoModeStatus: () => Promise<void>;
@@ -213,6 +219,9 @@ interface AppState {
   bindCurrentStore: () => Promise<string | null>;
   setShopInfo: (shopId: number | null, accountId: number | null, shopUsername: string) => void;
   resolveUndiscountedSkus: (editedPrices: Record<string, number>, skippedKeys: string[]) => Promise<void>;
+  toggleOneDaySkuSelection: (itemId: string) => void;
+  setOneDaySkuSelection: (itemIds: string[]) => void;
+  runOneDaySkuAndEnable: () => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -277,6 +286,19 @@ export const useAppStore = create<AppState>((set, get) => ({
   pendingUndiscountedSkus: [],
   showUndiscountedModal: false,
   _enableSkipSkuKeys: [],
+
+  // 一键补充 1 天备货 SKU 初始值
+  oneDaySkuSelectedIds: [],
+  oneDaySkuFlow: {
+    phase: 'idle',
+    running: false,
+    currentIndex: 0,
+    total: 0,
+    message: '',
+    error: null,
+    items: [],
+    canStartFlashSale: false,
+  },
 
   setSpcCds: (spcCds, spcCdsVer) => set({ spcCds, spcCdsVer }),
   setConnected: (isConnected) => set({ isConnected }),
@@ -1172,8 +1194,12 @@ export const useAppStore = create<AppState>((set, get) => ({
         _enableParams: {
           products, flashSaleId, spcCds, spcCdsVer, maxRetries, infiniteRetry,
           discountRate, flashSaleStock, purchaseLimit, skuOverrides,
+          skipSkuKeys: _enableSkipSkuKeys,
         },
       });
+      if (_enableSkipSkuKeys.length > 0) {
+        set({ _enableSkipSkuKeys: [] });
+      }
     } catch (e: any) {
       set({ error: `保存启动参数失败: ${e?.message || '未知错误'}` });
       return;
@@ -1842,6 +1868,185 @@ export const useAppStore = create<AppState>((set, get) => ({
         set({ autoModeLogs: logs.slice(0, 50) });
       }
     } catch {}
+  },
+
+  toggleOneDaySkuSelection: (itemId) => {
+    set(state => {
+      const exists = state.oneDaySkuSelectedIds.includes(itemId);
+      return {
+        oneDaySkuSelectedIds: exists
+          ? state.oneDaySkuSelectedIds.filter(id => id !== itemId)
+          : [...state.oneDaySkuSelectedIds, itemId],
+      };
+    });
+  },
+
+  setOneDaySkuSelection: (itemIds) => {
+    set({ oneDaySkuSelectedIds: Array.from(new Set(itemIds)) });
+  },
+
+  runOneDaySkuAndEnable: async () => {
+    const state = get();
+    if (state.oneDaySkuFlow.running || state.isEnabling) return;
+
+    const selectedProducts = state.products.filter(product => state.oneDaySkuSelectedIds.includes(product.itemid));
+    if (!selectedProducts.length) {
+      set({
+        oneDaySkuFlow: {
+          phase: 'failed',
+          running: false,
+          currentIndex: 0,
+          total: 0,
+          message: '',
+          error: '请先勾选需要处理的商品',
+          items: [],
+          canStartFlashSale: false,
+        },
+      });
+      return;
+    }
+
+    if (!state.spcCds) {
+      set({
+        oneDaySkuFlow: {
+          phase: 'failed',
+          running: false,
+          currentIndex: 0,
+          total: selectedProducts.length,
+          message: '',
+          error: '未获取 SPC_CDS，请先在 seller.shopee.tw 页面连接店铺',
+          items: [],
+          canStartFlashSale: false,
+        },
+      });
+      return;
+    }
+
+    const initialItems: OneDaySkuItemStatus[] = selectedProducts.map(product => ({
+      itemId: product.itemid,
+      itemName: product.name,
+      hasOneDaySku: hasDedicatedOneDaySku(product),
+      skuCreated: false,
+      publishStatus: 'idle',
+      discountRemoved: false,
+      discountRestored: false,
+      flashSaleStatus: 'idle',
+      highestPrice: getHighestModelPrice(product),
+    }));
+
+    set({
+      oneDaySkuFlow: {
+        phase: 'preparing_sku',
+        running: true,
+        currentIndex: 0,
+        total: selectedProducts.length,
+        message: '正在检查专用 1 天备货 SKU...',
+        error: null,
+        items: initialItems,
+        canStartFlashSale: false,
+      },
+    });
+
+    const nextItems = [...initialItems];
+
+    for (let i = 0; i < selectedProducts.length; i++) {
+      const product = selectedProducts[i];
+      const productIdNum = Number(product.itemid);
+
+      // Step 1: Fetch full product info
+      set(state2 => ({
+        oneDaySkuFlow: {
+          ...state2.oneDaySkuFlow,
+          phase: 'preparing_sku',
+          currentIndex: i + 1,
+          message: `获取商品信息 ${i + 1}/${selectedProducts.length}: ${product.name}`,
+        },
+      }));
+
+      try {
+        const getUrl = `https://seller.shopee.tw/api/v3/product/get_product_info?SPC_CDS=${state.spcCds}&SPC_CDS_VER=${state.spcCdsVer}&product_id=${productIdNum}&is_draft=false`;
+        const getResp = await injectedFetch<any>(getUrl);
+        const productInfo = getResp?.data?.product_info;
+        if (!productInfo) {
+          throw new Error('获取商品详情返回数据为空');
+        }
+
+        // Step 2: Build update payload
+        let buildResult;
+        try {
+          buildResult = buildOneDaySkuProductInfo(product, productInfo);
+        } catch (buildErr: any) {
+          throw new Error(`构造更新请求失败: ${buildErr.message}`);
+        }
+
+        // Step 3: Publish product
+        set(state2 => ({
+          oneDaySkuFlow: {
+            ...state2.oneDaySkuFlow,
+            phase: 'publishing_product',
+            message: `发布商品 ${i + 1}/${selectedProducts.length}: ${product.name}`,
+          },
+        }));
+
+        const updateUrl = `https://seller.shopee.tw/api/v3/product/update_product_info?SPC_CDS=${state.spcCds}&SPC_CDS_VER=${state.spcCdsVer}`;
+        const updateResp = await injectedFetch<any>(updateUrl, 'POST', {
+          product_id: productIdNum,
+          product_info: buildResult.productInfo,
+          is_draft: false,
+        });
+
+        if (updateResp?.code === 0) {
+          nextItems[i] = {
+            ...nextItems[i],
+            hasOneDaySku: buildResult.hasOneDaySku,
+            skuCreated: buildResult.skuCreated,
+            publishStatus: 'success',
+            highestPrice: buildResult.highestPrice,
+          };
+        } else {
+          throw new Error(updateResp?.msg || updateResp?.user_message || `发布失败 (code: ${updateResp?.code})`);
+        }
+      } catch (e: any) {
+        nextItems[i] = {
+          ...nextItems[i],
+          publishStatus: 'failed',
+          error: e.message || '未知错误',
+        };
+      }
+
+      set(state2 => ({ oneDaySkuFlow: { ...state2.oneDaySkuFlow, items: [...nextItems] } }));
+    }
+
+    const successCount = nextItems.filter(item => item.publishStatus === 'success').length;
+    const failCount = nextItems.filter(item => item.publishStatus === 'failed').length;
+
+    if (failCount === 0) {
+      set({
+        oneDaySkuFlow: {
+          phase: 'success',
+          running: false,
+          currentIndex: selectedProducts.length,
+          total: selectedProducts.length,
+          message: `已完成，共处理 ${selectedProducts.length} 个商品`,
+          error: null,
+          items: nextItems,
+          canStartFlashSale: false,
+        },
+      });
+    } else {
+      set({
+        oneDaySkuFlow: {
+          phase: 'failed',
+          running: false,
+          currentIndex: selectedProducts.length,
+          total: selectedProducts.length,
+          message: `处理完成：${successCount} 个成功，${failCount} 个失败`,
+          error: `${failCount} 个商品处理失败，请查看下方详情。`,
+          items: nextItems,
+          canStartFlashSale: false,
+        },
+      });
+    }
   },
 
   // ===== 后端管理 Actions =====

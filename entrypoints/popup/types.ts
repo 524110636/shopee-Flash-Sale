@@ -317,6 +317,52 @@ export interface UndiscountedSku {
   image: string;
 }
 
+// ===== 一键补充 1 天备货 SKU 相关类型 =====
+
+export type OneDaySkuFlowPhase =
+  | 'idle'
+  | 'preparing_sku'
+  | 'publishing_product'
+  | 'searching_discount'
+  | 'removing_discount'
+  | 'restoring_discount'
+  | 'starting_flash_sale'
+  | 'success'
+  | 'failed';
+
+export interface OneDaySkuDiscountInfo {
+  promotionId: number;
+  name: string;
+  startTime?: number;
+  endTime?: number;
+  raw: unknown;
+}
+
+export interface OneDaySkuItemStatus {
+  itemId: string;
+  itemName: string;
+  hasOneDaySku: boolean;
+  skuCreated: boolean;
+  publishStatus: 'idle' | 'skipped' | 'success' | 'failed';
+  discountRemoved: boolean;
+  discountRestored: boolean;
+  flashSaleStatus: 'idle' | 'pending' | 'started' | 'failed';
+  highestPrice?: number;
+  error?: string;
+  discounts?: OneDaySkuDiscountInfo[];
+}
+
+export interface OneDaySkuFlowState {
+  phase: OneDaySkuFlowPhase;
+  running: boolean;
+  currentIndex: number;
+  total: number;
+  message: string;
+  error: string | null;
+  items: OneDaySkuItemStatus[];
+  canStartFlashSale: boolean;
+}
+
 // ===== 后端管理系统类型 =====
 
 export interface BackendUser {

@@ -7,9 +7,11 @@ import type { ShopeeProduct } from '@/entrypoints/popup/types';
 interface ProductCardProps {
   product: ShopeeProduct;
   onViewSkus: (product: ShopeeProduct) => void;
+  selectedForOneDaySku?: boolean;
+  onToggleOneDaySku?: (itemId: string) => void;
 }
 
-export function ProductCard({ product, onViewSkus }: ProductCardProps) {
+export function ProductCard({ product, onViewSkus, selectedForOneDaySku = false, onToggleOneDaySku }: ProductCardProps) {
   const skuOverrides = useAppStore((s) => s.skuOverrides);
   const hasOverrides = product.modelList.some((m) => `${product.itemid}-${m.modelid}` in skuOverrides);
 
@@ -25,6 +27,20 @@ export function ProductCard({ product, onViewSkus }: ProductCardProps) {
     >
       <CardContent className='p-3'>
         <div className='flex items-start gap-3'>
+          {onToggleOneDaySku && (
+            <input
+              type='checkbox'
+              checked={selectedForOneDaySku}
+              onChange={(e) => {
+                e.stopPropagation();
+                onToggleOneDaySku(product.itemid);
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className='mt-5 h-4 w-4 shrink-0 cursor-pointer accent-shopee-brand'
+              aria-label={`选择 ${product.name} 进行 1 天备货 SKU 修复`}
+            />
+          )}
+
           {/* 商品图片 */}
           <div className='w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0'>
             {product.images[0] ? (

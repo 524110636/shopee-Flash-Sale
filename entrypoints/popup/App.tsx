@@ -15,7 +15,7 @@ import { AdminPanel } from '@/components/product/AdminPanel';
 import { UndiscountedSkuModal } from '@/components/product/UndiscountedSkuModal';
 import { ScheduledTaskCard } from '@/components/product/ScheduledTaskCard';
 import { useAppStore, setupBackgroundListener } from './store';
-import type { ShopeeProduct, CompletedCopyInfo } from './types';
+import type { ShopeeProduct } from './types';
 import * as backendApi from './backend-api';
 
 export default function App() {
@@ -41,10 +41,12 @@ export default function App() {
     checkCopyTaskStatus, setSelectedTemplate, fetchTimeSlots,
     checkBackgroundStatus,
     loadCache, clearCache, reset,
-    hasScheduledCopy, checkScheduledCopy, triggerScheduledCopyNow, scheduledTaskStatus,
+    hasScheduledCopy, checkScheduledCopy, triggerScheduledCopyNow,
     _completedCopyInfo, acknowledgeCompletedCopy,
     autoModeActive, autoModeStatus, enterAutoMode, exitAutoMode,
     loadAutoModeStatus,
+    oneDaySkuSelectedIds, oneDaySkuFlow,
+    toggleOneDaySkuSelection, setOneDaySkuSelection, runOneDaySkuAndEnable,
   } = useAppStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [flashSaleListOpen, setFlashSaleListOpen] = useState(true);
@@ -122,6 +124,21 @@ export default function App() {
       })
       .filter(({ skus }) => skus.length > 0);
   }, [overrideSearchQuery, overrideSummary.products]);
+
+  const oneDaySkuPhaseLabel = useMemo(() => {
+    const labels: Record<string, string> = {
+      idle: '待处理',
+      preparing_sku: '检查 SKU',
+      publishing_product: '发布商品',
+      searching_discount: '查询折扣',
+      removing_discount: '移除折扣',
+      restoring_discount: '恢复折扣',
+      starting_flash_sale: '开启特卖',
+      success: '已完成',
+      failed: '已停止',
+    };
+    return labels[oneDaySkuFlow.phase] || oneDaySkuFlow.phase;
+  }, [oneDaySkuFlow.phase]);
 
   useEffect(() => {
     setupBackgroundListener();
@@ -598,7 +615,91 @@ export default function App() {
                   </Button>
                 </div>
               )}
-              <ProductList products={products} />
+              <ProductList
+                products={products}
+                oneDaySkuSelectedIds={oneDaySkuSelectedIds}
+                onToggleOneDaySku={toggleOneDaySkuSelection}
+                onSelectAllOneDaySku={setOneDaySkuSelection}
+              />
+            </div>
+          )}
+
+          {/* ===== P1.5: 1 天备货 SKU 修复（无需选中活动即可使用）===== */}
+          {products.length > 0 && (
+            <div className="rounded-md border border-amber-200 bg-amber-50/70 px-2.5 py-2 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-xs font-medium text-amber-900">1 天备货 SKU 修复</div>
+                  <div className="text-[11px] text-amber-700">
+                    已选 {oneDaySkuSelectedIds.length} 个商品，系统将为每个商品新增 1 天备货 SKU 并发布
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 shrink-0 border-amber-300 bg-white px-2 text-xs text-amber-800 hover:bg-amber-100"
+                  disabled={oneDaySkuFlow.running || isEnabling || oneDaySkuSelectedIds.length === 0}
+                  onClick={() => runOneDaySkuAndEnable()}
+                >
+                  {oneDaySkuFlow.running ? '处理中...' : '一键修复并开启'}
+                </Button>
+              </div>
+
+              {oneDaySkuFlow.phase !== 'idle' && (
+                <div className="space-y-1 text-[11px] text-amber-900">
+                  <div className="flex items-center justify-between">
+                    <span className="shrink-0 rounded border border-amber-200 bg-white px-1.5 py-0.5 text-[10px] text-amber-800">
+                      {oneDaySkuPhaseLabel}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate px-2">{oneDaySkuFlow.message || '等待处理'}</span>
+                    <span>{oneDaySkuFlow.currentIndex}/{oneDaySkuFlow.total}</span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-amber-100">
+                    <div
+                      className="h-full rounded-full bg-amber-500 transition-all"
+                      style={{ width: `${oneDaySkuFlow.total ? Math.round(oneDaySkuFlow.currentIndex / oneDaySkuFlow.total * 100) : 0}%` }}
+                    />
+                  </div>
+                  {oneDaySkuFlow.error && (
+                    <div className="rounded border border-red-200 bg-red-50 px-2 py-1 text-red-700 space-y-1">
+                      <div>{oneDaySkuFlow.error}</div>
+                      {oneDaySkuFlow.phase === 'failed' && (
+                        <div className="text-[10px] text-red-600">
+                          部分商品处理失败，详情见下方列表。
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {oneDaySkuFlow.items.length > 0 && (
+                    <details>
+                      <summary className="cursor-pointer text-amber-700 hover:text-amber-900">
+                        处理详情 ({oneDaySkuFlow.items.length})
+                      </summary>
+                      <div className="mt-1 max-h-28 space-y-1 overflow-y-auto">
+                        {oneDaySkuFlow.items.map(item => (
+                          <div key={item.itemId} className="rounded border border-amber-100 bg-white px-2 py-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="truncate font-medium">{item.itemName}</span>
+                              <span className={item.publishStatus === 'failed' ? 'text-red-600' : 'text-amber-700'}>
+                                {item.hasOneDaySku ? '已有专用 SKU' : '待补充 SKU'}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">
+                              ID: {item.itemId} · 最高价: {item.highestPrice ?? '-'}
+                            </div>
+                            {item.discounts && item.discounts.length > 0 && (
+                              <div className="text-[10px] text-amber-700">
+                                折扣活动: {item.discounts.map(d => `${d.name} (#${d.promotionId})`).join('，')}
+                              </div>
+                            )}
+                            {item.error && <div className="text-[10px] text-red-600">{item.error}</div>}
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -643,7 +744,7 @@ export default function App() {
                     value={discountRate}
                     onChange={e => setDiscountRate(Math.max(1, Math.min(100, Number(e.target.value) || 60)))}
                     className="w-14 px-1.5 py-1 border rounded text-center"
-                    disabled={isEnabling}
+                    disabled={isEnabling || oneDaySkuFlow.running}
                   />
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -654,7 +755,7 @@ export default function App() {
                     value={flashSaleStock}
                     onChange={e => setFlashSaleStock(Math.max(1, Number(e.target.value) || 200))}
                     className="w-14 px-1.5 py-1 border rounded text-center"
-                    disabled={isEnabling}
+                    disabled={isEnabling || oneDaySkuFlow.running}
                   />
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -665,7 +766,7 @@ export default function App() {
                     value={purchaseLimit}
                     onChange={e => setPurchaseLimit(Math.max(0, Number(e.target.value) || 0))}
                     className="w-14 px-1.5 py-1 border rounded text-center"
-                    disabled={isEnabling}
+                    disabled={isEnabling || oneDaySkuFlow.running}
                   />
                 </div>
               </div>
@@ -680,14 +781,14 @@ export default function App() {
                   value={maxRetries}
                   onChange={e => setMaxRetries(Math.max(1, Number(e.target.value) || 1))}
                   className="w-16 px-2 py-1 border rounded text-center"
-                  disabled={isEnabling || infiniteRetry}
+                  disabled={isEnabling || oneDaySkuFlow.running || infiniteRetry}
                 />
                 <label className="flex items-center gap-1 ml-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={infiniteRetry}
                     onChange={e => setInfiniteRetry(e.target.checked)}
-                    disabled={isEnabling}
+                    disabled={isEnabling || oneDaySkuFlow.running}
                     className="cursor-pointer"
                   />
                   <span>无限重试</span>
@@ -698,7 +799,7 @@ export default function App() {
               {!isEnabling ? (
                 <button
                   className="w-full py-2.5 text-sm font-semibold text-white bg-shopee-brand rounded-md hover:bg-shopee-brand-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-                  disabled={isEnabling}
+                  disabled={isEnabling || oneDaySkuFlow.running}
                   onClick={() => enableFlashSaleItems()}
                 >
                   开启限时特卖
