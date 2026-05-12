@@ -43,7 +43,7 @@ entrypoints/                  # WXT entrypoints
 │   ├── store.ts              # Zustand single store (all business logic + API calls)
 │   ├── api.ts                # GraphQL product query fetcher
 │   ├── backend-api.ts        # Backend REST API client (auth, stores, analytics)
-│   ├── one-day-sku.ts        # 1-day-delivery SKU builder (buildOneDaySkuProductInfo, extractSellableStock, generateTierCombinations, getHighestModelPrice, hasDedicatedOneDaySku)
+│   ├── one-day-sku.ts        # 1-day-delivery SKU builder (buildOneDaySkuProductInfo, getDiscountRatio, buildDiscountRestoreList, extractSellableStock, generateTierCombinations, getHighestModelPrice, hasDedicatedOneDaySku, hasAnyOneDayDeliverySku, extractSellerDiscounts, isFiveTimesPriceError)
 │   ├── types.ts              # All shared TypeScript interfaces
 │   ├── index.html            # HTML template
 │   └── style.css             # Tailwind directives
@@ -148,8 +148,12 @@ backend/                      # Standalone backend service
 - **`skipSkuKeys` in auto-mode**: `AutoModePanel` can detect undiscounted SKUs and let user skip them before starting. The `runEnableLoop` in background.ts filters out skipped SKUs via a `skipSet`
 - **Copy button visibility**: The "复制" button in the activity list uses filled brand color (`bg-shopee-brand text-white`) instead of outline, with a "新/待开启" badge for newly created activities
 - **No test files**: Testing is manual via Chrome extension reload
-- **One-day SKU feature**: `one-day-sku.ts` provides SKU builder functions for adding/updating a dedicated "批發客戶下訂-請勿下單" SKU with 1-day shipping. Key flow: `get_product_info` → `buildOneDaySkuProductInfo()` → `update_product_info`. Runs in popup (not background) via `runOneDaySkuAndEnable()` in store.ts. Phase 1 only (SKU creation + publish), no discount restore yet.
+- **One-day SKU feature**: `one-day-sku.ts` provides SKU builder functions for adding/updating a dedicated "批發客戶下訂-請勿下單" SKU with 1-day shipping. Full flow: `get_product_info` → `buildOneDaySkuProductInfo()` → search discounts → remove from discounts → `update_product_info` → re-fetch product info (with retry) → restore discounts. Runs in popup (not background) via `runOneDaySkuAndEnable()` in store.ts. Discount restore now applies to ALL products including the newly created SKUs.
 - **`buildOneDaySkuProductInfo()` data flow**: Takes `ShopeeProduct` (GraphQL camelCase) + `ProductInfoPayload` (REST snake_case from `get_product_info`). Adds/updates a variation option in `std_tier_variation_list`, then generates new models for ALL existing tier combinations via `generateTierCombinations()` (Cartesian product). Existing models are cleaned (`cleanModel()`) to strip response-only fields while preserving `stock_setting_list` and `pre_order_info`.
+- **`getDiscountRatio(modelList)`**: Iterates existing models' `price_info.input_promotion_price / input_normal_price` to find the highest ratio (mildest discount, e.g. 6.5折 > 5.4折). Used to compute discount price for newly created 1-day SKU models that have no `input_promotion_price`.
+- **`buildDiscountRestoreList(modelList, productId, discountRatio?)`**: Converts model_list to `discount_model_list` entries for `update_seller_discount_items`. For models with existing `input_promotion_price`, uses that directly. For models without (new 1-day SKUs), computes `normalPrice * discountRatio` when `discountRatio` is provided.
+- **Discount flow (Phase 2)**: Publish step restructured to: always search discounts → remove if found → publish → (if 5× price error & no discounts found, re-search/remove/retry) → re-fetch product info (up to 3 retries with 1s delay) → restore discounts including new SKUs. `failed_item_list`/`error_list` in restore response are checked even when top-level `error: 0`.
+- **Console logging**: Every step emits `[一键修复]` prefixed logs with product name, action, and result data for debugging in DevTools Console.
 - **Model count safety**: Shopee limits models to 100 per product. `buildOneDaySkuProductInfo()` checks `nextModelList.length + tierCombinations.length > 100` before creating new SKUs, throwing a clear error if exceeded.
 - **Stock extraction**: `extractSellableStock()` handles both `stock_setting_list` (request format) and `stock_detail` (response format) to extract sellable stock for new models.
 
