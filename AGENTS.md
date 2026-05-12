@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **版本:** 1.8.3
 **状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 1
-**最近更新:** 2026-05-10 — 强制刷新列表、复制活动后自动加载商品、设置页安全加固、已结束活动内联提示、checkAuthOnStartup 竞态修复、healthCheck API、admin 查询重构
+**最近更新:** 2026-05-11 — 1 天备货 SKU Phase 1（新增/更新专用 SKU 并发布商品）
 
 ## 相关文档
 - `docs/shopee-flash-sale-api.md` — Shopee API endpoints and response formats
@@ -18,6 +18,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `docs/superpowers/specs/2026-05-06-auto-mode-spec.md` — Auto mode development blueprint
 - `docs/superpowers/specs/2026-05-06-auto-mode-checklist.md` — Auto mode acceptance checklist
 - `docs/superpowers/specs/2026-05-07-backend-system-spec.md` — Backend management system dev blueprint (if exists)
+- `docs/superpowers/specs/2026-05-10-one-day-sku-har-analysis.md` — One-day SKU HAR analysis + Phase 1 implementation status
 
 ## 完整目录结构
 
@@ -32,6 +33,7 @@ limited-time-sale/
 │   │   ├── api.ts                # GraphQL 商品查询 (fetchProducts)
 │   │   ├── backend-api.ts        # 后端 REST API 客户端 (auth, stores, analytics)
 │   │   ├── types.ts              # 全局 TypeScript 类型定义
+│   │   ├── one-day-sku.ts        # 1 天备货 SKU 构建器 (buildOneDaySkuProductInfo, extractSellableStock, generateTierCombinations, getHighestModelPrice, hasDedicatedOneDaySku)
 │   │   └── style.css             # Tailwind CSS 指令
 │   ├── background.ts             # Service Worker (enable loop, copy flows, alarms, auto mode, analytics event reporting)
 │   └── content.ts                # 内容脚本 (浮动进度 UI, 消息中继)
@@ -399,6 +401,7 @@ The API returns two possible formats (check both):
 - **Flash Sales:** flashSaleList[], flashSaleId, flashSaleInfo, isLoadingFlashSales
 - **Enable:** maxRetries, infiniteRetry, discountRate, flashSaleStock, purchaseLimit, isEnabling, enableProgress
 - **Copy:** copySource (flashSale + itemCount), copyMode, copyTaskStatus, isCopying, savedTemplates[], selectedTemplate, hasScheduledCopy, scheduledTaskStatus
+- **One-Day SKU:** oneDaySkuSelectedIds[], oneDaySkuFlow (phase/running/currentIndex/total/message/error/items[]/canStartFlashSale)
 - **SKU Overrides:** `Record<string, SkuOverride>` keyed by `${itemId}-${modelId}` (fields: `discountRate?`, `promoPrice?`, `stock?`, `purchaseLimit?`)
 - **Auto Mode:** autoModeView, autoModeConfig, autoModeStatus, autoModeLogs, firstSelectedActivity
 
@@ -453,6 +456,10 @@ The API returns two possible formats (check both):
 - **AutoModePhase** (v1.7.0) — 自动模式阶段: 'idle' | 'waiting_create' | 'creating' | 'waiting_enable' | 'enabling' | 'completed' | 'stopped'
 - **AutoModeStatus** (v1.7.0) — 自动模式状态: isRunning, sourceFlashSaleId, sourceFlashSaleName, config, currentRound, totalRounds, phase, nextTargetTime?, nextActionTime?, currentFlashSaleId?, lastError?, startedAt, debugMode?, selectedSlotId?, selectedSlotTime?, enableParams?
 - **AutoModeLog** (v1.7.0) — 自动模式日志: id, type ('info'|'success'|'warning'|'error'), message, timestamp
+- **OneDaySkuFlowPhase** — Phase enum: 'idle'|'preparing_sku'|'publishing_product'|'searching_discount'|'removing_discount'|'restoring_discount'|'starting_flash_sale'|'success'|'failed'
+- **OneDaySkuDiscountInfo** — Discount search result: promotionId, name, startTime?, endTime?, raw
+- **OneDaySkuItemStatus** — Per-item status in flow: itemId, itemName, hasOneDaySku, skuCreated, publishStatus, discountRemoved, discountRestored, flashSaleStatus, highestPrice?, error?, discounts?
+- **OneDaySkuFlowState** — Flow state: phase, running, currentIndex, total, message, error, items[], canStartFlashSale
 - **CopiedSaleData** — `_copiedSaleData` storage schema (source info + products + skuOverrides)
 - **FlashSaleTemplate** — Named template: name, createdAt, updatedAt, discountRate, flashSaleStock, purchaseLimit, skuOverrides, productInfo[]
 - **TemplateProductInfo** — Template product reference: itemId, name
@@ -523,6 +530,11 @@ The API returns two possible formats (check both):
 - **.env 配置系统 (v1.8.0):** 新增 `.env.example` + `.env` 管理后端地址。`import.meta.env.VITE_BACKEND_URL` 提供默认值，`backend-api.ts` 和 `store.ts` 读取。`setBackendUrl` 只在地址非默认时持久化到 storage，`checkAuthOnStartup` 清理 storage 中的旧默认值，避免代码默认值变更后被旧 storage 覆盖。
 - **认证注册流程内联验证码 (v1.8.0):** 注册表单中验证码显示框和输入框与邮箱/密码同行展示，无需单独步骤。验证码显示区域可点击触发注册 API。输入 6 位验证码后自动调用 verify API 完成验证。成功页展示"前往登录"按钮。
 - **pre-commit build 自检钩子 (v1.8.0):** `.githooks/pre-commit` 在 `git commit` 前自动运行 `npm run build`，构建失败则阻止提交。使用 `git config core.hooksPath .githooks` 启用。
+- **1 天备货 SKU — `buildOneDaySkuProductInfo` 数据流:** 输入 `ShopeeProduct`（GraphQL camelCase）+ `ProductInfoPayload`（REST snake_case 来自 `get_product_info`）。在 `std_tier_variation_list` 第一层追加/查找"批發客戶下訂-請勿下單"选项，然后通过 `generateTierCombinations()` 生成新选项与其他所有层的笛卡尔积组合索引。cleanModel() 剥离响应格式字段，保留 id、tier_index、price、stock_setting_list、pre_order_info。
+- **1 天备货 SKU — 多规格组合生成:** `generateTierCombinations(newTier0Idx, tierVariationList)` 遍历第 2~N 层的所有规格选项，生成 `newTier0Idx × count(tier2) × count(tier3) × ...` 个组合。例如第一层新增索引 4、第二层 8 个选项 → 生成 `[[4,0],[4,1],...,[4,7]]` 共 8 组索引。
+- **1 天备货 SKU — 100 组上限保护:** Shopee 限制商品最多 100 个 model。创建前检查 `nextModelList.length + tierCombinations.length > 100`，超限时抛出清晰错误信息。
+- **1 天备货 SKU — 库存提取:** `extractSellableStock()` 同时处理 `stock_setting_list`（请求格式）和 `stock_detail`（响应格式），从 `seller_stock_info[0].sellable_stock` 提取可售库存。
+- **1 天备货 SKU — runOneDaySkuAndEnable 执行循环:** 在 popup store（非 background）中运行。依次调用 `get_product_info` → `buildOneDaySkuProductInfo` → `update_product_info`，无折扣恢复。Phase 1 只做 SKU 创建/更新 + 发布。
 
 ## Known Issues / 待验证
 

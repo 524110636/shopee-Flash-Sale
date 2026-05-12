@@ -487,6 +487,27 @@ export default function App() {
                   <Button
                     variant="outline"
                     size="sm"
+                    className="h-6 px-2 text-xs font-normal border-red-200 text-red-500 hover:bg-red-50 disabled:opacity-50"
+                    disabled={isClearingCache}
+                    onClick={e => {
+                      e.stopPropagation();
+                      setIsClearingCache(true);
+                      clearCache().then(() => { reset(); extractSpcCds(); }).finally(() => setIsClearingCache(false));
+                    }}
+                  >
+                    <span className="mr-1">
+                      <svg className={`w-3 h-3 ${isClearingCache ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        {isClearingCache
+                          ? <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                          : <><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></>
+                        }
+                      </svg>
+                    </span>
+                    {isClearingCache ? '清除中' : '清除缓存'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="h-6 px-2 text-xs font-normal"
                     disabled={isLoadingFlashSaleList}
                     onClick={e => { e.stopPropagation(); fetchFlashSaleList(true); setFlashSaleListOpen(true); }}
@@ -680,8 +701,8 @@ export default function App() {
                           <div key={item.itemId} className="rounded border border-amber-100 bg-white px-2 py-1">
                             <div className="flex items-center justify-between gap-2">
                               <span className="truncate font-medium">{item.itemName}</span>
-                              <span className={item.publishStatus === 'failed' ? 'text-red-600' : 'text-amber-700'}>
-                                {item.hasOneDaySku ? '已有专用 SKU' : '待补充 SKU'}
+                              <span className={item.publishStatus === 'failed' ? 'text-red-600' : item.publishStatus === 'skipped' ? 'text-green-600' : 'text-amber-700'}>
+                                {item.publishStatus === 'skipped' ? '无需修复' : item.hasOneDaySku ? '已有专用 SKU' : '待补充 SKU'}
                               </span>
                             </div>
                             <div className="text-[10px] text-muted-foreground">
@@ -690,6 +711,8 @@ export default function App() {
                             {item.discounts && item.discounts.length > 0 && (
                               <div className="text-[10px] text-amber-700">
                                 折扣活动: {item.discounts.map(d => `${d.name} (#${d.promotionId})`).join('，')}
+                                {item.discountRestored && <span className="text-green-600"> · 已恢复</span>}
+                                {item.discountRemoved && !item.discountRestored && <span className="text-red-600"> · 恢复失败</span>}
                               </div>
                             )}
                             {item.error && <div className="text-[10px] text-red-600">{item.error}</div>}
@@ -1003,22 +1026,6 @@ export default function App() {
                   }}
                 >
                   {isTriggeringScheduled ? '执行中...' : (isEnabling ? '限时特卖进行中...' : '手动触发定时任务')}
-                </button>
-                <button
-                  className="w-full py-2 text-sm font-medium border border-red-200 text-red-500 bg-white rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  disabled={isClearingCache}
-                  onClick={async () => {
-                    setIsClearingCache(true);
-                    try {
-                      await clearCache();
-                      reset();
-                      extractSpcCds();
-                    } finally {
-                      setIsClearingCache(false);
-                    }
-                  }}
-                >
-                  {isClearingCache ? '清除中...' : '清除缓存'}
                 </button>
               </div>
             </div>

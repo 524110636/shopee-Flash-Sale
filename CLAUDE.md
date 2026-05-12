@@ -43,6 +43,7 @@ entrypoints/                  # WXT entrypoints
 │   ├── store.ts              # Zustand single store (all business logic + API calls)
 │   ├── api.ts                # GraphQL product query fetcher
 │   ├── backend-api.ts        # Backend REST API client (auth, stores, analytics)
+│   ├── one-day-sku.ts        # 1-day-delivery SKU builder (buildOneDaySkuProductInfo, extractSellableStock, generateTierCombinations, getHighestModelPrice, hasDedicatedOneDaySku)
 │   ├── types.ts              # All shared TypeScript interfaces
 │   ├── index.html            # HTML template
 │   └── style.css             # Tailwind directives
@@ -147,6 +148,10 @@ backend/                      # Standalone backend service
 - **`skipSkuKeys` in auto-mode**: `AutoModePanel` can detect undiscounted SKUs and let user skip them before starting. The `runEnableLoop` in background.ts filters out skipped SKUs via a `skipSet`
 - **Copy button visibility**: The "复制" button in the activity list uses filled brand color (`bg-shopee-brand text-white`) instead of outline, with a "新/待开启" badge for newly created activities
 - **No test files**: Testing is manual via Chrome extension reload
+- **One-day SKU feature**: `one-day-sku.ts` provides SKU builder functions for adding/updating a dedicated "批發客戶下訂-請勿下單" SKU with 1-day shipping. Key flow: `get_product_info` → `buildOneDaySkuProductInfo()` → `update_product_info`. Runs in popup (not background) via `runOneDaySkuAndEnable()` in store.ts. Phase 1 only (SKU creation + publish), no discount restore yet.
+- **`buildOneDaySkuProductInfo()` data flow**: Takes `ShopeeProduct` (GraphQL camelCase) + `ProductInfoPayload` (REST snake_case from `get_product_info`). Adds/updates a variation option in `std_tier_variation_list`, then generates new models for ALL existing tier combinations via `generateTierCombinations()` (Cartesian product). Existing models are cleaned (`cleanModel()`) to strip response-only fields while preserving `stock_setting_list` and `pre_order_info`.
+- **Model count safety**: Shopee limits models to 100 per product. `buildOneDaySkuProductInfo()` checks `nextModelList.length + tierCombinations.length > 100` before creating new SKUs, throwing a clear error if exceeded.
+- **Stock extraction**: `extractSellableStock()` handles both `stock_setting_list` (request format) and `stock_detail` (response format) to extract sellable stock for new models.
 
 ## Backend API Endpoints
 

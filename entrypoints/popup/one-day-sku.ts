@@ -55,6 +55,11 @@ export function hasDedicatedOneDaySku(product: ShopeeProduct): boolean {
   return (product.modelList || []).some(model => model.name === ONE_DAY_SKU_NAME);
 }
 
+/** 检查商品是否已有任意 1 天备货 SKU（不限名称） */
+export function hasAnyOneDayDeliverySku(modelList: Record<string, unknown>[]): boolean {
+  return modelList.some(m => m?.pre_order_info && (m.pre_order_info as any)?.days_to_ship === 1);
+}
+
 /** 生成多规格组合索引：第一层固定为 newTier0Idx，其他层遍历所有已有选项的笛卡尔积 */
 function generateTierCombinations(newTier0Idx: number, tierVariationList: any[]): number[][] {
   const otherTierCounts = tierVariationList.slice(1).map(
@@ -234,6 +239,57 @@ export function buildOneDaySkuProductInfo(product: ShopeeProduct, productInfo: P
 export function isFiveTimesPriceError(error: unknown): boolean {
   const text = typeof error === 'string' ? error : JSON.stringify(error ?? '');
   return /5\s*倍|五倍|price.*5|5.*price|價格.*差|价格.*差|price.*difference/i.test(text);
+}
+
+/** 从现有 model 列表中计算最高折扣率（最高折数 = mildest discount）。
+ *  例如 5.4折(ratio=0.54) vs 6.5折(ratio=0.65) → 返回 0.65 */
+export function getDiscountRatio(modelList: Record<string, any>[]): number | null {
+  let maxRatio: number | null = null;
+  for (const m of modelList) {
+    const normal = Number(m?.price_info?.input_normal_price ?? 0);
+    const promo = Number(m?.price_info?.input_promotion_price ?? 0);
+    if (normal > 0 && promo > 0 && promo < normal) {
+      const ratio = promo / normal;
+      if (maxRatio === null || ratio > maxRatio) {
+        maxRatio = ratio;
+      }
+    }
+  }
+  return maxRatio;
+}
+
+/** 将产品 model_list 转换为折扣恢复请求体（promotion_price 使用当前折扣价转换为最小单位）。
+ *  discountRatio: 可选折扣率，用于没有 input_promotion_price 的 model（如新增的 1 天备货 SKU） */
+export function buildDiscountRestoreList(
+  modelList: Record<string, any>[],
+  productId: number,
+  discountRatio?: number,
+): Record<string, any>[] {
+  return modelList
+    .filter(m => m.id != null && m.id > 0)
+    .map(m => {
+      let price: number;
+      const promoPrice = m.price_info?.input_promotion_price;
+      const normalPrice = m.price_info?.input_normal_price ?? m.price ?? 0;
+
+      if (promoPrice != null && Number(promoPrice) > 0) {
+        price = Number(promoPrice);
+      } else if (discountRatio != null && discountRatio > 0 && discountRatio < 1 && Number(normalPrice) > 0) {
+        price = Number(normalPrice) * discountRatio;
+      } else {
+        price = Number(normalPrice);
+      }
+
+      const priceInMinor = Math.round(price * 100000);
+      return {
+        item_id: productId,
+        model_id: m.id,
+        promotion_price: priceInMinor,
+        user_item_limit: 0,
+        status: 1,
+        promotion_stock: 0,
+      };
+    });
 }
 
 export function extractSellerDiscounts(response: any): OneDaySkuDiscountInfo[] {

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { ShopeeProduct, FlashSale, EnableItem, EnableProgress, SkuOverride, CacheData, FlashSaleTemplate, TemplateProductInfo, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, TimeSlot, ScheduledTaskStatus, AutoModeConfig, AutoModeStatus, AutoModeLog, BackendAuthState, BackendStoreBinding, UndiscountedSku, PendingFlashSaleData, CompletedCopyInfo, OneDaySkuFlowState, OneDaySkuItemStatus } from './types';
 import * as backendApi from './backend-api';
-import { getHighestModelPrice, hasDedicatedOneDaySku, buildOneDaySkuProductInfo } from './one-day-sku';
+import { getHighestModelPrice, hasDedicatedOneDaySku, buildOneDaySkuProductInfo, hasAnyOneDayDeliverySku, extractSellerDiscounts, isFiveTimesPriceError, buildDiscountRestoreList, getDiscountRatio } from './one-day-sku';
 
 // ===== 注入页面执行 fetch（MAIN world）=====
 async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -1964,22 +1964,105 @@ export const useAppStore = create<AppState>((set, get) => ({
       }));
 
       try {
+        console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 获取商品信息 (get_product_info)...`);
         const getUrl = `https://seller.shopee.tw/api/v3/product/get_product_info?SPC_CDS=${state.spcCds}&SPC_CDS_VER=${state.spcCdsVer}&product_id=${productIdNum}&is_draft=false`;
         const getResp = await injectedFetch<any>(getUrl);
         const productInfo = getResp?.data?.product_info;
         if (!productInfo) {
           throw new Error('获取商品详情返回数据为空');
         }
+        const modelList = Array.isArray(productInfo.model_list) ? productInfo.model_list : [];
+        console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 获取商品信息成功，已有 ${modelList.length} 个SKU`);
+
+        // 检测是否已有任意 1 天备货 SKU，有则跳过
+        if (hasAnyOneDayDeliverySku(modelList)) {
+          console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: ⏭️ 已有1天备货SKU，跳过`);
+          nextItems[i] = {
+            ...nextItems[i],
+            hasOneDaySku: true,
+            publishStatus: 'skipped',
+            highestPrice: getHighestModelPrice(product),
+          };
+          set(state2 => ({ oneDaySkuFlow: { ...state2.oneDaySkuFlow, items: [...nextItems] } }));
+          continue;
+        }
 
         // Step 2: Build update payload
+        console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 构造更新请求 (buildOneDaySkuProductInfo)...`);
         let buildResult;
         try {
           buildResult = buildOneDaySkuProductInfo(product, productInfo);
+          console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 构造完成 hasOneDaySku=${buildResult.hasOneDaySku} skuCreated=${buildResult.skuCreated} highestPrice=${buildResult.highestPrice}`);
         } catch (buildErr: any) {
+          console.error(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 构造更新请求失败`, buildErr.message);
           throw new Error(`构造更新请求失败: ${buildErr.message}`);
         }
 
-        // Step 3: Publish product
+        // Step 3: 搜索折扣活动（发布前，确保后续可恢复）
+        console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 搜索折扣活动...`);
+        set(state2 => ({
+          oneDaySkuFlow: {
+            ...state2.oneDaySkuFlow,
+            phase: 'searching_discount',
+            message: `搜索折扣活动 ${i + 1}/${selectedProducts.length}: ${product.name}`,
+          },
+        }));
+
+        const searchUrl = `https://seller.shopee.tw/api/marketing/v3/public/discount/search/?SPC_CDS=${state.spcCds}&SPC_CDS_VER=${state.spcCdsVer}`;
+        const searchResp = await injectedFetch<any>(searchUrl, 'POST', {
+          discount_type: 0,
+          time_status: 0,
+          keyword: product.itemid,
+          search_type: 2,
+        });
+        let discounts = extractSellerDiscounts(searchResp);
+        console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 搜索到 ${discounts.length} 个折扣活动`, discounts.map(d => `${d.name}(${d.promotionId})`));
+
+        if (discounts.length > 0) {
+          nextItems[i] = { ...nextItems[i], discounts };
+
+          // Step 4: 从折扣活动中移除商品
+          console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 从 ${discounts.length} 个折扣活动中移除商品...`);
+          set(state2 => ({
+            oneDaySkuFlow: {
+              ...state2.oneDaySkuFlow,
+              phase: 'removing_discount',
+              message: `移除折扣活动 ${i + 1}/${selectedProducts.length}: ${product.name}`,
+            },
+          }));
+
+          let removeFailed: string | null = null;
+          const removeUrl = `https://seller.shopee.tw/api/marketing/v4/discount/delete_abnormal_seller_discount_items/?SPC_CDS=${state.spcCds}&SPC_CDS_VER=${state.spcCdsVer}`;
+          for (const discount of discounts) {
+            console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 从折扣"${discount.name}"(${discount.promotionId})移除...`);
+            const removeResp = await injectedFetch<any>(removeUrl, 'POST', {
+              promotion_id: discount.promotionId,
+              item_id_list: [productIdNum],
+            });
+            if (removeResp?.error !== 0) {
+              console.error(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 从折扣"${discount.name}"移除失败`, removeResp);
+              removeFailed = discount.name;
+              break;
+            }
+            console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 从折扣"${discount.name}"移除成功`);
+          }
+
+          if (removeFailed) {
+            nextItems[i] = {
+              ...nextItems[i],
+              publishStatus: 'failed',
+              error: `无法从折扣活动"${removeFailed}"中移除商品，请手动关闭折扣活动后重试。`,
+            };
+            set(state2 => ({ oneDaySkuFlow: { ...state2.oneDaySkuFlow, items: [...nextItems] } }));
+            continue;
+          }
+
+          nextItems[i] = { ...nextItems[i], discountRemoved: true };
+          console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 已从所有折扣活动中移除`);
+        }
+
+        // Step 5: 发布商品
+        console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 发布商品 (update_product_info)${buildResult.skuCreated ? ' [新增SKU]' : ' [更新已有SKU]'}，model数量=${(buildResult.productInfo.model_list || []).length}，最高价=${buildResult.highestPrice}`);
         set(state2 => ({
           oneDaySkuFlow: {
             ...state2.oneDaySkuFlow,
@@ -1989,13 +2072,194 @@ export const useAppStore = create<AppState>((set, get) => ({
         }));
 
         const updateUrl = `https://seller.shopee.tw/api/v3/product/update_product_info?SPC_CDS=${state.spcCds}&SPC_CDS_VER=${state.spcCdsVer}`;
-        const updateResp = await injectedFetch<any>(updateUrl, 'POST', {
-          product_id: productIdNum,
-          product_info: buildResult.productInfo,
-          is_draft: false,
-        });
 
-        if (updateResp?.code === 0) {
+        const attemptPublish = async (): Promise<{ code: number; msg?: string }> => {
+          const resp = await injectedFetch<any>(updateUrl, 'POST', {
+            product_id: productIdNum,
+            product_info: buildResult.productInfo,
+            is_draft: false,
+          });
+          return { code: resp?.code ?? -1, msg: resp?.msg || resp?.user_message };
+        };
+
+        let publishResult = await attemptPublish();
+        console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 发布结果 code=${publishResult.code}${publishResult.msg ? ' msg=' + publishResult.msg : ''}`);
+
+        // 如果是 5 倍错误且之前没有搜到折扣，重新搜索折扣并移除后重试
+        if (publishResult.code !== 0 && isFiveTimesPriceError(publishResult.msg) && discounts.length === 0) {
+          console.warn(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 发布遇到5倍价格差，重新搜索折扣...`);
+          set(state2 => ({
+            oneDaySkuFlow: {
+              ...state2.oneDaySkuFlow,
+              phase: 'searching_discount',
+              message: `搜索折扣活动 ${i + 1}/${selectedProducts.length}: ${product.name}`,
+            },
+          }));
+
+          const retrySearchResp = await injectedFetch<any>(searchUrl, 'POST', {
+            discount_type: 0,
+            time_status: 0,
+            keyword: product.itemid,
+            search_type: 2,
+          });
+          discounts = extractSellerDiscounts(retrySearchResp);
+          console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 重新搜索到 ${discounts.length} 个折扣活动`, discounts.map(d => `${d.name}(${d.promotionId})`));
+
+          if (discounts.length > 0) {
+            nextItems[i] = { ...nextItems[i], discounts };
+
+            set(state2 => ({
+              oneDaySkuFlow: {
+                ...state2.oneDaySkuFlow,
+                phase: 'removing_discount',
+                message: `移除折扣活动 ${i + 1}/${selectedProducts.length}: ${product.name}`,
+              },
+            }));
+
+            let retryRemoveFailed = false;
+            const retryRemoveUrl = `https://seller.shopee.tw/api/marketing/v4/discount/delete_abnormal_seller_discount_items/?SPC_CDS=${state.spcCds}&SPC_CDS_VER=${state.spcCdsVer}`;
+            for (const discount of discounts) {
+              console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 从折扣"${discount.name}"(${discount.promotionId})移除...`);
+              const removeResp = await injectedFetch<any>(retryRemoveUrl, 'POST', {
+                promotion_id: discount.promotionId,
+                item_id_list: [productIdNum],
+              });
+              if (removeResp?.error !== 0) {
+                console.error(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 从折扣"${discount.name}"移除失败`, removeResp);
+                retryRemoveFailed = true;
+                break;
+              }
+              console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 从折扣"${discount.name}"移除成功`);
+            }
+
+            if (!retryRemoveFailed) {
+              nextItems[i] = { ...nextItems[i], discountRemoved: true };
+
+              set(state2 => ({
+                oneDaySkuFlow: {
+                  ...state2.oneDaySkuFlow,
+                  phase: 'publishing_product',
+                  message: `重新发布商品 ${i + 1}/${selectedProducts.length}: ${product.name}`,
+                },
+              }));
+              publishResult = await attemptPublish();
+              console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 重试发布结果 code=${publishResult.code}${publishResult.msg ? ' msg=' + publishResult.msg : ''}`);
+            } else {
+              nextItems[i] = {
+                ...nextItems[i],
+                publishStatus: 'failed',
+                error: '无法从折扣活动中移除商品，请手动关闭折扣活动后重试。',
+              };
+              set(state2 => ({ oneDaySkuFlow: { ...state2.oneDaySkuFlow, items: [...nextItems] } }));
+              continue;
+            }
+          } else {
+            nextItems[i] = {
+              ...nextItems[i],
+              publishStatus: 'failed',
+              error: `价格差距过大（>5倍），但未搜索到该商品的折扣活动。${publishResult.msg || ''}`,
+            };
+            set(state2 => ({ oneDaySkuFlow: { ...state2.oneDaySkuFlow, items: [...nextItems] } }));
+            continue;
+          }
+        }
+
+        // Step 6: 恢复折扣（发布成功后，需重新获取商品信息以拿到新 SKU 的 ID）
+        if (publishResult.code === 0 && discounts.length > 0) {
+          const originalModelList = Array.isArray(productInfo.model_list) ? productInfo.model_list : [];
+          const discountRatio = getDiscountRatio(originalModelList);
+          console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 原有折扣率=${discountRatio != null ? (discountRatio * 100).toFixed(1) + '%' : '无折扣'}`);
+
+          // 重新获取商品信息，拿到包含新 SKU ID 的完整 model_list
+          // 发布后虾皮后端可能需要一点时间处理，加重试机制
+          console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 重新获取商品信息以取得新 SKU ID...`);
+          let updatedModelList: Record<string, any>[] = originalModelList;
+          for (let retry = 0; retry < 3; retry++) {
+            if (retry > 0) {
+              console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 等待 1 秒后重试第 ${retry} 次...`);
+              await new Promise(r => setTimeout(r, 1000));
+            }
+            try {
+              const updatedGetResp = await injectedFetch<any>(getUrl);
+              const code = updatedGetResp?.code;
+              const freshList = updatedGetResp?.data?.product_info?.model_list;
+              if (code === 0 && Array.isArray(freshList) && freshList.length > 0) {
+                updatedModelList = freshList;
+                console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 重新获取成功，共 ${updatedModelList.length} 个 SKU（原始 ${originalModelList.length} 个）`);
+                break;
+              }
+              console.warn(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 重新获取失败 code=${code} msg=${updatedGetResp?.msg || ''}，${retry < 2 ? '将重试' : '回退使用原始 SKU 列表'}`);
+            } catch (refetchErr: any) {
+              console.warn(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 重新获取异常，${retry < 2 ? '将重试' : '回退使用原始 SKU 列表'}`, refetchErr.message);
+            }
+          }
+
+          // 用最新的 model_list（含新 SKU ID）构建恢复条目，新 SKU 按最高折扣率计算折扣价
+          const restoreEntries = buildDiscountRestoreList(updatedModelList, productIdNum, discountRatio ?? undefined);
+
+          if (restoreEntries.length > 0) {
+            const newSkuCount = buildResult.skuCreated ? updatedModelList.length - originalModelList.length : 0;
+            console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 发布成功，恢复 ${discounts.length} 个折扣活动 (${restoreEntries.length} 个SKU${newSkuCount > 0 ? `，含 ${newSkuCount} 个新增批发客户 SKU` : ''})...`);
+            // 打印前 3 个和最后 1 个恢复条目方便调试
+            console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 恢复条目示例:`, restoreEntries.slice(0, 3).map(e => ({ model_id: e.model_id, promotion_price: e.promotion_price })));
+            if (restoreEntries.length > 3) {
+              console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: ... 最后一个:`, { model_id: restoreEntries[restoreEntries.length - 1].model_id, promotion_price: restoreEntries[restoreEntries.length - 1].promotion_price });
+            }
+
+            set(state2 => ({
+              oneDaySkuFlow: {
+                ...state2.oneDaySkuFlow,
+                phase: 'restoring_discount',
+                message: `恢复折扣活动 ${i + 1}/${selectedProducts.length}: ${product.name}`,
+              },
+            }));
+
+            let restoreFailed: string | null = null;
+            const restoreUrl = `https://seller.shopee.tw/api/marketing/v4/discount/update_seller_discount_items/?SPC_CDS=${state.spcCds}&SPC_CDS_VER=${state.spcCdsVer}`;
+            for (const discount of discounts) {
+              console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 恢复到折扣"${discount.name}"(${discount.promotionId})...`);
+              const restoreResp = await injectedFetch<any>(restoreUrl, 'POST', {
+                promotion_id: discount.promotionId,
+                discount_model_list: restoreEntries,
+              });
+              // 检查顶层错误
+              if (restoreResp?.error !== 0) {
+                console.error(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 恢复到折扣"${discount.name}"失败`, restoreResp);
+                restoreFailed = discount.name;
+                break;
+              }
+              // 检查单条 model 失败（failed_item_list / error_list）
+              const data = restoreResp?.data;
+              const failedItems = data?.failed_item_list;
+              const errorList = data?.error_list;
+              if ((Array.isArray(failedItems) && failedItems.length > 0) || (Array.isArray(errorList) && errorList.length > 0)) {
+                console.error(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 恢复到折扣"${discount.name}"部分失败`, {
+                  total_count: data?.total_count,
+                  success_count: data?.success_count,
+                  failed_item_list: failedItems,
+                  error_list: errorList,
+                });
+                restoreFailed = `${discount.name}(部分SKU失败)`;
+                break;
+              }
+              console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 恢复到折扣"${discount.name}"成功 (total=${data?.total_count}, success=${data?.success_count})`);
+            }
+
+            if (restoreFailed) {
+              nextItems[i] = {
+                ...nextItems[i],
+                discountRestored: false,
+                error: `商品已发布，但折扣活动"${restoreFailed}"恢复失败。请根据上方活动信息手动恢复。`,
+              };
+            } else {
+              nextItems[i] = { ...nextItems[i], discountRestored: true };
+              console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 所有折扣恢复完成`);
+            }
+          }
+        }
+
+        // 判断最终发布结果
+        if (publishResult.code === 0) {
           nextItems[i] = {
             ...nextItems[i],
             hasOneDaySku: buildResult.hasOneDaySku,
@@ -2003,10 +2267,13 @@ export const useAppStore = create<AppState>((set, get) => ({
             publishStatus: 'success',
             highestPrice: buildResult.highestPrice,
           };
-        } else {
-          throw new Error(updateResp?.msg || updateResp?.user_message || `发布失败 (code: ${updateResp?.code})`);
+          console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: ✅ 处理成功${buildResult.skuCreated ? ' (新增SKU)' : ' (更新已有SKU)'}，折扣活动${discounts.length > 0 ? '已恢复' : '无需处理'}`);
+        } else if (nextItems[i].publishStatus !== 'failed') {
+          console.error(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: ❌ 发布失败 code=${publishResult.code}`, publishResult.msg);
+          throw new Error(publishResult.msg || `发布失败 (code: ${publishResult.code})`);
         }
       } catch (e: any) {
+        console.error(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: ❌ 处理异常`, e.message || e);
         nextItems[i] = {
           ...nextItems[i],
           publishStatus: 'failed',
@@ -2019,28 +2286,36 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const successCount = nextItems.filter(item => item.publishStatus === 'success').length;
     const failCount = nextItems.filter(item => item.publishStatus === 'failed').length;
+    const skippedCount = nextItems.filter(item => item.publishStatus === 'skipped').length;
+    console.log(`[一键修复] ===== 处理完成 ===== 成功:${successCount} 失败:${failCount} 跳过:${skippedCount} 总计:${selectedProducts.length}`);
 
     if (failCount === 0) {
+      const parts: string[] = [];
+      if (successCount > 0) parts.push(`${successCount} 个成功`);
+      if (skippedCount > 0) parts.push(`已跳过 ${skippedCount} 个（无需修复）`);
       set({
         oneDaySkuFlow: {
           phase: 'success',
           running: false,
           currentIndex: selectedProducts.length,
           total: selectedProducts.length,
-          message: `已完成，共处理 ${selectedProducts.length} 个商品`,
+          message: `已完成${parts.length ? '：' + parts.join('，') : '，共处理 ' + selectedProducts.length + ' 个商品'}`,
           error: null,
           items: nextItems,
           canStartFlashSale: false,
         },
       });
     } else {
+      const parts: string[] = [];
+      if (successCount > 0) parts.push(`${successCount} 个成功`);
+      if (skippedCount > 0) parts.push(`已跳过 ${skippedCount} 个`);
       set({
         oneDaySkuFlow: {
           phase: 'failed',
           running: false,
           currentIndex: selectedProducts.length,
           total: selectedProducts.length,
-          message: `处理完成：${successCount} 个成功，${failCount} 个失败`,
+          message: `处理完成：${successCount} 个成功${failCount > 0 ? '，' + failCount + ' 个失败' : ''}${skippedCount > 0 ? '，已跳过 ' + skippedCount + ' 个' : ''}`,
           error: `${failCount} 个商品处理失败，请查看下方详情。`,
           items: nextItems,
           canStartFlashSale: false,
