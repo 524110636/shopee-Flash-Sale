@@ -43,12 +43,26 @@ function extractSellableStock(model: Record<string, unknown>): number {
   return 0;
 }
 
-export function getHighestModelPrice(product: ShopeeProduct): number {
-  const prices = (product.modelList || [])
-    .map(model => Number(model.originPrice || model.inputOriginPrice || product.originPrice || product.inputOriginPrice || 0))
+export function getHighestModelPrice(product: ShopeeProduct, productInfoModels?: Record<string, unknown>[]): number {
+  // 优先从 ShopeeProduct.modelList（已有价格信息），其次从 productInfo model_list
+  const modelPrices = (product.modelList || [])
+    .map(model => Number(model.originPrice || model.inputOriginPrice || 0))
     .filter(price => Number.isFinite(price) && price > 0);
+  if (modelPrices.length > 0) return Math.max(...modelPrices);
 
-  return prices.length > 0 ? Math.max(...prices) : 0;
+  // modelList 为空时（如 FirstUse 流程），从 productInfo model_list 取
+  if (productInfoModels) {
+    const infoPrices = productInfoModels
+      .map(m => Number((m as any)?.price_info?.input_normal_price || (m as any)?.price_info?.input_origin_price || (m as any)?.price || 0))
+      .filter(price => Number.isFinite(price) && price > 0);
+    if (infoPrices.length > 0) return Math.max(...infoPrices);
+  }
+
+  // 兜底：产品级别价格
+  const productPrice = Number(product.originPrice || product.inputOriginPrice || 0);
+  if (Number.isFinite(productPrice) && productPrice > 0) return productPrice;
+
+  return 0;
 }
 
 export function hasDedicatedOneDaySku(product: ShopeeProduct): boolean {
@@ -90,7 +104,7 @@ export function buildOneDaySkuProductInfo(product: ShopeeProduct, productInfo: P
     throw new Error('缺少完整 product_info.model_list，不能安全构造 update_product_info 请求');
   }
 
-  const highestPrice = getHighestModelPrice(product);
+  const highestPrice = getHighestModelPrice(product, modelList);
   if (highestPrice <= 0) {
     throw new Error('无法从商品 SKU 中计算最高价格');
   }
@@ -296,6 +310,8 @@ export function extractSellerDiscounts(response: any): OneDaySkuDiscountInfo[] {
   const discounts = response?.data?.discounts;
   if (!Array.isArray(discounts)) return [];
 
+  const now = Math.floor(Date.now() / 1000);
+
   return discounts
     .map((entry: any) => entry?.seller_discount)
     .filter(Boolean)
@@ -304,7 +320,14 @@ export function extractSellerDiscounts(response: any): OneDaySkuDiscountInfo[] {
       name: String(discount.name || `折扣活动 #${discount.discount_id}`),
       startTime: typeof discount.start_time === 'number' ? discount.start_time : undefined,
       endTime: typeof discount.end_time === 'number' ? discount.end_time : undefined,
+      timeStatus: typeof discount.time_status === 'number' ? discount.time_status : undefined,
       raw: discount,
     }))
-    .filter((discount: OneDaySkuDiscountInfo) => Number.isFinite(discount.promotionId));
+    .filter((discount: OneDaySkuDiscountInfo) => {
+      if (!Number.isFinite(discount.promotionId)) return false;
+      // 过滤已结束的折扣活动（time_status=3 或 endTime 已过）
+      if (discount.timeStatus === 3) return false;
+      if (discount.endTime != null && discount.endTime < now) return false;
+      return true;
+    });
 }

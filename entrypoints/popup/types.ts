@@ -327,6 +327,8 @@ export type OneDaySkuFlowPhase =
   | 'removing_discount'
   | 'restoring_discount'
   | 'starting_flash_sale'
+  | 'editing_params'
+  | 'selecting_flash_sale'
   | 'success'
   | 'failed';
 
@@ -335,6 +337,7 @@ export interface OneDaySkuDiscountInfo {
   name: string;
   startTime?: number;
   endTime?: number;
+  timeStatus?: number; // 1=upcoming, 2=active, 3=ended
   raw: unknown;
 }
 
@@ -343,7 +346,7 @@ export interface OneDaySkuItemStatus {
   itemName: string;
   hasOneDaySku: boolean;
   skuCreated: boolean;
-  publishStatus: 'idle' | 'skipped' | 'success' | 'failed';
+  publishStatus: 'idle' | 'success' | 'failed';
   discountRemoved: boolean;
   discountRestored: boolean;
   flashSaleStatus: 'idle' | 'pending' | 'started' | 'failed';
@@ -361,6 +364,31 @@ export interface OneDaySkuFlowState {
   error: string | null;
   items: OneDaySkuItemStatus[];
   canStartFlashSale: boolean;
+}
+
+// ===== 第一次使用（获取全部商品 + 选择修复）类型 =====
+
+export interface ShopProductListItem {
+  id: number;
+  name: string;
+  status: number;
+  coverImage: string;
+  priceMin: number;
+  priceMax: number;
+  modelCount: number;
+  soldCount: number;
+}
+
+export interface FirstUseState {
+  open: boolean;
+  loading: boolean;
+  products: ShopProductListItem[];
+  selectedIds: Set<number>;
+  searchKeyword: string;
+  searchResults: ShopProductListItem[];
+  fetchedTotal: number;
+  hasMore: boolean;
+  cursor: string | null;
 }
 
 // ===== 后端管理系统类型 =====

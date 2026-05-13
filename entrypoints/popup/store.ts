@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ShopeeProduct, FlashSale, EnableItem, EnableProgress, SkuOverride, CacheData, FlashSaleTemplate, TemplateProductInfo, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, TimeSlot, ScheduledTaskStatus, AutoModeConfig, AutoModeStatus, AutoModeLog, BackendAuthState, BackendStoreBinding, UndiscountedSku, PendingFlashSaleData, CompletedCopyInfo, OneDaySkuFlowState, OneDaySkuItemStatus } from './types';
+import type { ShopeeProduct, FlashSale, EnableItem, EnableProgress, SkuOverride, CacheData, FlashSaleTemplate, TemplateProductInfo, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, TimeSlot, ScheduledTaskStatus, AutoModeConfig, AutoModeStatus, AutoModeLog, BackendAuthState, BackendStoreBinding, UndiscountedSku, PendingFlashSaleData, CompletedCopyInfo, OneDaySkuFlowState, OneDaySkuItemStatus, ShopProductListItem, FirstUseState } from './types';
 import * as backendApi from './backend-api';
 import { getHighestModelPrice, hasDedicatedOneDaySku, buildOneDaySkuProductInfo, hasAnyOneDayDeliverySku, extractSellerDiscounts, isFiveTimesPriceError, buildDiscountRestoreList, getDiscountRatio } from './one-day-sku';
 
@@ -222,6 +222,66 @@ interface AppState {
   toggleOneDaySkuSelection: (itemId: string) => void;
   setOneDaySkuSelection: (itemIds: string[]) => void;
   runOneDaySkuAndEnable: () => Promise<void>;
+  // Phase 3: 开启限时特卖
+  dismissFlashSaleStart: () => void;
+  goToFlashSaleSelection: () => void;
+  addToExistingFlashSale: (flashSaleId: number) => Promise<void>;
+  createNewFlashSaleAndAdd: (timeSlotId: number) => Promise<void>;
+  // 第一次使用
+  firstUse: FirstUseState;
+  openFirstUse: () => void;
+  closeFirstUse: () => void;
+  fetchFirstUseProducts: (pageSize?: number) => Promise<void>;
+  searchFirstUseProducts: (keyword: string) => Promise<void>;
+  toggleFirstUseSelection: (productId: number) => void;
+  selectAllFirstUse: (productIds: number[]) => void;
+  runFirstUseFlow: () => Promise<void>;
+}
+
+/** 按页拉取全部店铺商品，支持可选 keyword 搜索 */
+async function fetchShopProductsPage(
+  spcCds: string,
+  spcCdsVer: string,
+  pageSize: number,
+  cursor: string | null,
+  keyword?: string,
+): Promise<{ products: ShopProductListItem[]; cursor: string | null; total: number }> {
+  const params = new URLSearchParams({
+    SPC_CDS: spcCds,
+    SPC_CDS_VER: spcCdsVer,
+    page_size: String(pageSize),
+    list_type: 'live_all',
+    sort_by: 'sales',
+    is_asc: 'false',
+    request_attribute: '',
+    need_ads: 'true',
+  });
+  if (cursor) params.set('cursor', cursor);
+  if (keyword) params.set('keyword', keyword);
+
+  const url = `https://seller.shopee.tw/api/v3/opt/mpsku/list/v2/search_product_list?${params.toString()}`;
+  const resp = await injectedFetch<any>(url, 'GET');
+
+  if (resp?.code !== 0) {
+    throw new Error(`获取商品列表失败: ${resp?.message || '未知错误'}`);
+  }
+
+  const products: ShopProductListItem[] = (resp.data?.products || []).map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    status: p.status,
+    coverImage: p.cover_image || '',
+    priceMin: parseFloat(p.price_detail?.selling_price_min || p.price_detail?.price_min || '0'),
+    priceMax: parseFloat(p.price_detail?.selling_price_max || p.price_detail?.price_max || '0'),
+    modelCount: Array.isArray(p.model_list) ? p.model_list.length : 0,
+    soldCount: p.statistics?.sold_count || 0,
+  }));
+
+  return {
+    products,
+    cursor: resp.data?.page_info?.cursor || null,
+    total: resp.data?.page_info?.total || 0,
+  };
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -298,6 +358,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     error: null,
     items: [],
     canStartFlashSale: false,
+  },
+
+  firstUse: {
+    open: false,
+    loading: false,
+    products: [],
+    selectedIds: new Set(),
+    searchKeyword: '',
+    searchResults: [],
+    fetchedTotal: 0,
+    hasMore: true,
+    cursor: null,
   },
 
   setSpcCds: (spcCds, spcCdsVer) => set({ spcCds, spcCdsVer }),
@@ -1948,6 +2020,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
 
     const nextItems = [...initialItems];
+    const collectedRatios: number[] = [];
 
     for (let i = 0; i < selectedProducts.length; i++) {
       const product = selectedProducts[i];
@@ -1974,14 +2047,17 @@ export const useAppStore = create<AppState>((set, get) => ({
         const modelList = Array.isArray(productInfo.model_list) ? productInfo.model_list : [];
         console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 获取商品信息成功，已有 ${modelList.length} 个SKU`);
 
-        // 检测是否已有任意 1 天备货 SKU，有则跳过
+        // 检测是否已有任意 1 天备货 SKU，有则无需修复但仍进入后续编辑→闪购流程
         if (hasAnyOneDayDeliverySku(modelList)) {
-          console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: ⏭️ 已有1天备货SKU，跳过`);
+          console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: ⏭️ 已有1天备货SKU，无需修复，直接进入编辑→闪购`);
+          const existingRatio = getDiscountRatio(modelList);
+          if (existingRatio !== null) collectedRatios.push(existingRatio);
           nextItems[i] = {
             ...nextItems[i],
             hasOneDaySku: true,
-            publishStatus: 'skipped',
-            highestPrice: getHighestModelPrice(product),
+            skuCreated: false,
+            publishStatus: 'success',
+            highestPrice: getHighestModelPrice(product, modelList),
           };
           set(state2 => ({ oneDaySkuFlow: { ...state2.oneDaySkuFlow, items: [...nextItems] } }));
           continue;
@@ -2178,10 +2254,13 @@ export const useAppStore = create<AppState>((set, get) => ({
           }
         }
 
+        // 从原始商品数据中检测折扣率，用于后续更新全局 discountRate
+        const originalModelList = Array.isArray(productInfo.model_list) ? productInfo.model_list : [];
+        const detectedDiscountRatio = getDiscountRatio(originalModelList);
+
         // Step 6: 恢复折扣（发布成功后，需重新获取商品信息以拿到新 SKU 的 ID）
         if (publishResult.code === 0 && discounts.length > 0) {
-          const originalModelList = Array.isArray(productInfo.model_list) ? productInfo.model_list : [];
-          const discountRatio = getDiscountRatio(originalModelList);
+          const discountRatio = detectedDiscountRatio;
           console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 原有折扣率=${discountRatio != null ? (discountRatio * 100).toFixed(1) + '%' : '无折扣'}`);
 
           // 重新获取商品信息，拿到包含新 SKU ID 的完整 model_list
@@ -2290,6 +2369,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             highestPrice: buildResult.highestPrice,
           };
           console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: ✅ 处理成功${buildResult.skuCreated ? ' (新增SKU)' : ' (更新已有SKU)'}，折扣活动${discounts.length > 0 ? '已恢复' : '无需处理'}`);
+          if (detectedDiscountRatio !== null) collectedRatios.push(detectedDiscountRatio);
         } else if (nextItems[i].publishStatus !== 'failed') {
           console.error(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: ❌ 发布失败 code=${publishResult.code}`, publishResult.msg);
           throw new Error(publishResult.msg || `发布失败 (code: ${publishResult.code})`);
@@ -2308,37 +2388,83 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const successCount = nextItems.filter(item => item.publishStatus === 'success').length;
     const failCount = nextItems.filter(item => item.publishStatus === 'failed').length;
-    const skippedCount = nextItems.filter(item => item.publishStatus === 'skipped').length;
-    console.log(`[一键修复] ===== 处理完成 ===== 成功:${successCount} 失败:${failCount} 跳过:${skippedCount} 总计:${selectedProducts.length}`);
+    console.log(`[一键修复] ===== 处理完成 ===== 成功:${successCount} 失败:${failCount} 总计:${selectedProducts.length}`);
 
-    if (failCount === 0) {
+    const successItems = nextItems.filter(item => item.publishStatus === 'success');
+
+    // 从修复过程中检测到的实际折扣率计算全局 discountRate
+    let newDiscountRate: number | null = null;
+    if (collectedRatios.length > 0) {
+      const allSame = collectedRatios.every(r => r === collectedRatios[0]);
+      if (allSame) {
+        newDiscountRate = Math.round(collectedRatios[0] * 100);
+      } else {
+        const avg = collectedRatios.reduce((a, b) => a + b, 0) / collectedRatios.length;
+        newDiscountRate = Math.round(avg * 100);
+      }
+      console.log(`[一键修复] 检测到商品折扣率: ${collectedRatios.map(r => (r * 100).toFixed(1) + '%').join(', ')}，设置全局折扣率为 ${newDiscountRate}%`);
+    }
+
+    if (successCount > 0) {
+      // 将商品加载到主列表，让用户编辑参数后手动开启（含无需修复但用户勾选的商品）
+      const successIds = successItems.map(item => item.itemId);
+      console.log(`[一键修复] 处理完成，加载 ${successIds.length} 个商品到主列表供用户编辑参数`);
+
       const parts: string[] = [];
-      if (successCount > 0) parts.push(`${successCount} 个成功`);
-      if (skippedCount > 0) parts.push(`已跳过 ${skippedCount} 个（无需修复）`);
+      if (successCount > 0) parts.push(`${successCount} 个可继续`);
+      if (failCount > 0) parts.push(`${failCount} 个失败`);
+      const summaryMsg = parts.join('，');
+
+      // 加载完整商品数据
       set({
+        productIds: successIds,
+        oneDaySkuSelectedIds: [],
+        discountRate: newDiscountRate ?? get().discountRate,
+        flashSaleInfo: `✅ 已完成 ${successCount} 个商品，请编辑参数后选择限时特卖并点击开启`,
         oneDaySkuFlow: {
           phase: 'success',
           running: false,
           currentIndex: selectedProducts.length,
           total: selectedProducts.length,
-          message: `已完成${parts.length ? '：' + parts.join('，') : '，共处理 ' + selectedProducts.length + ' 个商品'}`,
-          error: null,
+          message: `修复完成：${summaryMsg}`,
+          error: failCount > 0 ? `${failCount} 个失败，详见下方` : null,
           items: nextItems,
           canStartFlashSale: false,
         },
       });
-    } else {
-      const parts: string[] = [];
-      if (successCount > 0) parts.push(`${successCount} 个成功`);
-      if (skippedCount > 0) parts.push(`已跳过 ${skippedCount} 个`);
+
+      try {
+        await get().fetchProducts();
+      } catch (fetchErr: any) {
+        console.warn('[一键修复] fetchProducts 失败，使用 productIds 继续:', fetchErr?.message);
+      }
+
+      // 加载完成后进入编辑参数阶段
+      set(state2 => ({
+        oneDaySkuFlow: { ...state2.oneDaySkuFlow, phase: 'editing_params' as const },
+      }));
+    } else if (failCount > 0) {
       set({
         oneDaySkuFlow: {
           phase: 'failed',
           running: false,
           currentIndex: selectedProducts.length,
           total: selectedProducts.length,
-          message: `处理完成：${successCount} 个成功${failCount > 0 ? '，' + failCount + ' 个失败' : ''}${skippedCount > 0 ? '，已跳过 ' + skippedCount + ' 个' : ''}`,
+          message: `处理完成：${failCount} 个失败`,
           error: `${failCount} 个商品处理失败，请查看下方详情。`,
+          items: nextItems,
+          canStartFlashSale: false,
+        },
+      });
+    } else {
+      set({
+        oneDaySkuFlow: {
+          phase: 'success',
+          running: false,
+          currentIndex: selectedProducts.length,
+          total: selectedProducts.length,
+          message: `处理完成`,
+          error: null,
           items: nextItems,
           canStartFlashSale: false,
         },
@@ -2460,6 +2586,329 @@ export const useAppStore = create<AppState>((set, get) => ({
     setTimeout(() => {
       get().enableFlashSaleItems();
     }, 100);
+  },
+
+  // ===== 第一次使用 =====
+
+  openFirstUse: () => {
+    set(state => ({
+      firstUse: {
+        ...state.firstUse,
+        open: true,
+        loading: true,
+        products: [],
+        selectedIds: new Set(),
+        searchKeyword: '',
+        searchResults: [],
+        hasMore: true,
+        cursor: null,
+        fetchedTotal: 0,
+      },
+    }));
+  },
+
+  closeFirstUse: () => {
+    set(state => ({
+      firstUse: {
+        ...state.firstUse,
+        open: false,
+        products: [],
+        selectedIds: new Set(),
+        searchKeyword: '',
+        searchResults: [],
+        cursor: null,
+      },
+    }));
+  },
+
+  fetchFirstUseProducts: async (pageSize = 12) => {
+    const state = get();
+    const { spcCds, spcCdsVer, firstUse } = state;
+    if (!spcCds) return;
+
+    set({ firstUse: { ...firstUse, loading: true } });
+
+    try {
+      const page = await fetchShopProductsPage(spcCds, spcCdsVer, pageSize, firstUse.cursor);
+      const allProducts = [...firstUse.products, ...page.products];
+      const total = page.total;
+      const hasMore = page.cursor != null && allProducts.length < total;
+
+      set({
+        firstUse: {
+          ...get().firstUse,
+          loading: false,
+          products: allProducts,
+          cursor: page.cursor,
+          hasMore,
+          fetchedTotal: total,
+        },
+      });
+    } catch (err: any) {
+      console.error('[第一次使用] 获取商品列表失败:', err.message);
+      set({
+        firstUse: { ...get().firstUse, loading: false },
+        error: `获取商品列表失败: ${err.message}`,
+      });
+    }
+  },
+
+  searchFirstUseProducts: async (keyword) => {
+    const state = get();
+    const { spcCds, spcCdsVer } = state;
+    if (!spcCds || !keyword.trim()) return;
+
+    set({ firstUse: { ...get().firstUse, loading: true } });
+
+    try {
+      const page = await fetchShopProductsPage(spcCds, spcCdsVer, 12, null, keyword.trim());
+      set({
+        firstUse: {
+          ...get().firstUse,
+          loading: false,
+          searchResults: page.products,
+          searchKeyword: keyword.trim(),
+        },
+      });
+    } catch (err: any) {
+      console.error('[第一次使用] 搜索商品失败:', err.message);
+      set({
+        firstUse: { ...get().firstUse, loading: false },
+      });
+    }
+  },
+
+  toggleFirstUseSelection: (productId) => {
+    set(state => {
+      const next = new Set(state.firstUse.selectedIds);
+      let products = state.firstUse.products;
+      if (next.has(productId)) {
+        next.delete(productId);
+      } else if (next.size < 20) {
+        next.add(productId);
+        // 如果勾选的是搜索结果中的商品，且不在 products 中，同步一份到 products 防止被下次搜索覆盖
+        const fromSearch = state.firstUse.searchResults.find(p => p.id === productId);
+        if (fromSearch && !products.some(p => p.id === productId)) {
+          products = [...products, fromSearch];
+        }
+      }
+      return { firstUse: { ...state.firstUse, selectedIds: next, products } };
+    });
+  },
+
+  selectAllFirstUse: (productIds) => {
+    set(state => ({
+      firstUse: {
+        ...state.firstUse,
+        selectedIds: new Set(productIds.slice(0, 20)),
+      },
+    }));
+  },
+
+  runFirstUseFlow: async () => {
+    const { firstUse } = get();
+    const selectedIds = [...firstUse.selectedIds];
+    if (selectedIds.length === 0) return;
+
+    // 合并已加载商品和搜索结果中的勾选商品（去重）
+    const mergedProducts = [...firstUse.products];
+    for (const sp of firstUse.searchResults) {
+      if (!mergedProducts.some(p => p.id === sp.id)) {
+        mergedProducts.push(sp);
+      }
+    }
+    const selectedProducts: ShopeeProduct[] = mergedProducts
+      .filter(p => firstUse.selectedIds.has(p.id) && p.id > 0)
+      .map(p => ({
+        itemid: String(p.id),
+        name: p.name,
+        images: [p.coverImage].filter(Boolean),
+        variationImages: [] as string[],
+        transparentBackgroundImage: '',
+        status: p.status,
+        inputOriginPrice: String(Math.max(p.priceMax, p.priceMin, 0)),
+        originPrice: String(Math.max(p.priceMax, p.priceMin, 0)),
+        normalStock: 0,
+        localPrice: '0',
+        pffTag: false,
+        normalSellerStock: 0,
+        normalWmsStock: 0,
+        minPurchaseLimit: 1,
+        itemSellerSellableStock: 0,
+        itemWmsSellableStock: 0,
+        itemTotalReservedStock: 0,
+        itemNormalStock: 0,
+        modelList: [],
+      }));
+
+    set({
+      productIds: selectedIds.map(String),
+      products: selectedProducts,
+      oneDaySkuSelectedIds: selectedIds.map(String),
+      firstUse: {
+        ...firstUse,
+        open: false,
+        products: [],
+        selectedIds: new Set(),
+        searchKeyword: '',
+        searchResults: [],
+        cursor: null,
+      },
+    });
+
+    // 自动触发一键修复
+    setTimeout(() => {
+      get().runOneDaySkuAndEnable();
+    }, 300);
+  },
+
+  // ===== Phase 3: 开启限时特卖 =====
+
+  dismissFlashSaleStart: () => {
+    set(state => ({
+      oneDaySkuFlow: {
+        ...state.oneDaySkuFlow,
+        phase: 'success' as const,
+        canStartFlashSale: false,
+        message: state.oneDaySkuFlow.message.replace('，请选择目标限时特卖', '').replace('，可选择开启闪购', ''),
+      },
+    }));
+  },
+
+  goToFlashSaleSelection: () => {
+    const state = get();
+    // 将当前编辑的商品数据加载到 products（确保 modelList 是最新的）
+    set({
+      oneDaySkuFlow: {
+        ...state.oneDaySkuFlow,
+        phase: 'selecting_flash_sale',
+        message: '请选择目标限时特卖场次',
+      },
+    });
+  },
+
+  addToExistingFlashSale: async (flashSaleId: number) => {
+    const state = get();
+    const { oneDaySkuFlow } = state;
+    const successItems = oneDaySkuFlow.items.filter(i => i.publishStatus === 'success');
+    if (successItems.length === 0) return;
+
+    set({
+      oneDaySkuFlow: {
+        ...oneDaySkuFlow,
+        phase: 'starting_flash_sale',
+        message: `正在将 ${successItems.length} 个商品加入限时特卖...`,
+      },
+    });
+
+    // 为每个成功商品重新获取 product_info 以拿到最新 model_list
+    const enableItems: any[] = [];
+    for (const item of successItems) {
+      try {
+        const getUrl = `https://seller.shopee.tw/api/v3/product/get_product_info?SPC_CDS=${state.spcCds}&SPC_CDS_VER=${state.spcCdsVer}&product_id=${item.itemId}&is_draft=false`;
+        const resp = await injectedFetch<any>(getUrl);
+        if (resp?.code !== 0 || !Array.isArray(resp?.data?.product_info?.model_list)) continue;
+
+        const models = resp.data.product_info.model_list;
+        for (const model of models) {
+          const skuKey = `${item.itemId}-${model.id}`;
+          const override = state.skuOverrides[skuKey];
+          const normalPrice = Number(model.price_info?.input_normal_price || model.price || 0);
+          const usedDiscount = override?.discountRate ?? state.discountRate;
+          const promoPrice = override?.promoPrice ?? Math.floor(normalPrice * (usedDiscount / 100));
+          const usedStock = override?.stock ?? state.flashSaleStock;
+          const usedPurchaseLimit = override?.purchaseLimit ?? state.purchaseLimit;
+          enableItems.push({
+            item_id: Number(item.itemId),
+            model_id: model.id,
+            status: 1,
+            item_display_image: '',
+            input_promo_price: promoPrice,
+            stock: usedStock,
+            purchase_limit: usedPurchaseLimit,
+          });
+        }
+      } catch (err: any) {
+        console.error(`[一键修复] 获取商品 ${item.itemId} 详情失败:`, err.message);
+      }
+    }
+
+    if (enableItems.length === 0) {
+      set({
+        oneDaySkuFlow: {
+          ...get().oneDaySkuFlow,
+          phase: 'failed',
+          error: '无法构建闪购商品列表，请手动操作。',
+          canStartFlashSale: false,
+        },
+      });
+      return;
+    }
+
+    try {
+      const addUrl = `https://seller.shopee.tw/api/marketing/v4/shop_flash_sale/set_shop_flash_sale_items/?SPC_CDS=${state.spcCds}&SPC_CDS_VER=${state.spcCdsVer}`;
+      const addResp = await injectedFetch<any>(addUrl, 'POST', {
+        flash_sale_id: flashSaleId,
+        items: enableItems,
+        use_global_category: true,
+      });
+
+      if (addResp?.code === 0) {
+        set({
+          oneDaySkuFlow: {
+            ...get().oneDaySkuFlow,
+            phase: 'success',
+            message: `已成功将 ${successItems.length} 个商品加入限时特卖 #${flashSaleId}`,
+            canStartFlashSale: false,
+          },
+        });
+      } else {
+        throw new Error(addResp?.msg || `code=${addResp?.code}`);
+      }
+    } catch (err: any) {
+      set({
+        oneDaySkuFlow: {
+          ...get().oneDaySkuFlow,
+          phase: 'failed',
+          error: `加入闪购失败: ${err.message}`,
+          canStartFlashSale: false,
+        },
+      });
+    }
+  },
+
+  createNewFlashSaleAndAdd: async (timeSlotId: number) => {
+    const state = get();
+    const { oneDaySkuFlow, spcCds, spcCdsVer } = state;
+
+    set({
+      oneDaySkuFlow: {
+        ...oneDaySkuFlow,
+        message: '正在创建新的限时特卖场次...',
+      },
+    });
+
+    try {
+      // Step 1: 创建新的闪购场次
+      const createUrl = `https://seller.shopee.tw/api/marketing/v4/shop_flash_sale/set_shop_flash_sale/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`;
+      const createResp = await injectedFetch<any>(createUrl, 'POST', { time_slot_id: timeSlotId });
+      const newFlashSaleId = createResp?.data?.flash_sale_id;
+      if (!newFlashSaleId) {
+        throw new Error(createResp?.msg || '创建闪购场次失败');
+      }
+
+      // Step 2: 加入商品（复用 addToExistingFlashSale 逻辑）
+      await get().addToExistingFlashSale(newFlashSaleId);
+    } catch (err: any) {
+      set({
+        oneDaySkuFlow: {
+          ...get().oneDaySkuFlow,
+          phase: 'failed',
+          error: `创建闪购失败: ${err.message}`,
+          canStartFlashSale: false,
+        },
+      });
+    }
   },
 
 }));

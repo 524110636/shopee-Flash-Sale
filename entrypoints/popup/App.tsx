@@ -8,6 +8,7 @@ import { TemplateManager } from '@/components/product/TemplateManager';
 import { CopyConfirmPanel } from '@/components/product/CopyConfirmPanel';
 import { CopyResultPanel } from '@/components/product/CopyResultPanel';
 import { AutoModePanel } from '@/components/product/AutoModePanel';
+import { FirstUseModal } from '@/components/product/FirstUseModal';
 import { SkuTable } from '@/components/product/SkuTable';
 import { AuthPanel } from '@/components/product/AuthPanel';
 import { StoreStatus } from '@/components/product/StoreStatus';
@@ -15,7 +16,7 @@ import { AdminPanel } from '@/components/product/AdminPanel';
 import { UndiscountedSkuModal } from '@/components/product/UndiscountedSkuModal';
 import { ScheduledTaskCard } from '@/components/product/ScheduledTaskCard';
 import { useAppStore, setupBackgroundListener } from './store';
-import type { ShopeeProduct } from './types';
+import type { ShopeeProduct, TimeSlot } from './types';
 import * as backendApi from './backend-api';
 
 export default function App() {
@@ -47,6 +48,8 @@ export default function App() {
     loadAutoModeStatus,
     oneDaySkuSelectedIds, oneDaySkuFlow,
     toggleOneDaySkuSelection, setOneDaySkuSelection, runOneDaySkuAndEnable,
+    firstUse, openFirstUse,
+    dismissFlashSaleStart, goToFlashSaleSelection, addToExistingFlashSale, createNewFlashSaleAndAdd,
   } = useAppStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [flashSaleListOpen, setFlashSaleListOpen] = useState(true);
@@ -58,6 +61,9 @@ export default function App() {
   const [isTriggeringScheduled, setIsTriggeringScheduled] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [phase3Slots, setPhase3Slots] = useState<TimeSlot[] | null>(null);
+  const [phase3SlotsLoading, setPhase3SlotsLoading] = useState(false);
+  const [wizardEditProduct, setWizardEditProduct] = useState<ShopeeProduct | null>(null);
   const { checkAuthOnStartup, isLoggedIn, isCheckingAuth, storeBindings, shopId, pendingUndiscountedSkus, showUndiscountedModal } = useAppStore();
 
   // 检测当前店铺 SPC_CDS 是否在用户绑定列表中
@@ -134,6 +140,8 @@ export default function App() {
       removing_discount: '移除折扣',
       restoring_discount: '恢复折扣',
       starting_flash_sale: '开启特卖',
+      editing_params: '编辑参数',
+      selecting_flash_sale: '选择场次',
       success: '已完成',
       failed: '已停止',
     };
@@ -361,6 +369,18 @@ export default function App() {
                       <polygon points="5 3 19 12 5 21 5 3"/>
                     </svg>
                     自动模式
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2.5 text-xs font-normal border-green-300 text-green-700 hover:bg-green-50"
+                    onClick={() => openFirstUse()}
+                  >
+                    <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M12 16v-4M12 8h.01"/>
+                    </svg>
+                    第一次使用
                   </Button>
                   {autoModeActive && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-shopee-green/10 text-shopee-green border border-shopee-green/20">
@@ -701,8 +721,8 @@ export default function App() {
                           <div key={item.itemId} className="rounded border border-amber-100 bg-white px-2 py-1">
                             <div className="flex items-center justify-between gap-2">
                               <span className="truncate font-medium">{item.itemName}</span>
-                              <span className={item.publishStatus === 'failed' ? 'text-red-600' : item.publishStatus === 'skipped' ? 'text-green-600' : 'text-amber-700'}>
-                                {item.publishStatus === 'skipped' ? '无需修复' : item.hasOneDaySku ? '已有专用 SKU' : '待补充 SKU'}
+                              <span className={item.publishStatus === 'failed' ? 'text-red-600' : 'text-green-600'}>
+                                {item.publishStatus === 'failed' ? '处理失败' : item.hasOneDaySku ? '已有专用 SKU' : '待补充 SKU'}
                               </span>
                             </div>
                             <div className="text-[10px] text-muted-foreground">
@@ -722,6 +742,193 @@ export default function App() {
                     </details>
                   )}
                 </div>
+              )}
+
+              {/* Wizard Phase 1: 编辑参数 */}
+              {oneDaySkuFlow.phase === 'editing_params' && (
+                <div className="space-y-2">
+                  <div className="text-[11px] font-medium text-green-800">{oneDaySkuFlow.message}</div>
+
+                  {/* 修复成功的商品卡片 */}
+                  <div className="max-h-36 space-y-1 overflow-y-auto">
+                    {products.filter(p => oneDaySkuFlow.items.some(
+                      i => i.itemId === p.itemid && i.publishStatus === 'success'
+                    )).map(p => {
+                      const hasOverrides = p.modelList.some(m => `${p.itemid}-${m.modelid}` in skuOverrides);
+                      return (
+                        <div
+                          key={p.itemid}
+                          className={`flex items-center gap-2 rounded border bg-white px-2 py-1.5 cursor-pointer hover:bg-accent transition-colors ${hasOverrides ? 'border-l-2 border-l-shopee-brand' : 'border-green-200'}`}
+                          onClick={() => setWizardEditProduct(p)}
+                        >
+                          <div className="w-7 h-7 rounded overflow-hidden bg-muted shrink-0">
+                            {p.images?.[0] ? (
+                              <img src={`https://cf.shopee.tw/file/${p.images[0]}_tn`} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[8px] text-muted-foreground">无图</div>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[11px] font-medium truncate">{p.name}</div>
+                            <div className="text-[10px] text-muted-foreground">
+                              {p.modelList.length} SKU · 价格: NT${Number(p.originPrice || p.inputOriginPrice || 0).toLocaleString()}
+                              {hasOverrides && <span className="ml-1 text-shopee-brand font-medium">已编辑</span>}
+                            </div>
+                          </div>
+                          <svg className="w-3 h-3 shrink-0 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {products.length === 0 && (
+                    <div className="text-[10px] text-muted-foreground text-center py-2">正在加载商品数据...</div>
+                  )}
+
+                  {/* 全局参数 */}
+                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <span>折扣率</span>
+                      <input type="number" min={1} max={100} value={discountRate} onChange={e => setDiscountRate(Math.max(1, Math.min(100, Number(e.target.value) || 60)))} className="w-10 px-1 py-0.5 border rounded text-center text-[10px]" />
+                      <span>%</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span>库存</span>
+                      <input type="number" min={1} value={flashSaleStock} onChange={e => setFlashSaleStock(Math.max(1, Number(e.target.value) || 200))} className="w-10 px-1 py-0.5 border rounded text-center text-[10px]" />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span>限购</span>
+                      <input type="number" min={0} value={purchaseLimit} onChange={e => setPurchaseLimit(Math.max(0, Number(e.target.value) || 0))} className="w-10 px-1 py-0.5 border rounded text-center text-[10px]" />
+                    </div>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    className="w-full h-7 text-xs bg-shopee-brand hover:bg-shopee-brand/90"
+                    onClick={() => goToFlashSaleSelection()}
+                  >
+                    下一步：选择限时特卖
+                  </Button>
+                </div>
+              )}
+
+              {/* Wizard Phase 2: 选择闪购 */}
+              {oneDaySkuFlow.phase === 'selecting_flash_sale' && (
+                <div className="space-y-2 rounded border border-blue-200 bg-blue-50/60 px-2 py-2">
+                  <div className="text-[11px] font-medium text-blue-900">选择目标限时特卖</div>
+
+                  {/* 已有闪购列表 */}
+                  {flashSaleList.filter(s => s.status === 0 || s.status === 1).length > 0 && (
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-blue-700">添加到已有场次：</div>
+                      {flashSaleList
+                        .filter(s => s.status === 0 || s.status === 1)
+                        .slice(0, 5)
+                        .map(sale => {
+                          const now = Math.floor(Date.now() / 1000);
+                          const isActive = now >= sale.start_time && now < sale.end_time;
+                          return (
+                            <div key={sale.flash_sale_id} className="flex items-center gap-1">
+                              <div className="flex-1 min-w-0 rounded border border-blue-200 bg-white px-2 py-1.5">
+                                <div className="text-[11px] font-medium truncate">{sale.name || `限时特卖 #${sale.flash_sale_id}`}</div>
+                                <div className="text-[10px] text-muted-foreground">
+                                  {fmtTime(sale.start_time)}
+                                  {isActive ? <span className="text-shopee-green font-medium"> 进行中</span> : <span className="text-blue-600"> 即将开始</span>}
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                className="h-7 shrink-0 px-2 text-[10px] bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() => addToExistingFlashSale(sale.flash_sale_id)}
+                              >
+                                调试加入
+                              </Button>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+
+                  {/* 创建新场次 */}
+                  <div className="space-y-1">
+                    <div className="text-[10px] text-blue-700">
+                      {flashSaleList.filter(s => s.status === 0 || s.status === 1).length > 0 ? '或创建新场次：' : '创建新场次：'}
+                    </div>
+                    {!phase3Slots ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full h-7 text-[11px] border-blue-300 text-blue-700 hover:bg-blue-50"
+                        disabled={phase3SlotsLoading}
+                        onClick={async () => {
+                          setPhase3SlotsLoading(true);
+                          try {
+                            const slots = await fetchTimeSlots();
+                            setPhase3Slots(slots);
+                          } finally {
+                            setPhase3SlotsLoading(false);
+                          }
+                        }}
+                      >
+                        {phase3SlotsLoading ? '加载中...' : '+ 创建新限时特卖场次'}
+                      </Button>
+                    ) : (
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {phase3Slots
+                          .filter(s => s.start_time > Math.floor(Date.now() / 1000))
+                          .slice(0, 5)
+                          .map(slot => (
+                            <div key={slot.timeslot_id} className="flex items-center gap-1">
+                              <div className="flex-1 min-w-0 rounded border border-blue-200 bg-white px-2 py-1.5">
+                                <div className="text-[11px] font-medium">{fmtTime(slot.start_time)}</div>
+                                <div className="text-[10px] text-muted-foreground">ID: {slot.timeslot_id}</div>
+                              </div>
+                              <Button
+                                size="sm"
+                                className="h-7 shrink-0 px-2 text-[10px] bg-shopee-brand hover:bg-shopee-brand/90 text-white"
+                                onClick={() => createNewFlashSaleAndAdd(slot.timeslot_id)}
+                              >
+                                开始
+                              </Button>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 折叠处理详情 */}
+                  {oneDaySkuFlow.items.length > 0 && (
+                    <details>
+                      <summary className="cursor-pointer text-[10px] text-blue-600 hover:text-blue-800">
+                        查看处理详情 ({oneDaySkuFlow.items.length})
+                      </summary>
+                      <div className="mt-1 max-h-24 space-y-1 overflow-y-auto">
+                        {oneDaySkuFlow.items.filter(i => i.publishStatus === 'success').map(item => (
+                          <div key={item.itemId} className="rounded border border-amber-100 bg-white px-2 py-1 text-[10px]">
+                            <span className="truncate font-medium">{item.itemName}</span>
+                            <span className="text-muted-foreground"> · ID: {item.itemId}</span>
+                            {item.skuCreated && <span className="text-green-600"> · 新增SKU</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+
+                  <button
+                    className="w-full text-center text-[10px] text-muted-foreground hover:text-foreground py-0.5"
+                    onClick={() => {
+                      useAppStore.setState(state2 => ({
+                        oneDaySkuFlow: { ...state2.oneDaySkuFlow, phase: 'editing_params' as const },
+                      }));
+                    }}
+                  >
+                    ← 返回编辑参数
+                  </button>
+                </div>
+              )}
+
+              {/* Wizard SkuTable 弹窗 */}
+              {wizardEditProduct && (
+                <SkuTable key={wizardEditProduct.itemid} product={wizardEditProduct} onClose={() => setWizardEditProduct(null)} />
               )}
             </div>
           )}
@@ -1148,6 +1355,8 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <FirstUseModal />
 
     </div>
   );
