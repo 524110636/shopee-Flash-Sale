@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # 限时特卖助手 (Limited Time Sale Helper)
 
-**版本:** 1.8.5
+**版本:** 1.8.6
 **状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 1
-**最近更新:** 2026-05-13 — 1 天备货 SKU Phase 2（折扣搜索→移除→发布→恢复全流程，新增 SKU 自动打折，控制台日志）
+**最近更新:** 2026-05-13 — 1 天备货 SKU 折扣流程 4 节点防抖（移除→发布→恢复 + 多折扣间隔，各 2s）
 
 ## 相关文档
 - `docs/shopee-flash-sale-api.md` — Shopee API endpoints and response formats
@@ -536,7 +536,8 @@ The API returns two possible formats (check both):
 - **1 天备货 SKU — 库存提取:** `extractSellableStock()` 同时处理 `stock_setting_list`（请求格式）和 `stock_detail`（响应格式），从 `seller_stock_info[0].sellable_stock` 提取可售库存。
 - **1 天备货 SKU — `getDiscountRatio(modelList)`:** 遍历现有 SKU 的 `price_info.input_promotion_price / input_normal_price`，返回最高比率（最轻折扣 = 最高折数，如 6.5折 > 5.4折 → 0.65）。用于为新增的 1 天备货 SKU 计算折扣价。
 - **1 天备货 SKU — `buildDiscountRestoreList(modelList, productId, discountRatio?)`:** 将 model_list 转为 `discount_model_list`（`update_seller_discount_items` 请求体）。已有 `input_promotion_price` 的 SKU 直接用现有折扣价；没有的（新增 SKU）在提供 `discountRatio` 时用 `normalPrice * discountRatio` 计算。
-- **1 天备货 SKU — runOneDaySkuAndEnable 完整流程 (Phase 2):** 在 popup store（非 background）中运行。全流程：`get_product_info` → 检测已有 1 天 SKU 则跳过 → `buildOneDaySkuProductInfo` → 搜索折扣活动（`discount/search`）→ 从折扣中移除（`delete_abnormal_seller_discount_items`）→ 发布商品（`update_product_info`）→ 5 倍价格检测&重试 → 重新获取商品信息（含 3 次重试、1 秒间隔）→ 恢复折扣含新 SKU（`update_seller_discount_items`，检查 `failed_item_list`/`error_list`）。全程 `[一键修复]` 控制台日志。
+- **1 天备货 SKU — runOneDaySkuAndEnable 完整流程 (Phase 2):** 在 popup store（非 background）中运行。全流程：`get_product_info` → 检测已有 1 天 SKU 则跳过 → `buildOneDaySkuProductInfo` → 搜索折扣活动（`discount/search`）→ 从折扣中移除（`delete_abnormal_seller_discount_items`，多折扣间隔 2s）→ **防抖 2s** → 发布商品（`update_product_info`）→ 5 倍价格检测&重试（重试路径同样防抖 2s）→ 重新获取商品信息（含 3 次重试、1 秒间隔）→ **防抖 2s** → 恢复折扣含新 SKU（`update_seller_discount_items`，多折扣间隔 2s，检查 `failed_item_list`/`error_list`）。全程 `[一键修复]` 控制台日志。
+- **1 天备货 SKU — 4 节点防抖 (v1.8.6):** 为避免虾皮 API 处理延迟导致请求异常，在折扣移除→发布→恢复流程中加入 4 个防抖节点（各 2s）：① 移除全部折扣后等 2s 再发布；② 发布成功后等 2s 再恢复第一个折扣；③ 多个折扣活动操作之间各间隔 2s；④ 5 倍价格差重试路径同样在移除后等 2s 再重新发布。三个循环从 `for-of` 改为索引循环（`di > 0` 条件跳过首个请求的延迟）。
 
 ## Known Issues / 待验证
 
