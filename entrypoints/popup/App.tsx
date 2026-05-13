@@ -652,7 +652,7 @@ export default function App() {
                 <div className="min-w-0">
                   <div className="text-xs font-medium text-amber-900">1 天备货 SKU 修复</div>
                   <div className="text-[11px] text-amber-700">
-                    已选 {oneDaySkuSelectedIds.length} 个商品，系统将为每个商品新增 1 天备货 SKU 并发布
+                    已选 {oneDaySkuSelectedIds.length} 个商品，系统将修复这些商品，使其能够开启限时特卖。
                   </div>
                 </div>
                 <Button

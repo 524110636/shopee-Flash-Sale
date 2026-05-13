@@ -2033,7 +2033,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
           let removeFailed: string | null = null;
           const removeUrl = `https://seller.shopee.tw/api/marketing/v4/discount/delete_abnormal_seller_discount_items/?SPC_CDS=${state.spcCds}&SPC_CDS_VER=${state.spcCdsVer}`;
-          for (const discount of discounts) {
+          for (let di = 0; di < discounts.length; di++) {
+            const discount = discounts[di];
+            // 防抖：非首个折扣活动请求前等待 2s
+            if (di > 0) {
+              await new Promise(r => setTimeout(r, 2000));
+            }
             console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 从折扣"${discount.name}"(${discount.promotionId})移除...`);
             const removeResp = await injectedFetch<any>(removeUrl, 'POST', {
               promotion_id: discount.promotionId,
@@ -2058,7 +2063,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           }
 
           nextItems[i] = { ...nextItems[i], discountRemoved: true };
-          console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 已从所有折扣活动中移除`);
+          console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 已从所有折扣活动中移除，等待 2s 后发布...`);
+          await new Promise(r => setTimeout(r, 2000));
         }
 
         // Step 5: 发布商品
@@ -2118,7 +2124,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 
             let retryRemoveFailed = false;
             const retryRemoveUrl = `https://seller.shopee.tw/api/marketing/v4/discount/delete_abnormal_seller_discount_items/?SPC_CDS=${state.spcCds}&SPC_CDS_VER=${state.spcCdsVer}`;
-            for (const discount of discounts) {
+            for (let di = 0; di < discounts.length; di++) {
+              const discount = discounts[di];
+              // 防抖：非首个折扣活动请求前等待 2s
+              if (di > 0) {
+                await new Promise(r => setTimeout(r, 2000));
+              }
               console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 从折扣"${discount.name}"(${discount.promotionId})移除...`);
               const removeResp = await injectedFetch<any>(retryRemoveUrl, 'POST', {
                 promotion_id: discount.promotionId,
@@ -2134,6 +2145,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
             if (!retryRemoveFailed) {
               nextItems[i] = { ...nextItems[i], discountRemoved: true };
+              // 防抖：移除完成后等待 2s 再重新发布
+              console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 已从所有折扣活动中移除，等待 2s 后重新发布...`);
+              await new Promise(r => setTimeout(r, 2000));
 
               set(state2 => ({
                 oneDaySkuFlow: {
@@ -2216,7 +2230,15 @@ export const useAppStore = create<AppState>((set, get) => ({
 
             let restoreFailed: string | null = null;
             const restoreUrl = `https://seller.shopee.tw/api/marketing/v4/discount/update_seller_discount_items/?SPC_CDS=${state.spcCds}&SPC_CDS_VER=${state.spcCdsVer}`;
-            for (const discount of discounts) {
+            // 防抖：发布完成后等待 2s，确保虾皮后端处理完毕再恢复折扣
+            console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 等待 2s 后恢复折扣...`);
+            await new Promise(r => setTimeout(r, 2000));
+            for (let di = 0; di < discounts.length; di++) {
+              const discount = discounts[di];
+              // 防抖：非首个折扣活动请求前等待 2s
+              if (di > 0) {
+                await new Promise(r => setTimeout(r, 2000));
+              }
               console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 恢复到折扣"${discount.name}"(${discount.promotionId})...`);
               const restoreResp = await injectedFetch<any>(restoreUrl, 'POST', {
                 promotion_id: discount.promotionId,
