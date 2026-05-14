@@ -18,6 +18,7 @@ admin.get('/users', async (c) => {
     role: users.role,
     isActive: users.isActive,
     autoModeEnabled: users.autoModeEnabled,
+    trialUsed: users.trialUsed,
     createdAt: users.createdAt,
     bindingCount: sql<number>`(
       SELECT COUNT(*) FROM store_bindings
@@ -81,6 +82,32 @@ admin.patch('/users/:id/auto-mode', async (c) => {
   return c.json({
     message: `用户 ${user[0].email} 的自动模式权限已${autoModeEnabled ? '开启' : '关闭'}`,
     autoModeEnabled,
+  });
+});
+
+/** 重置用户试用状态 */
+admin.patch('/users/:id/trial', async (c) => {
+  const userId = parseInt(c.req.param('id'), 10);
+  const { trialUsed } = await c.req.json<{ trialUsed: number }>();
+
+  if (trialUsed !== 0 && trialUsed !== 1) {
+    return c.json({ error: 'trialUsed 必须为 0 或 1' }, 400);
+  }
+
+  const db = getDb();
+
+  const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (user.length === 0) {
+    return c.json({ error: '用户不存在' }, 404);
+  }
+
+  await db.update(users)
+    .set({ trialUsed })
+    .where(eq(users.id, userId));
+
+  return c.json({
+    message: `用户 ${user[0].email} 的试用状态已${trialUsed ? '标记为已使用' : '重置'}`,
+    trialUsed,
   });
 });
 

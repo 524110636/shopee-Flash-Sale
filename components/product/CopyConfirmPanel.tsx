@@ -29,6 +29,7 @@ export function CopyConfirmPanel({
   const [loadingViewProducts, setLoadingViewProducts] = useState(false);
   const [selectedViewProduct, setSelectedViewProduct] = useState<ShopeeProduct | null>(null);
   const [viewError, setViewError] = useState<string | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   const products = useAppStore(s => s.products);
   const isLoadingFlashSales = useAppStore(s => s.isLoadingFlashSales);
   const skuOverrides = useAppStore(s => s.skuOverrides);
@@ -59,12 +60,31 @@ export function CopyConfirmPanel({
   };
 
   const handleConfirm = () => {
+    setConfirmError(null);
     const slot = timeSlots.find(s => s.timeslot_id === selectedSlotId);
     if (!slot) {
-      alert('请选择一个活动时间段');
+      setConfirmError('请选择一个活动时间段');
       return;
     }
-    onConfirm(slot.start_time, selectedTemplate);
+    const startTime = slot.start_time;
+    const fireTime = startTime - 300;
+    const now = Math.floor(Date.now() / 1000);
+    console.log('[CopyConfirmPanel] 创建复制任务:', {
+      slotStartTime: startTime,
+      slotStartTimeStr: fmtTime(startTime),
+      fireTime,
+      fireTimeStr: fmtTime(fireTime),
+      now,
+      nowStr: fmtTime(now),
+      delaySeconds: fireTime - now,
+      template: selectedTemplate,
+    });
+    try {
+      onConfirm(startTime, selectedTemplate);
+    } catch (e: any) {
+      console.error('[CopyConfirmPanel] onConfirm 异常:', e?.message || e);
+      setConfirmError(e?.message || String(e));
+    }
   };
 
   const handleOpenView = async () => {
@@ -232,7 +252,13 @@ export function CopyConfirmPanel({
           </div>
 
           {/* 操作按钮 */}
-          <div className="flex gap-2 pt-1">
+          <div className="space-y-2 pt-1">
+            {confirmError && (
+              <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md p-2">
+                {confirmError}
+              </div>
+            )}
+            <div className="flex gap-2">
             <Button variant="outline" className="flex-1" onClick={onCancel} disabled={isCopying}>
               取消
             </Button>
@@ -243,15 +269,8 @@ export function CopyConfirmPanel({
             >
               {isCopying ? '⏳ 正在创建任务...' : '创建复制任务'}
             </Button>
+            </div>
           </div>
-          {/* TODO: 调试按钮，上线前删除 */}
-          <button
-            className="w-full py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-300 rounded-md hover:bg-amber-100 disabled:opacity-50"
-            onClick={() => onConfirm(Math.floor(Date.now() / 1000), selectedTemplate)}
-            disabled={isCopying}
-          >
-            🛠 立即创建 Demo（调试用，跳过等待时间）
-          </button>
         </CardContent>
       </Card>
 

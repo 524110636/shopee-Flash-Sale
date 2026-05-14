@@ -50,7 +50,12 @@ stores.post('/validate', async (c) => {
     return c.json({ error: '账号未激活，请联系管理员' }, 403);
   }
 
-  // 2. 检查该店铺是否仍绑定在当前用户下且绑定有效
+  // 2. 检查试用限制（admin 不受限）
+  if (userRecord[0].role !== 'admin' && userRecord[0].trialUsed >= 1) {
+    return c.json({ error: '试用已结束，请联系管理员升级套餐' }, 403);
+  }
+
+  // 3. 检查该店铺是否仍绑定在当前用户下且绑定有效
   const binding = await db.select()
     .from(storeBindings)
     .where(
@@ -64,6 +69,13 @@ stores.post('/validate', async (c) => {
 
   if (binding.length === 0) {
     return c.json({ error: '店铺未绑定或绑定已失效，请重新绑定店铺' }, 403);
+  }
+
+  // 4. 标记试用已使用（admin 不受限，首次使用才写入）
+  if (userRecord[0].role !== 'admin' && userRecord[0].trialUsed === 0) {
+    await db.update(users)
+      .set({ trialUsed: 1 })
+      .where(eq(users.id, user.userId));
   }
 
   // 记录验证事件（fire-and-forget）

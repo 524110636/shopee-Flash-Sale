@@ -1000,20 +1000,6 @@ export default function App() {
                     </Button>
                   )}
 
-                  {/* TODO: 调试按钮，上线前删除 */}
-                  {phase3Slots && phase3Slots.length > 0 && (
-                    <button
-                      className="w-full py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-300 rounded-md hover:bg-amber-100 disabled:opacity-50"
-                      disabled={isEnabling || oneDaySkuFlow.running}
-                      onClick={() => {
-                        const slot = phase3Slots.find(s => s.start_time > Math.floor(Date.now() / 1000));
-                        if (!slot) return;
-                        useAppStore.getState().createNewFlashSaleAndAdd(slot.timeslot_id, Math.floor(Date.now() / 1000), 0, 0);
-                      }}
-                    >
-                      🛠 立即创建 Demo（调试用，跳过等待时间）
-                    </button>
-                  )}
 
                   {/* 折叠处理详情 */}
                   {oneDaySkuFlow.items.length > 0 && (

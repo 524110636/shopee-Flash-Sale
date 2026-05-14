@@ -20,6 +20,7 @@ export function AdminPanel() {
 
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   const [togglingAutoModeUserId, setTogglingAutoModeUserId] = useState<number | null>(null);
+  const [resettingTrialUserId, setResettingTrialUserId] = useState<number | null>(null);
 
   const loadUsers = async () => {
     setLoading(true); setError('');
@@ -137,7 +138,7 @@ export function AdminPanel() {
                     )}
                   </div>
                   <div className="mt-0.5 text-muted-foreground">
-                    已绑定 {user.bindingCount ?? 0} 个店铺 · {user.isActive ? '已激活' : '未激活'} · {user.autoModeEnabled ? '自动已开' : '自动未开'}
+                    已绑定 {user.bindingCount ?? 0} 个店铺 · {user.isActive ? '已激活' : '未激活'} · {user.autoModeEnabled ? '自动已开' : '自动未开'} · {user.trialUsed ? '试用已用' : '试用未用'}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -214,6 +215,34 @@ export function AdminPanel() {
                         }}
                       >
                         调整限额
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`h-6 px-2 text-[10px] font-normal ${
+                          user.trialUsed
+                            ? 'text-amber-600 border-amber-200 hover:bg-amber-50'
+                            : 'text-muted-foreground'
+                        }`}
+                        disabled={resettingTrialUserId === user.id}
+                        onClick={async () => {
+                          const newVal = user.trialUsed ? 0 : 1;
+                          setResettingTrialUserId(user.id);
+                          setError('');
+                          try {
+                            await backendApi.resetTrial(user.id, newVal);
+                            loadUsers();
+                          } catch (e: any) {
+                            setError(e.message);
+                          }
+                          setResettingTrialUserId(null);
+                        }}
+                      >
+                        {resettingTrialUserId === user.id
+                          ? '...'
+                          : user.trialUsed
+                            ? '重置试用'
+                            : '标记已用'}
                       </Button>
                       <Button
                         variant="outline"

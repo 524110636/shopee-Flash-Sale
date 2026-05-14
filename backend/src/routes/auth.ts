@@ -11,10 +11,14 @@ const auth = new Hono();
 
 /** 注册：创建未激活账户并返回验证码 */
 auth.post('/register', async (c) => {
-  const { email, password } = await c.req.json<{ email: string; password: string }>();
+  const { email, password, registerKey } = await c.req.json<{ email: string; password: string; registerKey: string }>();
 
   if (!email || !password) {
     return c.json({ error: '邮箱和密码不能为空' }, 400);
+  }
+
+  if (!registerKey || registerKey !== process.env.REGISTER_KEY) {
+    return c.json({ error: '注册密钥无效，请联系管理员获取' }, 403);
   }
 
   // 支持邮箱格式或纯用户名（内部系统）
@@ -129,6 +133,7 @@ auth.post('/login', async (c) => {
     email: user[0].email,
     role: user[0].role,
     autoModeEnabled: user[0].autoModeEnabled,
+    trialUsed: user[0].trialUsed,
   });
 
   return c.json({
@@ -138,19 +143,21 @@ auth.post('/login', async (c) => {
       email: user[0].email,
       role: user[0].role,
       autoModeEnabled: user[0].autoModeEnabled,
+      trialUsed: user[0].trialUsed,
     },
   });
 });
 
-/** 检查当前用户是否为管理员（含 autoModeEnabled 实时查询） */
+/** 检查当前用户是否为管理员（含 autoModeEnabled / trialUsed 实时查询） */
 auth.post('/check-admin', authMiddleware, async (c) => {
   const jwtUser = c.get('user');
   const db = getDb();
-  const userRecord = await db.select({ autoModeEnabled: users.autoModeEnabled })
+  const userRecord = await db.select({ autoModeEnabled: users.autoModeEnabled, trialUsed: users.trialUsed })
     .from(users).where(eq(users.id, jwtUser.userId)).limit(1);
   return c.json({
     isAdmin: jwtUser.role === 'admin',
     autoModeEnabled: userRecord[0]?.autoModeEnabled ?? 0,
+    trialUsed: userRecord[0]?.trialUsed ?? 0,
   });
 });
 

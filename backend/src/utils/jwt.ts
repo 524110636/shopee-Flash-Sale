@@ -1,14 +1,17 @@
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 
-const secret = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'limited-time-sale-dev-secret-key-2026'
-);
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) {
+  throw new Error('JWT_SECRET 环境变量未设置，请设置后重启服务');
+}
+const secret = new TextEncoder().encode(jwtSecret);
 
 export interface TokenPayload extends JWTPayload {
   userId: number;
   email: string;
   role: string;
   autoModeEnabled: number;
+  trialUsed: number;
 }
 
 export async function signToken(payload: TokenPayload): Promise<string> {

@@ -5,6 +5,7 @@ import type { ShopeeProduct, EnableItem, EnableResult, EnableProgress, SkuOverri
 const GRAPHQL_URL = 'https://seller.shopee.tw/api/marketing/v4/graphql/query/';
 const FLASH_SALE_API = 'https://seller.shopee.tw/api/marketing/v4/shop_flash_sale';
 const COPY_MAX_RETRIES = 10;
+const DEFAULT_BACKEND_URL = 'http://localhost:5724';
 
 const PRODUCTS_QUERY = `query Products($productIds: [String], $statusType: Int) {
   products(productIds: $productIds, statusType: $statusType) {
@@ -179,15 +180,18 @@ async function reportAnalyticsEvent(eventType: string, eventData: Record<string,
 
 // ===== Shop access validation (backend check) =====
 async function validateShopAccess(spcCds: string, action: string): Promise<{ allowed: boolean; error?: string }> {
+  console.log(`[bg:validate] 开始校验: action=${action}, spcCds=${spcCds.slice(0, 16)}...`);
   try {
     const result = await browser.storage.local.get(['backendAuth', 'backendUrl']);
     const auth = result.backendAuth as { token?: string } | undefined;
     const backendUrl = result.backendUrl as string | undefined;
     if (!auth?.token) {
+      console.warn('[bg:validate] ❌ 未登录后端系统');
       return { allowed: false, error: '未登录后端系统，请先登录' };
     }
     // fallback to default URL (store.ts 仅持久化非默认值)
-    const baseUrl = backendUrl || 'http://localhost:5724';
+    const baseUrl = backendUrl || DEFAULT_BACKEND_URL;
+    console.log(`[bg:validate] 请求 POST ${baseUrl}/api/stores/validate`);
     const response = await fetch(`${baseUrl}/api/stores/validate`, {
       method: 'POST',
       headers: {
@@ -197,11 +201,15 @@ async function validateShopAccess(spcCds: string, action: string): Promise<{ all
       body: JSON.stringify({ spcCds, action }),
     });
     const data = await response.json();
+    console.log(`[bg:validate] 后端响应: status=${response.status}, data=`, JSON.stringify(data));
     if (!response.ok) {
+      console.error(`[bg:validate] ❌ 验证失败: ${data.error || `HTTP ${response.status}`}`);
       return { allowed: false, error: data.error || `验证失败 (${response.status})` };
     }
+    console.log('[bg:validate] ✅ 验证通过');
     return { allowed: true };
   } catch (e: any) {
+    console.error(`[bg:validate] ❌ 网络错误: ${e.message}`);
     return { allowed: false, error: `无法连接后端服务: ${e.message}` };
   }
 }
@@ -1448,8 +1456,42 @@ export default defineBackground({
           const fireTime = params.targetStartTime - 300;
           const now = Math.floor(Date.now() / 1000);
           const delayMs = (fireTime - now) * 1000;
-          console.log('[bg:SCHEDULE_COPY]', { targetStartTime: params.targetStartTime, fireTime, now, delayMs });
-          if (delayMs <= 0) throw new Error('目标时间已过');
+          console.log('[bg:SCHEDULE_COPY] 收到请求:', {
+            targetStartTime: params.targetStartTime,
+            targetStartTimeStr: new Date(params.targetStartTime * 1000).toLocaleString(),
+            fireTime,
+            fireTimeStr: new Date(fireTime * 1000).toLocaleString(),
+            now,
+            nowStr: new Date(now * 1000).toLocaleString(),
+            delayMs,
+            delayMinutes: Math.ceil(delayMs / 60000),
+            sourceFlashSaleId: params.sourceFlashSaleId,
+            sourceFlashSaleName: params.sourceFlashSaleName,
+            productCount: params.products?.length ?? 0,
+            templateName: params.templateName || '(无)',
+          });
+          if (delayMs <= 0) throw new Error('目标时间已过，无法安排定时任务');
+
+          // 校验店铺访问权限（含试用限制）
+          const { spcCds: scCds } = await getSpcCdsFromCookies();
+          console.log('[bg:SCHEDULE_COPY] 店铺校验:', {
+            hasSpcCds: !!scCds,
+            spcCdsPreview: scCds ? scCds.slice(0, 16) + '...' : '无',
+          });
+          if (scCds) {
+            const scValidation = await validateShopAccess(scCds, 'scheduled_copy');
+            console.log('[bg:SCHEDULE_COPY] 校验结果:', { allowed: scValidation.allowed, error: scValidation.error || null });
+            if (!scValidation.allowed) {
+              console.error('[bg:SCHEDULE_COPY] ❌ 店铺验证失败:', scValidation.error);
+              await browser.storage.local.set({
+                _copyTaskStatus: { scheduled: true, executed: true, success: false, error: scValidation.error },
+              });
+              return { success: false, error: scValidation.error };
+            }
+            console.log('[bg:SCHEDULE_COPY] ✅ 店铺验证通过');
+          } else {
+            console.warn('[bg:SCHEDULE_COPY] ⚠️ 未找到 SPC_CDS，跳过店铺校验');
+          }
 
           await browser.storage.local.set({
             _scheduledCopy: params,
@@ -1706,7 +1748,7 @@ export default defineBackground({
               console.warn('[bg:START_AUTO_MODE] Step0 失败: 未登录后端');
               return { success: false, error: '未登录后端系统，请先登录' };
             }
-            const baseUrl = backendUrl || 'http://localhost:5724';
+            const baseUrl = backendUrl || DEFAULT_BACKEND_URL;
             const permResp = await fetch(`${baseUrl}/api/auth/check-auto-mode`, {
               method: 'POST',
               headers: {
@@ -1959,6 +2001,15 @@ export default defineBackground({
             return { success: false, error: '目标时间已过，请使用立即加入' };
           }
 
+          // 校验店铺访问权限（含试用限制）
+          if (enableParams?.spcCds) {
+            const seValidation = await validateShopAccess(enableParams.spcCds, 'scheduled_enable');
+            if (!seValidation.allowed) {
+              console.log('[bg:SCHEDULE_ENABLE] ❌ 店铺验证失败:', seValidation.error);
+              return { success: false, error: seValidation.error };
+            }
+          }
+
           await browser.storage.local.set({
             _enableParams: enableParams,
             _scheduledEnable: { fireTime, flashSaleName, flashSaleId: enableParams.flashSaleId },
@@ -1983,6 +2034,20 @@ export default defineBackground({
 
           if (createTime <= now) {
             return { success: false, error: '创建时间已过，请重新操作' };
+          }
+
+          // 校验店铺访问权限（含试用限制）
+          let finalCds = cds;
+          if (!finalCds) {
+            const cookies = await getSpcCdsFromCookies();
+            finalCds = cookies.spcCds;
+          }
+          if (finalCds) {
+            const swValidation = await validateShopAccess(finalCds, 'wizard_flow');
+            if (!swValidation.allowed) {
+              console.log('[bg:SCHEDULE_WIZARD_FLOW] ❌ 店铺验证失败:', swValidation.error);
+              return { success: false, error: swValidation.error };
+            }
           }
 
           await browser.storage.local.set({

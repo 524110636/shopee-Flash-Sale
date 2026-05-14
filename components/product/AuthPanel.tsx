@@ -10,6 +10,7 @@ export function AuthPanel() {
   const [view, setView] = useState<AuthView>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [registerKey, setRegisterKey] = useState('');
   const [verifyCode, setVerifyCode] = useState('');
   const [displayedCode, setDisplayedCode] = useState('');
   const [error, setError] = useState('');
@@ -21,7 +22,7 @@ export function AuthPanel() {
   const handleRegister = async () => {
     setLoading(true); setError('');
     try {
-      const result = await backendApi.register(email, password);
+      const result = await backendApi.register(email, password, registerKey);
       setDisplayedCode(result.code);
       setIsRegistered(true);
     } catch (e: any) {
@@ -167,7 +168,7 @@ export function AuthPanel() {
           <div className="flex justify-center">
             <button
               className="text-xs text-shopee-brand hover:text-shopee-brand-dark hover:underline"
-              onClick={() => { setView('register'); setIsRegistered(false); setRegVerified(false); setVerifyCode(''); setDisplayedCode(''); setError(''); }}
+              onClick={() => { setView('register'); setIsRegistered(false); setRegVerified(false); setVerifyCode(''); setDisplayedCode(''); setRegisterKey(''); setError(''); }}
             >
               {'没有账号 → 注册'}
             </button>
@@ -204,6 +205,13 @@ export function AuthPanel() {
             onChange={e => setPassword(e.target.value)}
             className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           />
+          <input
+            type="text"
+            placeholder="注册密钥（联系管理员获取）"
+            value={registerKey}
+            onChange={e => setRegisterKey(e.target.value)}
+            className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+          />
 
           {/* 验证码显示 + 输入框 — 同一行 */}
           <div className="flex items-center gap-2">
@@ -213,6 +221,7 @@ export function AuthPanel() {
                 onClick={() => {
                   if (displayedCode) return;
                   if (!email || password.length < 6) { setError('请先输入邮箱和密码（至少 6 位）'); return; }
+                  if (!registerKey) { setError('请输入注册密钥'); return; }
                   handleRegister();
                 }}
               >
@@ -252,7 +261,7 @@ export function AuthPanel() {
               </svg>
               <p className="text-sm font-medium text-shopee-green">验证成功</p>
               <p className="text-xs text-muted-foreground">请使用你的账号登录</p>
-              <Button size="sm" className="h-8 text-xs" onClick={() => { setView('login'); setPassword(''); }}>
+              <Button size="sm" className="h-8 text-xs" onClick={() => { setView('login'); setPassword(''); setRegisterKey(''); }}>
                 前往登录
               </Button>
             </div>
@@ -260,7 +269,7 @@ export function AuthPanel() {
             <Button
               size="sm"
               className="w-full h-9 text-sm"
-              disabled={loading || !email || password.length < 6 || (isRegistered && verifyCode.length !== 6)}
+              disabled={loading || !email || password.length < 6 || !registerKey || (isRegistered && verifyCode.length !== 6)}
               onClick={isRegistered ? handleVerify : handleRegister}
             >
               {loading ? (isRegistered ? '验证中...' : '注册中...') : (isRegistered ? '验证' : '注册')}
@@ -270,7 +279,7 @@ export function AuthPanel() {
           <div className="flex justify-center">
             <span
               className="text-xs text-shopee-brand cursor-pointer hover:text-shopee-brand-dark hover:underline"
-              onClick={() => { setView('login'); setIsRegistered(false); setRegVerified(false); setVerifyCode(''); setDisplayedCode(''); setError(''); }}
+              onClick={() => { setView('login'); setIsRegistered(false); setRegVerified(false); setVerifyCode(''); setDisplayedCode(''); setRegisterKey(''); setError(''); }}
             >
               已有账号，去登录
             </span>

@@ -1623,7 +1623,16 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       if (fireTime <= now) {
         // === 立即执行路径 ===
-        console.log('[executeCopy] 立即执行, targetTime:', targetTime, 'template:', templateName);
+        console.log('[executeCopy] 立即执行:', {
+          targetTime,
+          targetTimeStr: new Date(targetTime * 1000).toLocaleString(),
+          fireTime,
+          now,
+          template: templateName,
+          sourceFlashSaleId: state.copySource.flashSale.flash_sale_id,
+          productCount: state.products.length,
+          spcCds: state.spcCds ? state.spcCds.slice(0, 16) + '...' : '无',
+        });
         const status = await waitForStorage({
           type: 'EXECUTE_COPY',
           sourceFlashSale: state.copySource.flashSale,
@@ -1639,7 +1648,10 @@ export const useAppStore = create<AppState>((set, get) => ({
         }, 120000);
 
         if (status) {
-          console.log('[executeCopy] EXECUTE_COPY storage 状态:', JSON.stringify(status));
+          console.log('[executeCopy] EXECUTE_COPY 响应:', JSON.stringify(status));
+          if (status.success === false) {
+            console.error('[executeCopy] ❌ 即时复制失败:', status.error);
+          }
           set({ copyMode: 'result', isCopying: false, copyTaskStatus: status });
           // 即时执行：刷新活动列表直到新活动出现
           const newId = status.newFlashSaleId;
@@ -1670,10 +1682,10 @@ export const useAppStore = create<AppState>((set, get) => ({
             await get().loadFlashSaleProducts(newId);
           }
         } else {
-          console.error('[executeCopy] EXECUTE_COPY 无响应');
+          console.error('[executeCopy] ❌ EXECUTE_COPY 无响应 (超时或后台未处理)');
           set({
             copyMode: 'result', isCopying: false,
-            copyTaskStatus: { scheduled: true, executed: true, success: false, error: '后台无响应' },
+            copyTaskStatus: { scheduled: true, executed: true, success: false, error: '后台无响应，请检查后端服务是否正常运行' },
           });
         }
       } else {
@@ -1710,18 +1722,36 @@ export const useAppStore = create<AppState>((set, get) => ({
           skuOverrides: effectiveSkuOverrides,
         };
 
-        console.log('[executeCopy] 定时执行, targetTime:', targetTime, 'template:', templateName);
+        console.log('[executeCopy] 定时执行:', {
+          targetTime,
+          targetTimeStr: new Date(targetTime * 1000).toLocaleString(),
+          fireTime: targetTime - 300,
+          fireTimeStr: new Date((targetTime - 300) * 1000).toLocaleString(),
+          now: Math.floor(Date.now() / 1000),
+          template: templateName,
+          sourceFlashSaleId: params.sourceFlashSaleId,
+          productCount: params.products.length,
+          discountRate: params.discountRate,
+          spcCds: state.spcCds ? state.spcCds.slice(0, 16) + '...' : '无',
+        });
         const status = await waitForStorage({ type: 'SCHEDULE_COPY', params });
 
         if (status) {
-          console.log('[executeCopy] SCHEDULE_COPY storage 状态:', JSON.stringify(status));
+          console.log('[executeCopy] SCHEDULE_COPY 响应:', JSON.stringify(status));
+          if (status.success === false) {
+            console.error('[executeCopy] ❌ 后台返回错误:', status.error);
+          } else if (status.success === null) {
+            console.log('[executeCopy] ⏳ 定时任务已排期, 等待 alarm 触发');
+          } else {
+            console.log('[executeCopy] ✅ 复制成功, newFlashSaleId:', status.newFlashSaleId);
+          }
           set({ copyMode: 'result', isCopying: false, copyTaskStatus: status, hasScheduledCopy: true });
           get().checkScheduledCopy();
         } else {
-          console.error('[executeCopy] SCHEDULE_COPY 无响应');
+          console.error('[executeCopy] ❌ SCHEDULE_COPY 无响应 (超时或后台未处理)');
           set({
             copyMode: 'result', isCopying: false,
-            copyTaskStatus: { scheduled: true, executed: true, success: false, error: '后台无响应' },
+            copyTaskStatus: { scheduled: true, executed: true, success: false, error: '后台无响应，请检查后端服务是否正常运行' },
           });
         }
       }

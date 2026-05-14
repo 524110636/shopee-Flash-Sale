@@ -8,6 +8,7 @@ export const users = sqliteTable('users', {
   isActive: integer('is_active').notNull().default(0),
   maxStores: integer('max_stores').notNull().default(1),
   autoModeEnabled: integer('auto_mode_enabled').notNull().default(0),
+  trialUsed: integer('trial_used').notNull().default(0),
   createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
   updatedAt: text('updated_at').notNull().default('CURRENT_TIMESTAMP'),
 });

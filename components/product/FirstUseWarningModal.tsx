@@ -33,6 +33,7 @@ export function FirstUseWarningModal() {
               例如<span className="font-medium text-gray-900">多件折扣</span>、
               <span className="font-medium text-gray-900">免运促销</span>、
               <span className="font-medium text-gray-900">加价购</span>、
+              <span cspasName="font-medium text-gray-900">满额赠</span>、
               <span className="font-medium text-gray-900">套装优惠</span>等。
             </p>
 
