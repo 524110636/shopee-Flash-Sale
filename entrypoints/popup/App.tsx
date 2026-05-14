@@ -9,6 +9,7 @@ import { CopyConfirmPanel } from '@/components/product/CopyConfirmPanel';
 import { CopyResultPanel } from '@/components/product/CopyResultPanel';
 import { AutoModePanel } from '@/components/product/AutoModePanel';
 import { FirstUseModal } from '@/components/product/FirstUseModal';
+import { FirstUseWarningModal } from '@/components/product/FirstUseWarningModal';
 import { SkuTable } from '@/components/product/SkuTable';
 import { AuthPanel } from '@/components/product/AuthPanel';
 import { StoreStatus } from '@/components/product/StoreStatus';
@@ -1522,6 +1523,7 @@ export default function App() {
         </div>
       )}
 
+      <FirstUseWarningModal />
       <FirstUseModal />
 
     </div>

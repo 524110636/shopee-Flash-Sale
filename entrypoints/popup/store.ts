@@ -230,7 +230,9 @@ interface AppState {
   scheduleEnableForFlashSale: (flashSaleId: number, targetStartTime: number, flashSaleName: string, delayMinutes?: number) => Promise<void>;
   // 第一次使用
   firstUse: FirstUseState;
-  openFirstUse: () => void;
+  firstUseWarningOpen: boolean;
+  openFirstUse: () => Promise<void>;
+  confirmFirstUseWarning: (dontShowAgain: boolean) => void;
   closeFirstUse: () => void;
   fetchFirstUseProducts: (pageSize?: number) => Promise<void>;
   searchFirstUseProducts: (keyword: string) => Promise<void>;
@@ -372,6 +374,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     hasMore: true,
     cursor: null,
   },
+
+  firstUseWarningOpen: false,
 
   setSpcCds: (spcCds, spcCdsVer) => set({ spcCds, spcCdsVer }),
   setConnected: (isConnected) => set({ isConnected }),
@@ -2591,8 +2595,34 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // ===== 第一次使用 =====
 
-  openFirstUse: () => {
+  openFirstUse: async () => {
+    const result = await browser.storage.local.get('_firstUseWarningDismissed');
+    if (result._firstUseWarningDismissed) {
+      set(state => ({
+        firstUse: {
+          ...state.firstUse,
+          open: true,
+          loading: true,
+          products: [],
+          selectedIds: new Set(),
+          searchKeyword: '',
+          searchResults: [],
+          hasMore: true,
+          cursor: null,
+          fetchedTotal: 0,
+        },
+      }));
+    } else {
+      set({ firstUseWarningOpen: true });
+    }
+  },
+
+  confirmFirstUseWarning: (dontShowAgain) => {
+    if (dontShowAgain) {
+      browser.storage.local.set({ _firstUseWarningDismissed: true });
+    }
     set(state => ({
+      firstUseWarningOpen: false,
       firstUse: {
         ...state.firstUse,
         open: true,
