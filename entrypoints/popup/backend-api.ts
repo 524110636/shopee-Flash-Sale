@@ -4,7 +4,7 @@ const STORAGE_KEY = 'backendAuth';
 
 interface AuthData {
   token: string;
-  user: { id: number; email: string; role: string };
+  user: { id: number; email: string; role: string; autoModeEnabled: number };
 }
 
 let _baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5724';
@@ -34,6 +34,11 @@ export function isAdmin() {
   return _auth?.user?.role === 'admin';
 }
 
+export function canUseAutoMode(): boolean {
+  if (!_auth?.user) return false;
+  return _auth.user.role === 'admin' || _auth.user.autoModeEnabled === 1;
+}
+
 export async function loadAuthFromStorage() {
   try {
     const result = await browser.storage.local.get(STORAGE_KEY);
@@ -46,7 +51,7 @@ export async function loadAuthFromStorage() {
   return false;
 }
 
-export async function saveAuthToStorage(token: string, user: { id: number; email: string; role: string }) {
+export async function saveAuthToStorage(token: string, user: { id: number; email: string; role: string; autoModeEnabled: number }) {
   _auth = { token, user };
   await browser.storage.local.set({ [STORAGE_KEY]: _auth });
 }
@@ -97,13 +102,18 @@ export async function verify(email: string, code: string) {
 }
 
 export async function login(email: string, password: string) {
-  const data = await request<{ token: string; user: { id: number; email: string; role: string } }>('POST', '/api/auth/login', { email, password });
+  const data = await request<{ token: string; user: { id: number; email: string; role: string; autoModeEnabled: number } }>('POST', '/api/auth/login', { email, password });
   await saveAuthToStorage(data.token, data.user);
   return data;
 }
 
 export async function checkAdmin() {
-  return request<{ isAdmin: boolean }>('POST', '/api/auth/check-admin');
+  const data = await request<{ isAdmin: boolean; autoModeEnabled: number }>('POST', '/api/auth/check-admin');
+  if (_auth && data.autoModeEnabled !== undefined) {
+    _auth.user.autoModeEnabled = data.autoModeEnabled;
+    await browser.storage.local.set({ [STORAGE_KEY]: _auth });
+  }
+  return data;
 }
 
 // ===== Store API =====
@@ -142,6 +152,10 @@ export async function getUsers() {
 
 export async function updateStoreLimit(userId: number, maxStores: number) {
   return request<{ message: string }>('PATCH', `/api/admin/users/${userId}/store-limit`, { maxStores });
+}
+
+export async function toggleAutoMode(userId: number, autoModeEnabled: number) {
+  return request<{ message: string; autoModeEnabled: number }>('PATCH', `/api/admin/users/${userId}/auto-mode`, { autoModeEnabled });
 }
 
 export async function getAdminAnalytics() {

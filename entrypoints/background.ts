@@ -1696,6 +1696,35 @@ export default defineBackground({
              msgProductCount: msgProducts?.length ?? 0,
            }));
 
+          // Step 0: 验证自动模式权限
+          console.log('[bg:START_AUTO_MODE] Step0: 验证自动模式权限...');
+          try {
+            const authResult = await browser.storage.local.get(['backendAuth', 'backendUrl']);
+            const auth = authResult.backendAuth as { token?: string } | undefined;
+            const backendUrl = authResult.backendUrl as string | undefined;
+            if (!auth?.token) {
+              console.warn('[bg:START_AUTO_MODE] Step0 失败: 未登录后端');
+              return { success: false, error: '未登录后端系统，请先登录' };
+            }
+            const baseUrl = backendUrl || 'http://localhost:5724';
+            const permResp = await fetch(`${baseUrl}/api/auth/check-auto-mode`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${auth.token}`,
+              },
+            });
+            const permData = await permResp.json() as { allowed?: boolean };
+            if (!permResp.ok || !permData.allowed) {
+              console.warn('[bg:START_AUTO_MODE] Step0 失败: 无自动模式权限');
+              return { success: false, error: '该功能仅限高级用户，请联络管理员开通。' };
+            }
+            console.log('[bg:START_AUTO_MODE] Step0 通过');
+          } catch (e: any) {
+            console.error('[bg:START_AUTO_MODE] Step0 异常:', e?.message);
+            return { success: false, error: `权限验证失败: ${e.message}` };
+          }
+
           // Step 1: 获取源活动商品数据
           console.log('[bg:START_AUTO_MODE] Step1: 读取 _copiedSaleData...');
           let sourceData: CopiedSaleData | undefined;

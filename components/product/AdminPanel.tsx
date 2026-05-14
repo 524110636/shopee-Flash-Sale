@@ -19,6 +19,7 @@ export function AdminPanel() {
   const [unbindingId, setUnbindingId] = useState<number | null>(null);
 
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
+  const [togglingAutoModeUserId, setTogglingAutoModeUserId] = useState<number | null>(null);
 
   const loadUsers = async () => {
     setLoading(true); setError('');
@@ -136,7 +137,7 @@ export function AdminPanel() {
                     )}
                   </div>
                   <div className="mt-0.5 text-muted-foreground">
-                    已绑定 {user.bindingCount ?? 0} 个店铺 · {user.isActive ? '已激活' : '未激活'}
+                    已绑定 {user.bindingCount ?? 0} 个店铺 · {user.isActive ? '已激活' : '未激活'} · {user.autoModeEnabled ? '自动已开' : '自动未开'}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -175,6 +176,34 @@ export function AdminPanel() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`h-6 px-2 text-[10px] font-normal ${
+                          user.autoModeEnabled
+                            ? 'text-green-600 border-green-200 hover:bg-green-50'
+                            : 'text-muted-foreground'
+                        }`}
+                        disabled={togglingAutoModeUserId === user.id}
+                        onClick={async () => {
+                          const newVal = user.autoModeEnabled ? 0 : 1;
+                          setTogglingAutoModeUserId(user.id);
+                          setError('');
+                          try {
+                            await backendApi.toggleAutoMode(user.id, newVal);
+                            loadUsers();
+                          } catch (e: any) {
+                            setError(e.message);
+                          }
+                          setTogglingAutoModeUserId(null);
+                        }}
+                      >
+                        {togglingAutoModeUserId === user.id
+                          ? '...'
+                          : user.autoModeEnabled
+                            ? '关闭自动'
+                            : '开启自动'}
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"

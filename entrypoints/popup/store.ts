@@ -127,6 +127,7 @@ interface AppState {
   autoModeStatus: AutoModeStatus | null;
   autoModeLogs: AutoModeLog[];
   firstSelectedActivity: { flashSaleId: number; flashSaleName: string } | null;
+  autoModeDeniedMessage: string;
 
   // 后端管理认证状态
   isLoggedIn: boolean;
@@ -205,6 +206,7 @@ interface AppState {
   // 自动模式 Actions
   enterAutoMode: () => void;
   exitAutoMode: () => void;
+  clearAutoModeDeniedMessage: () => void;
   startAutoMode: (config: AutoModeConfig, flashSaleId?: number, flashSaleName?: string, debugMode?: boolean, selectedSlotId?: number, selectedSlotTime?: number, skipSkuKeys?: string[]) => Promise<{ success: boolean; error?: string }>;
   stopAutoMode: () => Promise<void>;
   setFirstSelectedActivity: (sale: FlashSale) => void;
@@ -326,6 +328,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   autoModeStatus: null,
   autoModeLogs: [],
   firstSelectedActivity: null,
+  autoModeDeniedMessage: '',
 
   // 后端管理初始值
   isLoggedIn: false,
@@ -1812,9 +1815,17 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  enterAutoMode: () => set({ autoModeActive: true }),
+  enterAutoMode: () => {
+    if (!backendApi.canUseAutoMode()) {
+      set({ autoModeDeniedMessage: '该功能仅限高级用户，请联络管理员开通。' });
+      return;
+    }
+    set({ autoModeActive: true, autoModeDeniedMessage: '' });
+  },
 
   exitAutoMode: () => set({ autoModeActive: false }),
+
+  clearAutoModeDeniedMessage: () => set({ autoModeDeniedMessage: '' }),
 
   setFirstSelectedActivity: (sale: FlashSale) => {
     set({ firstSelectedActivity: { flashSaleId: sale.flash_sale_id, flashSaleName: sale.name } });

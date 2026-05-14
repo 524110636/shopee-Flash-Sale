@@ -46,6 +46,7 @@ export default function App() {
     hasScheduledCopy, checkScheduledCopy, triggerScheduledCopyNow,
     _completedCopyInfo, acknowledgeCompletedCopy,
     autoModeActive, autoModeStatus, enterAutoMode, exitAutoMode,
+    autoModeDeniedMessage, clearAutoModeDeniedMessage,
     loadAutoModeStatus,
     oneDaySkuSelectedIds, oneDaySkuFlow,
     toggleOneDaySkuSelection, setOneDaySkuSelection, runOneDaySkuAndEnable,
@@ -289,6 +290,20 @@ export default function App() {
         <div style={{ backfaceVisibility: 'hidden' }}>
           <AuthPanel />
           {isLoggedIn && <StoreStatus />}
+
+          {autoModeDeniedMessage && (
+            <div className="mx-4 mt-2 p-2.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded flex items-center justify-between">
+              <span>{autoModeDeniedMessage}</span>
+              <button
+                className="ml-2 text-amber-500 hover:text-amber-700 shrink-0"
+                onClick={clearAutoModeDeniedMessage}
+              >
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          )}
 
           {isLoggedIn && storeBindings.filter(b => b.isActive).length === 0 && !showAdminPanel ? (
             <Card className="mx-4 mt-3">

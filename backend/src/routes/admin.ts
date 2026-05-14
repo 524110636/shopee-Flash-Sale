@@ -17,6 +17,7 @@ admin.get('/users', async (c) => {
     email: users.email,
     role: users.role,
     isActive: users.isActive,
+    autoModeEnabled: users.autoModeEnabled,
     createdAt: users.createdAt,
     bindingCount: sql<number>`(
       SELECT COUNT(*) FROM store_bindings
@@ -55,6 +56,32 @@ admin.patch('/users/:id/store-limit', async (c) => {
     .where(eq(storeBindings.userId, userId));
 
   return c.json({ message: `用户 ${user[0].email} 的店铺限额已更新为 ${maxStores}` });
+});
+
+/** 切换用户自动模式权限 */
+admin.patch('/users/:id/auto-mode', async (c) => {
+  const userId = parseInt(c.req.param('id'), 10);
+  const { autoModeEnabled } = await c.req.json<{ autoModeEnabled: number }>();
+
+  if (autoModeEnabled !== 0 && autoModeEnabled !== 1) {
+    return c.json({ error: 'autoModeEnabled 必须为 0 或 1' }, 400);
+  }
+
+  const db = getDb();
+
+  const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (user.length === 0) {
+    return c.json({ error: '用户不存在' }, 404);
+  }
+
+  await db.update(users)
+    .set({ autoModeEnabled })
+    .where(eq(users.id, userId));
+
+  return c.json({
+    message: `用户 ${user[0].email} 的自动模式权限已${autoModeEnabled ? '开启' : '关闭'}`,
+    autoModeEnabled,
+  });
 });
 
 /** 管理员删除用户（级联删除绑定、事件、验证码） */

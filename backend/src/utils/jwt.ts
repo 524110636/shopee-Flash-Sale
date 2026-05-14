@@ -8,6 +8,7 @@ export interface TokenPayload extends JWTPayload {
   userId: number;
   email: string;
   role: string;
+  autoModeEnabled: number;
 }
 
 export async function signToken(payload: TokenPayload): Promise<string> {

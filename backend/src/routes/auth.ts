@@ -128,6 +128,7 @@ auth.post('/login', async (c) => {
     userId: user[0].id,
     email: user[0].email,
     role: user[0].role,
+    autoModeEnabled: user[0].autoModeEnabled,
   });
 
   return c.json({
@@ -136,14 +137,33 @@ auth.post('/login', async (c) => {
       id: user[0].id,
       email: user[0].email,
       role: user[0].role,
+      autoModeEnabled: user[0].autoModeEnabled,
     },
   });
 });
 
-/** 检查当前用户是否为管理员 */
+/** 检查当前用户是否为管理员（含 autoModeEnabled 实时查询） */
 auth.post('/check-admin', authMiddleware, async (c) => {
-  const user = c.get('user');
-  return c.json({ isAdmin: user.role === 'admin' });
+  const jwtUser = c.get('user');
+  const db = getDb();
+  const userRecord = await db.select({ autoModeEnabled: users.autoModeEnabled })
+    .from(users).where(eq(users.id, jwtUser.userId)).limit(1);
+  return c.json({
+    isAdmin: jwtUser.role === 'admin',
+    autoModeEnabled: userRecord[0]?.autoModeEnabled ?? 0,
+  });
+});
+
+/** 检查当前用户是否有自动模式权限 */
+auth.post('/check-auto-mode', authMiddleware, async (c) => {
+  const jwtUser = c.get('user');
+  if (jwtUser.role === 'admin') {
+    return c.json({ allowed: true });
+  }
+  const db = getDb();
+  const userRecord = await db.select({ autoModeEnabled: users.autoModeEnabled })
+    .from(users).where(eq(users.id, jwtUser.userId)).limit(1);
+  return c.json({ allowed: userRecord[0]?.autoModeEnabled === 1 });
 });
 
 export default auth;

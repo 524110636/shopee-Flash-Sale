@@ -398,6 +398,7 @@ export interface BackendUser {
   email: string;
   role: 'user' | 'admin';
   isActive: number;
+  autoModeEnabled: number;
   createdAt: string;
   bindingCount?: number;
 }
@@ -417,7 +418,7 @@ export interface BackendStoreBinding {
 
 export interface BackendAuthState {
   token: string | null;
-  user: { id: number; email: string; role: string } | null;
+  user: { id: number; email: string; role: string; autoModeEnabled: number } | null;
   backendUrl: string;
 }
 
