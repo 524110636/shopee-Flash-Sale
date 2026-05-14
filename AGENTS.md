@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # 限时特卖助手 (Limited Time Sale Helper)
 
-**版本:** 1.11.0
-**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 1 + 一次性邀请码 + 试用限制 + 操作校验全覆盖
-**最近更新:** 2026-05-14 — 邀请码系统 (替换全局 REGISTER_KEY) + 管理员面板邀请码管理 + 定制开发弹窗 + tsconfig 修复
+**版本:** 1.11.1
+**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 1 + 一次性邀请码 + 试用限制 + 操作校验全覆盖 + ESLint 零错误
+**最近更新:** 2026-05-14 — 部署初始化脚本 (seed.ts) + ESLint 全量修复 (22→0)
 
 ## 相关文档
 - `docs/shopee-flash-sale-api.md` — Shopee API endpoints and response formats
@@ -103,6 +103,7 @@ backend/                      # 独立后端服务
 │   └── utils/
 │       ├── jwt.ts            # 签发/验证 JWT (jose, HS256, 7天)
 │       └── code.ts           # 6位验证码生成器 (5分钟过期)
+│   ├── seed.ts                # 首次部署初始化: 从环境变量创建管理员 + 初始邀请码
 ├── package.json
 └── tsconfig.json
 ```
@@ -115,6 +116,7 @@ Built with WXT + React 19 + TypeScript + Tailwind CSS + shadcn/ui + Zustand (ext
 ## Development Commands
 - `cp .env.example .env` — 创建本地环境变量配置（默认后端地址 `http://localhost:5724`）
 - `cd backend && npm run dev` — Start backend server on port 5724
+- `cd backend && npm run seed` — Initialize first admin + invite codes (first deployment only, idempotent)
 - `cd backend && npx kill-port 5724` — Kill backend if port in use
 - `npm run dev` — Start dev server with hot reload (WXT)
 - `npm run build` — Production build
@@ -576,6 +578,8 @@ The API returns two possible formats (check both):
 - **邀请码系统 (v1.11.0):** 替换全局 `REGISTER_KEY` 为一次性邀请码。`invite_codes` 表字段：id, code(UNIQUE), is_used, used_by, created_at, used_at。注册时 `POST /register` 校验邀请码（查表 is_used=0），成功后标记 is_used=1。管理员在 AdminPanel「邀请码」标签页生成（格式 `INV-xxxxxxxx`，批量 1-20 个）、查看使用状态、删除未使用邀请码。前端注册表单「注册密钥」→「邀请码」。`.env.example` 移除 `REGISTER_KEY`。
 - **定制开发弹窗 (v1.11.0):** 非管理员用户右上角显示渐变「定制开发」按钮（orange-400→amber-500），点击弹出模态窗口宣传虾皮定制开发服务。模态窗口使用渐变色头部 + 功能列表 + 琥珀色行动号召卡片。
 - **tsconfig 修复 (v1.11.0):** `tsconfig.json` 排除列表中移除 `.wxt`，修复 VSCode 中 `browser` 全局类型找不到的问题（WXT 在 `.wxt/wxt.d.ts` 中生成类型声明）。
+- **部署初始化脚本 (v1.11.1):** `backend/src/seed.ts` 解决首次部署无管理员死锁问题。从环境变量 `INIT_ADMIN_EMAIL`/`INIT_ADMIN_PASSWORD` 创建管理员账号，`INIT_INVITE_CODES` 控制初始邀请码数量。`npm run seed` 幂等执行，管理员已存在或邀请码已有时自动跳过。`.env.example` 新增相关配置项。
+- **ESLint 全量修复 (v1.11.1):** 22 个问题清零。排除 `.agents/` 非项目目录；补充 `confirm`/`Response`/`URLSearchParams` 浏览器全局变量；修复 `preserve-caught-error`（`backend-api.ts`、`store.ts` 的 catch 块传入 `{ cause: e }`）；移除 `AutoModePanel.tsx` 未使用的 `flashSaleStock`/`purchaseLimit` 解构；`ScheduledTaskCard.tsx` 的 `now` 重命名为 `_now`；补全 `FirstUseModal.tsx` 两处 useEffect 依赖数组；`UndiscountedSkuModal.tsx` interval 模式的 useEffect 加 eslint-disable 注释（添加 `countdown` 依赖会每秒重建 interval 破坏倒计时）。
 
 ## Known Issues / 待验证
 

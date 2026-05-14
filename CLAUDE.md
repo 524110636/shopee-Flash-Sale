@@ -16,6 +16,18 @@ Copy `.env.example` to `.env` to configure the backend URL. The default is `http
 cp .env.example .env
 ```
 
+### First Deployment
+
+New deployments have no admin account or invite codes (chicken-and-egg: registration needs invite codes, only admins can generate them). Run the seed script once:
+
+```bash
+cd backend
+# Edit .env and set INIT_ADMIN_EMAIL, INIT_ADMIN_PASSWORD, JWT_SECRET
+npm run seed
+```
+
+This creates the admin user (from `INIT_ADMIN_EMAIL`/`INIT_ADMIN_PASSWORD`) and generates initial invite codes (`INIT_INVITE_CODES`, default 5). The seed is idempotent — safe to run multiple times. After init, remove `INIT_ADMIN_*` lines from `.env`.
+
 ## Development Commands
 
 | Command | Description |
@@ -31,6 +43,7 @@ cp .env.example .env
 | `npx tsc --noEmit` | TypeScript type checking |
 | `cd backend && npm run dev` | Start backend server on port 5724 |
 | `cd backend && npx kill-port 5724` | Kill backend if port in use |
+| `cd backend && npm run seed` | Initialize first admin + invite codes (first deployment only) |
 | `git config core.hooksPath .githooks` | Enable pre-commit build check hook |
 
 ## Project Structure
@@ -84,6 +97,7 @@ backend/                      # Standalone backend service
 │   │   ├── stores.ts         # GET /, POST /bind, POST /validate, DELETE /:id (JWT-protected)
 │   │   ├── analytics.ts      # POST /events, GET /summary (JWT-protected)
 │   │   └── admin.ts          # GET /users, PATCH /:id/store-limit, PATCH /:id/auto-mode, PATCH /:id/trial, DELETE /:id, GET /analytics, GET /analytics/events, GET /bindings, DELETE /bindings/:id, GET/POST/DELETE /invite-codes (admin-only)
+│   ├── seed.ts                # First-deployment bootstrap: creates admin user + initial invite codes from env vars
 │   ├── middleware/
 │   │   └── auth.ts           # JWT verification + admin role guard
 │   └── utils/
