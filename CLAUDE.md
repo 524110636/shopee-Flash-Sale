@@ -96,12 +96,20 @@ backend/                      # Standalone backend service
 ## Backend Architecture
 
 ### Authentication Flow
-1. User registers with email/username + password → backend returns 6-digit verification code
+1. User registers with email/username + password + **register key** → backend validates key against `REGISTER_KEY` env var → returns 6-digit verification code
 2. User enters code to verify → activates account (`isActive=1`)  
-3. User logs in → receives JWT (7-day expiry)
+3. User logs in → receives JWT (7-day expiry, includes `trialUsed`, `autoModeEnabled`)
 4. Extension stores JWT in `chrome.storage.local` via `backend-api.ts`
 5. All subsequent API calls auto-attach `Authorization: Bearer` header
 6. On 401 response, auth is cleared and user is redirected to login
+
+### Registration Key + Trial Limit
+- `.env` 中 `REGISTER_KEY` 控制注册权限，注册时需提供匹配密钥
+- 新用户 `trial_used = 0`，首次执行任何操作时后端 `/validate` 自动标记为 `1`
+- `trial_used >= 1` 的非管理员用户再次操作 → `403 "试用已结束，请联系管理员升级套餐"`
+- 管理员（role=admin）不受试用限制
+- 管理员可在 AdminPanel 中「重置试用」或「标记已用」
+- 覆盖 9 个操作点：`enable` / `copy` / `auto_mode_enable` / `scheduled_copy` / `scheduled_enable` / `wizard_flow` / `scheduled_copy`(alarm) / `scheduled_copy_enable` / `scheduled_enable`(alarm)
 
 ### Store Binding
 - **shop_id** is the stable binding anchor (from `GET /api/v2/login/`), SPC_CDS is only for API calls
@@ -136,7 +144,8 @@ backend/                      # Standalone backend service
 - **`injectedFetch()`**: Uses `scripting.executeScript({ world: 'MAIN' })` to bypass CSP
 - **Storage-based communication**: `storage.onChanged` for critical flows when `sendMessage` is unreliable
 - **Fire-and-forget analytics**: Background SW reports events without awaiting or error handling
-- **Pre-operation validation (anti-cracking)**: Background SW calls `POST /api/stores/validate` before every critical operation (enable, copy, auto-mode, scheduled copy) via `validateShopAccess()` inline function — reads auth from storage, validates binding+user status on backend, cannot be bypassed by modifying frontend code
+- **Pre-operation validation (anti-cracking)**: Background SW calls `POST /api/stores/validate` before every critical operation (enable, copy, auto-mode, scheduled copy) via `validateShopAccess()` inline function — reads auth from storage, validates binding+user status+trial limit on backend, cannot be bypassed by modifying frontend code. Now includes detailed `[bg:validate]` console logging at each step (request → response → pass/fail)
+- **SPC_CDS source in background**: Background handlers that run without popup context (alarms, scheduled tasks) MUST use `getSpcCdsFromCookies()` to read SPC_CDS from browser cookies. Do NOT read from `browser.storage.local` — popup store only holds SPC_CDS in Zustand memory state, never persists it
 - **Settings security**: AuthPanel settings view shows backend URL only for admin users (`authUser.role === 'admin'`); non-admin users see only a "测试连接" button that calls `healthCheck()`
 - **checkAuthOnStartup sync**: `setTimeout(() => refreshStoreBindings(), 500)` removed in favor of `await refreshStoreBindings()` to eliminate 500ms race window where `isLoggedIn=true` but `storeBindings=[]`
 - **fetchFlashSaleList force param**: Passing `force=true` bypasses the "API returned fewer items" cache protection, used on user-initiated refresh and after copy flow completes
@@ -183,6 +192,8 @@ backend/                      # Standalone backend service
 | GET | `/api/admin/analytics/events` | Admin | Event details |
 | GET | `/api/admin/bindings` | Admin | List all store bindings (optional `?userId=`) |
 | DELETE | `/api/admin/bindings/:id` | Admin | Force-unbind any store |
+| PATCH | `/api/admin/users/:id/auto-mode` | Admin | Toggle auto mode permission |
+| PATCH | `/api/admin/users/:id/trial` | Admin | Reset/mark trial used status |
 | GET | `/api/health` | Public | Health check |
 
 ## Config Files

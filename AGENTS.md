@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # 限时特卖助手 (Limited Time Sale Helper)
 
-**版本:** 1.9.1
-**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 1 + 第一次使用流程 (含警告弹窗) + Wizard 优化 Phase 2-3
-**最近更新:** 2026-05-14 — 第一次使用前弹出警告弹窗 (FirstUseWarningModal)，提醒用户移出促销活动 + "以后不再提示"复选框持久化到 _firstUseWarningDismissed
+**版本:** 1.10.0
+**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 1 + 注册密钥 + 试用限制 + 操作校验全覆盖
+**最近更新:** 2026-05-14 — 注册密钥 + 试用限制 + SPC_CDS校验修复 (getSpcCdsFromCookies) + 9个操作点校验全覆盖 + 3层错误捕获日志
 
 ## 相关文档
 - `docs/shopee-flash-sale-api.md` — Shopee API endpoints and response formats
@@ -146,12 +146,25 @@ Built with WXT + React 19 + TypeScript + Tailwind CSS + shadcn/ui + Zustand (ext
 - **`entrypoints/content.ts`** — Content script: unified floating panel (`#__flash_sale_panel__`) merging enable progress, copy progress, and auto mode status. Listens for `ENABLE_PROGRESS`/`ENABLE_COMPLETE`/`COPY_SCHEDULED`/`COPY_PROGRESS`/`COPY_COMPLETE`/`AUTO_MODE_UPDATE` messages. Also watches `storage.onChanged` as backup path for `_enableProgress`, `_copyCountdown`, and `_autoModeStatus` when messages fail.
 
 ### Anti-Cracking Phase 1 — 后端验证 (v1.8.2)
-- 所有关键操作（开限时特卖、复制活动、自动模式、定时复制）执行前，调用 `POST /api/stores/validate` 校验店铺绑定是否仍有效 + 用户账号是否激活
+- 所有关键操作（开限时特卖、复制活动、自动模式、定时复制）执行前，调用 `POST /api/stores/validate` 校验店铺绑定是否仍有效 + 用户账号是否激活 + **试用限制**
 - `validateShopAccess()` inline 函数在 background.ts 中，从 storage 读取 `backendAuth` + `backendUrl`，URL 不存在时自动回退默认值 `http://localhost:5724`
-- 5 个注入点: START_ENABLE, EXECUTE_COPY, executeScheduledCopyFlow, handleAutoModeEnable, scheduled_copy_enable
+- 9 个注入点全覆盖: START_ENABLE, EXECUTE_COPY, executeScheduledCopyFlow, handleAutoModeEnable, SCHEDULE_COPY, SCHEDULE_ENABLE, SCHEDULE_WIZARD_FLOW, scheduled_copy_enable, scheduled_enable
 - 验证失败时根据注入点分别处理: return error / throw / stop auto mode / log + return
 - 无法通过修改前端代码绕过（验证在后端执行）
-- `reportAnalyticsEvent` fire-and-forget 记录 `validate_shop_access` 事件
+- `validateShopAccess()` 包含详细 `[bg:validate]` 日志：开始校验 → 请求 URL → 后端响应 → 通过/失败
+
+### 注册密钥 + 试用限制 (v1.10.0)
+- **注册密钥**: 注册需提供 `registerKey`，后端校验 `process.env.REGISTER_KEY`，不匹配返回 403
+- **试用限制**: `users` 表新增 `trial_used` 字段（默认 0），首次执行操作时 `/validate` 自动标记为 1
+- `trial_used >= 1` 的非管理员用户再次操作 → 403 `"试用已结束，请联系管理员升级套餐"`
+- 管理员（role=admin）不受试用限制，`trial_used` 也不自动递增
+- AdminPanel 显示试用状态 + 「重置试用/标记已用」按钮
+- JWT payload 包含 `trialUsed`，`checkAdmin()` 返回时自动同步到 storage
+
+### SPC_CDS 校验修复 (v1.10.0)
+- **问题**: `SCHEDULE_COPY` 和 `SCHEDULE_WIZARD_FLOW` 从 `browser.storage.local` 读取 `spcCds`，但 Zustand `setSpcCds` 只写内存不写 storage → 永远为空 → 校验被跳过
+- **修复**: 改用 `getSpcCdsFromCookies()` 从浏览器 Cookie 直接读取 SPC_CDS，与 `EXECUTE_COPY`、`scheduled_copy_enable` 等 handler 一致
+- **规则**: Background 中不依赖 popup 传参的 handler（alarm、定时任务）必须用 `getSpcCdsFromCookies()`，禁止从 `storage.local` 读 SPC_CDS
 
 ### 多店铺绑定修复 (v1.8.2)
 - StoreStatus 组件原仅当 `activeBindings.length === 0` 时显示绑定按钮，绑定首个店铺后按钮消失
@@ -307,7 +320,7 @@ Auto mode (background):
 - **Price rules:** Must be integer, strictly less than origin price
 
 ### Backend API Endpoints
-- **POST `/api/auth/register`** — Register (returns verification code)
+- **POST `/api/auth/register`** — Register (requires `registerKey`, returns verification code)
 - **POST `/api/auth/verify`** — Activate account with code
 - **POST `/api/auth/login`** — Login, returns JWT
 - **POST `/api/auth/check-admin`** — Check admin role (JWT)
@@ -319,6 +332,8 @@ Auto mode (background):
 - **GET `/api/analytics/summary`** — Personal usage summary (JWT)
 - **GET `/api/admin/users`** — User list (admin)
 - **PATCH `/api/admin/users/:id/store-limit`** — Adjust store limit (admin)
+- **PATCH `/api/admin/users/:id/auto-mode`** — Toggle auto mode permission (admin)
+- **PATCH `/api/admin/users/:id/trial`** — Reset/mark trial used status (admin)
 - **DELETE `/api/admin/users/:id`** — Delete user with cascade (bindings, events, verification codes) (admin)
 - **GET `/api/admin/analytics`** — Global analytics (admin)
 - **GET `/api/admin/analytics/events`** — Event details (admin)
