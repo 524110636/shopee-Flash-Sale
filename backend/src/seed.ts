@@ -31,6 +31,7 @@ async function seed() {
       isActive: 1,
       autoModeEnabled: 1,
       trialUsed: 0,
+      trialEnabled: 1,
     });
     console.log(`[Seed] 管理员 ${adminEmail} 创建成功`);
   }

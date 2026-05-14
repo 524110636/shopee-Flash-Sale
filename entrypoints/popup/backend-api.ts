@@ -4,7 +4,7 @@ const STORAGE_KEY = 'backendAuth';
 
 interface AuthData {
   token: string;
-  user: { id: number; email: string; role: string; autoModeEnabled: number; trialUsed: number };
+  user: { id: number; email: string; role: string; autoModeEnabled: number; trialUsed: number; trialEnabled: number };
 }
 
 let _baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5724';
@@ -51,7 +51,7 @@ export async function loadAuthFromStorage() {
   return false;
 }
 
-export async function saveAuthToStorage(token: string, user: { id: number; email: string; role: string; autoModeEnabled: number; trialUsed: number }) {
+export async function saveAuthToStorage(token: string, user: { id: number; email: string; role: string; autoModeEnabled: number; trialUsed: number; trialEnabled: number }) {
   _auth = { token, user };
   await browser.storage.local.set({ [STORAGE_KEY]: _auth });
 }
@@ -102,19 +102,22 @@ export async function verify(email: string, code: string) {
 }
 
 export async function login(email: string, password: string) {
-  const data = await request<{ token: string; user: { id: number; email: string; role: string; autoModeEnabled: number; trialUsed: number } }>('POST', '/api/auth/login', { email, password });
+  const data = await request<{ token: string; user: { id: number; email: string; role: string; autoModeEnabled: number; trialUsed: number; trialEnabled: number } }>('POST', '/api/auth/login', { email, password });
   await saveAuthToStorage(data.token, data.user);
   return data;
 }
 
 export async function checkAdmin() {
-  const data = await request<{ isAdmin: boolean; autoModeEnabled: number; trialUsed: number }>('POST', '/api/auth/check-admin');
+  const data = await request<{ isAdmin: boolean; autoModeEnabled: number; trialUsed: number; trialEnabled: number }>('POST', '/api/auth/check-admin');
   if (_auth) {
     if (data.autoModeEnabled !== undefined) {
       _auth.user.autoModeEnabled = data.autoModeEnabled;
     }
     if (data.trialUsed !== undefined) {
       _auth.user.trialUsed = data.trialUsed;
+    }
+    if (data.trialEnabled !== undefined) {
+      _auth.user.trialEnabled = data.trialEnabled;
     }
     await browser.storage.local.set({ [STORAGE_KEY]: _auth });
   }
@@ -165,6 +168,10 @@ export async function toggleAutoMode(userId: number, autoModeEnabled: number) {
 
 export async function resetTrial(userId: number, trialUsed: number) {
   return request<{ message: string; trialUsed: number }>('PATCH', `/api/admin/users/${userId}/trial`, { trialUsed });
+}
+
+export async function toggleTrialEnabled(userId: number, trialEnabled: number) {
+  return request<{ message: string; trialEnabled: number }>('PATCH', `/api/admin/users/${userId}/trial-enabled`, { trialEnabled });
 }
 
 export async function getAdminAnalytics() {

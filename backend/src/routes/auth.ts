@@ -155,6 +155,7 @@ auth.post('/login', async (c) => {
     role: user[0].role,
     autoModeEnabled: user[0].autoModeEnabled,
     trialUsed: user[0].trialUsed,
+    trialEnabled: user[0].trialEnabled,
   });
 
   return c.json({
@@ -165,6 +166,7 @@ auth.post('/login', async (c) => {
       role: user[0].role,
       autoModeEnabled: user[0].autoModeEnabled,
       trialUsed: user[0].trialUsed,
+      trialEnabled: user[0].trialEnabled,
     },
   });
 });
@@ -173,12 +175,13 @@ auth.post('/login', async (c) => {
 auth.post('/check-admin', authMiddleware, async (c) => {
   const jwtUser = c.get('user');
   const db = getDb();
-  const userRecord = await db.select({ autoModeEnabled: users.autoModeEnabled, trialUsed: users.trialUsed })
+  const userRecord = await db.select({ autoModeEnabled: users.autoModeEnabled, trialUsed: users.trialUsed, trialEnabled: users.trialEnabled })
     .from(users).where(eq(users.id, jwtUser.userId)).limit(1);
   return c.json({
     isAdmin: jwtUser.role === 'admin',
     autoModeEnabled: userRecord[0]?.autoModeEnabled ?? 0,
     trialUsed: userRecord[0]?.trialUsed ?? 0,
+    trialEnabled: userRecord[0]?.trialEnabled ?? 1,
   });
 });
 
@@ -189,9 +192,12 @@ auth.post('/check-auto-mode', authMiddleware, async (c) => {
     return c.json({ allowed: true });
   }
   const db = getDb();
-  const userRecord = await db.select({ autoModeEnabled: users.autoModeEnabled })
+  const userRecord = await db.select({ autoModeEnabled: users.autoModeEnabled, trialEnabled: users.trialEnabled })
     .from(users).where(eq(users.id, jwtUser.userId)).limit(1);
-  return c.json({ allowed: userRecord[0]?.autoModeEnabled === 1 });
+  return c.json({
+    allowed: userRecord[0]?.autoModeEnabled === 1,
+    trialEnabled: userRecord[0]?.trialEnabled ?? 1,
+  });
 });
 
 export default auth;

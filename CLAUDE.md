@@ -93,10 +93,10 @@ backend/                      # Standalone backend service
 │   │   ├── schema.ts         # Drizzle ORM schema (users, verification_codes, store_bindings, analytics_events, invite_codes)
 │   │   └── index.ts          # SQLite init + migration (ALTER TABLE for schema upgrades)
 │   ├── routes/
-│   │   ├── auth.ts           # POST /register (invite code), /verify, /login, /check-admin, /check-auto-mode
-│   │   ├── stores.ts         # GET /, POST /bind, POST /validate, DELETE /:id (JWT-protected)
+│   │   ├── auth.ts           # POST /register (invite code), /verify, /login, /check-admin (returns trialEnabled), /check-auto-mode
+│   │   ├── stores.ts         # GET /, POST /bind, POST /validate (trialEnabled-aware), DELETE /:id (JWT-protected)
 │   │   ├── analytics.ts      # POST /events, GET /summary (JWT-protected)
-│   │   └── admin.ts          # GET /users, PATCH /:id/store-limit, PATCH /:id/auto-mode, PATCH /:id/trial, DELETE /:id, GET /analytics, GET /analytics/events, GET /bindings, DELETE /bindings/:id, GET/POST/DELETE /invite-codes (admin-only)
+│   │   └── admin.ts          # GET /users, PATCH /:id/store-limit, PATCH /:id/auto-mode, PATCH /:id/trial, PATCH /:id/trial-enabled, DELETE /:id, GET /analytics, GET /analytics/events, GET /bindings, DELETE /bindings/:id, GET/POST/DELETE /invite-codes (admin-only)
 │   ├── seed.ts                # First-deployment bootstrap: creates admin user + initial invite codes from env vars
 │   ├── middleware/
 │   │   └── auth.ts           # JWT verification + admin role guard
@@ -121,11 +121,14 @@ backend/                      # Standalone backend service
 - 管理员在 AdminPanel「邀请码」标签页生成一次性邀请码（格式 `INV-xxxxxxxx`）
 - 注册时需提供有效邀请码，使用后立即标记 `is_used=1`，同一邀请码不可重复使用
 - 管理员可删除未使用的邀请码，已使用的不可删除
-- 新用户 `trial_used = 0`，首次执行任何操作时后端 `/validate` 自动标记为 `1`
+- 新用户 `trial_used = 0`、`trial_enabled = 1`（默认启用试用检查）
 - `trial_used >= 1` 的非管理员用户再次操作 → `403 "试用已结束，请联系管理员升级套餐"`
 - 管理员（role=admin）不受试用限制
-- 管理员可在 AdminPanel 中「重置试用」或「标记已用」
+- **`trialEnabled` 永久关闭试用**: 管理员在 AdminPanel 用户列表点击「关闭试用」→ `trialEnabled = 0`，该用户后续所有操作跳过试用检查（适用于已升级套餐的用户）。`trialEnabled=0` 时也不会自动标记 `trialUsed`
+- 管理员可「重置试用」（`trialUsed=0`）或「标记已用」（`trialUsed=1`）
 - 覆盖 9 个操作点：`enable` / `copy` / `auto_mode_enable` / `scheduled_copy` / `scheduled_enable` / `wizard_flow` / `scheduled_copy`(alarm) / `scheduled_copy_enable` / `scheduled_enable`(alarm)
+- **试用到期通知**: 任何操作触发 403 试用错误时，`trialExpiredBanner` 状态设值，App.tsx 顶部渲染醒目红底横幅（含图标 + 升级引导文案 + 关闭按钮）。5 个检测点：`checkBackgroundStatus`、`executeCopy` instant/scheduled 路径、`runOneDaySkuAndEnable` 异常、`scheduleEnableForFlashSale` 异常
+- **Wizard 试用错误就地显示**: `checkBackgroundStatus` 检测到试用错误且 `oneDaySkuFlow.phase === 'starting_flash_sale'` 时，同步更新 `oneDaySkuFlow` 为 failed 状态，错误直接显示在 wizard 界面中，无需用户向上滚动
 
 ### Store Binding
 - **shop_id** is the stable binding anchor (from `GET /api/v2/login/`), SPC_CDS is only for API calls
@@ -205,6 +208,7 @@ backend/                      # Standalone backend service
 | PATCH | `/api/admin/users/:id/store-limit` | Admin | Adjust store binding limit |
 | PATCH | `/api/admin/users/:id/auto-mode` | Admin | Toggle auto mode permission |
 | PATCH | `/api/admin/users/:id/trial` | Admin | Reset/mark trial used status |
+| PATCH | `/api/admin/users/:id/trial-enabled` | Admin | Toggle trial restriction (0=permanently bypass, 1=enabled) |
 | DELETE | `/api/admin/users/:id` | Admin | Delete user (cascade: bindings, events, verification codes) |
 | GET | `/api/admin/analytics` | Admin | Global analytics |
 | GET | `/api/admin/analytics/events` | Admin | Event details |

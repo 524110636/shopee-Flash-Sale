@@ -20,6 +20,7 @@ admin.get('/users', async (c) => {
     isActive: users.isActive,
     autoModeEnabled: users.autoModeEnabled,
     trialUsed: users.trialUsed,
+    trialEnabled: users.trialEnabled,
     createdAt: users.createdAt,
     bindingCount: sql<number>`(
       SELECT COUNT(*) FROM store_bindings
@@ -109,6 +110,32 @@ admin.patch('/users/:id/trial', async (c) => {
   return c.json({
     message: `用户 ${user[0].email} 的试用状态已${trialUsed ? '标记为已使用' : '重置'}`,
     trialUsed,
+  });
+});
+
+/** 切换用户试用限制开关（关闭后用户可永久使用手动模式） */
+admin.patch('/users/:id/trial-enabled', async (c) => {
+  const userId = parseInt(c.req.param('id'), 10);
+  const { trialEnabled } = await c.req.json<{ trialEnabled: number }>();
+
+  if (trialEnabled !== 0 && trialEnabled !== 1) {
+    return c.json({ error: 'trialEnabled 必须为 0 或 1' }, 400);
+  }
+
+  const db = getDb();
+
+  const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (user.length === 0) {
+    return c.json({ error: '用户不存在' }, 404);
+  }
+
+  await db.update(users)
+    .set({ trialEnabled })
+    .where(eq(users.id, userId));
+
+  return c.json({
+    message: `用户 ${user[0].email} 的试用限制已${trialEnabled ? '启用' : '关闭'}`,
+    trialEnabled,
   });
 });
 

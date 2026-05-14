@@ -147,6 +147,9 @@ interface AppState {
   // 复制完成后的提示信息（供主界面展示"立即查看"按钮）
   _completedCopyInfo: CompletedCopyInfo | null;
 
+  // 试用到期通知
+  trialExpiredBanner: string | null;
+
   // 未打折 SKU 拦截
   pendingUndiscountedSkus: UndiscountedSku[];
   showUndiscountedModal: boolean;
@@ -165,6 +168,7 @@ interface AppState {
   setProducts: (products: ShopeeProduct[]) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  dismissTrialExpiredBanner: () => void;
   extractSpcCds: () => Promise<void>;
   fetchShopInfo: () => Promise<void>;
   fetchProducts: () => Promise<void>;
@@ -348,6 +352,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   // 复制完成后持久化提示信息初始值
   _completedCopyInfo: null,
 
+  // 试用到期通知初始值
+  trialExpiredBanner: null,
+
   // 未打折 SKU 拦截初始值
   pendingUndiscountedSkus: [],
   showUndiscountedModal: false,
@@ -388,6 +395,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setProducts: (products) => set({ products }),
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
+  dismissTrialExpiredBanner: () => set({ trialExpiredBanner: null }),
   setMaxRetries: (maxRetries) => set({ maxRetries }),
   setInfiniteRetry: (infiniteRetry) => set({ infiniteRetry }),
   setDiscountRate: (discountRate) => set({ discountRate }),
@@ -1364,6 +1372,25 @@ export const useAppStore = create<AppState>((set, get) => ({
       } else {
         set({ isEnabling: false, enableProgress: null, error: null });
       }
+      // 检测试用到期错误
+      if (data?.error && data.error.includes('试用已结束')) {
+        const { oneDaySkuFlow } = get();
+        // 如果用户在 wizard 流程中，同步更新 oneDaySkuFlow 让错误在当前位置可见
+        if (oneDaySkuFlow.phase === 'starting_flash_sale') {
+          set({
+            trialExpiredBanner: data.error,
+            isEnabling: false,
+            oneDaySkuFlow: {
+              ...oneDaySkuFlow,
+              phase: 'failed',
+              error: data.error,
+              canStartFlashSale: false,
+            },
+          });
+        } else {
+          set({ trialExpiredBanner: data.error });
+        }
+      }
     } catch { /* storage not accessible */ }
   },
 
@@ -1653,6 +1680,9 @@ export const useAppStore = create<AppState>((set, get) => ({
             console.error('[executeCopy] ❌ 即时复制失败:', status.error);
           }
           set({ copyMode: 'result', isCopying: false, copyTaskStatus: status });
+          if (status.error && status.error.includes('试用已结束')) {
+            set({ trialExpiredBanner: status.error });
+          }
           // 即时执行：刷新活动列表直到新活动出现
           const newId = status.newFlashSaleId;
           if (newId) {
@@ -1746,6 +1776,9 @@ export const useAppStore = create<AppState>((set, get) => ({
             console.log('[executeCopy] ✅ 复制成功, newFlashSaleId:', status.newFlashSaleId);
           }
           set({ copyMode: 'result', isCopying: false, copyTaskStatus: status, hasScheduledCopy: true });
+          if (status.error && status.error.includes('试用已结束')) {
+            set({ trialExpiredBanner: status.error });
+          }
           get().checkScheduledCopy();
         } else {
           console.error('[executeCopy] ❌ SCHEDULE_COPY 无响应 (超时或后台未处理)');
@@ -3048,12 +3081,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       browser.runtime.sendMessage({ type: 'START_ENABLE' }).catch(() => {});
       const booted2 = await waitForBoot(3000);
       if (!booted2) {
+        // 检查 _enableProgress 中是否有错误信息（如试用到期）
+        const storedProg = await browser.storage.local.get('_enableProgress').catch(() => ({}));
+        const epErr = (storedProg._enableProgress as { error?: string } | undefined)?.error;
         set({
           isEnabling: false,
           oneDaySkuFlow: {
             ...get().oneDaySkuFlow,
             phase: 'failed',
-            error: '启动失败：Background Service Worker 未响应，请刷新页面后重试。',
+            error: epErr || '启动失败：Background Service Worker 未响应，请刷新页面后重试。',
             canStartFlashSale: false,
           },
         });
@@ -3163,11 +3199,15 @@ export const useAppStore = create<AppState>((set, get) => ({
         }
       }
     } catch (err: any) {
+      const errMsg = err.message || String(err);
+      if (errMsg.includes('试用已结束')) {
+        set({ trialExpiredBanner: errMsg });
+      }
       set({
         oneDaySkuFlow: {
           ...get().oneDaySkuFlow,
           phase: 'failed',
-          error: `创建闪购失败: ${err.message}`,
+          error: `创建闪购失败: ${errMsg}`,
           canStartFlashSale: false,
         },
       });
@@ -3245,10 +3285,14 @@ export const useAppStore = create<AppState>((set, get) => ({
         throw new Error(response?.error || '调度失败');
       }
     } catch (err: any) {
+      const errMsg = err.message || String(err);
+      if (errMsg.includes('试用已结束')) {
+        set({ trialExpiredBanner: errMsg });
+      }
       set({
         oneDaySkuFlow: {
           ...get().oneDaySkuFlow,
-          error: `定时开启失败: ${err.message}`,
+          error: `定时开启失败: ${errMsg}`,
         },
       });
     }

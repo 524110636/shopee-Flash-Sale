@@ -47,6 +47,7 @@ export default function App() {
     _completedCopyInfo, acknowledgeCompletedCopy,
     autoModeActive, autoModeStatus, enterAutoMode, exitAutoMode,
     autoModeDeniedMessage, clearAutoModeDeniedMessage,
+    trialExpiredBanner, dismissTrialExpiredBanner,
     loadAutoModeStatus,
     oneDaySkuSelectedIds, oneDaySkuFlow,
     toggleOneDaySkuSelection, setOneDaySkuSelection, runOneDaySkuAndEnable,
@@ -478,6 +479,32 @@ export default function App() {
 
           {/* ===== P1: 定时任务状态 ===== */}
           <ScheduledTaskCard />
+
+          {/* ===== 试用到期醒目提醒（最高优，覆盖所有操作）===== */}
+          {trialExpiredBanner && (
+            <div className="p-3 rounded-md border-2 border-red-400 bg-gradient-to-r from-red-50 to-amber-50 shadow-md">
+              <div className="flex items-start gap-2.5">
+                <svg className="w-5 h-5 mt-0.5 shrink-0 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-red-700">试用已到期</p>
+                  <p className="mt-0.5 text-xs text-red-600">{trialExpiredBanner}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    如需继续使用，请联系管理员升级套餐。升级后管理员将为您关闭试用限制，即可正常使用。
+                  </p>
+                </div>
+                <button
+                  className="text-muted-foreground hover:text-foreground shrink-0"
+                  onClick={dismissTrialExpiredBanner}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* ===== 错误提示 — 紧跟上下文（有错误时这是最高优先级信息）===== */}
           {error && (

@@ -21,6 +21,7 @@ export function AdminPanel() {
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   const [togglingAutoModeUserId, setTogglingAutoModeUserId] = useState<number | null>(null);
   const [resettingTrialUserId, setResettingTrialUserId] = useState<number | null>(null);
+  const [togglingTrialEnabledUserId, setTogglingTrialEnabledUserId] = useState<number | null>(null);
 
   // 邀请码管理状态
   const [inviteCodes, setInviteCodes] = useState<Array<{ id: number; code: string; isUsed: number; usedBy: number | null; createdAt: string; usedAt: string | null; userEmail: string | null }>>([]);
@@ -164,7 +165,7 @@ export function AdminPanel() {
                     )}
                   </div>
                   <div className="mt-0.5 text-muted-foreground">
-                    已绑定 {user.bindingCount ?? 0} 个店铺 · {user.isActive ? '已激活' : '未激活'} · {user.autoModeEnabled ? '自动已开' : '自动未开'} · {user.trialUsed ? '试用已用' : '试用未用'}
+                    已绑定 {user.bindingCount ?? 0} 个店铺 · {user.isActive ? '已激活' : '未激活'} · {user.autoModeEnabled ? '自动已开' : '自动未开'} · {user.trialUsed ? '试用已用' : '试用未用'}{user.trialEnabled === 0 ? ' · 试用已关闭' : ''}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
@@ -269,6 +270,34 @@ export function AdminPanel() {
                           : user.trialUsed
                             ? '重置试用'
                             : '标记已用'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={`h-6 px-2 text-[10px] font-normal ${
+                          user.trialEnabled === 1
+                            ? 'text-red-500 border-red-200 hover:bg-red-50'
+                            : 'text-green-600 border-green-200 hover:bg-green-50'
+                        }`}
+                        disabled={togglingTrialEnabledUserId === user.id}
+                        onClick={async () => {
+                          const newVal = user.trialEnabled === 0 ? 1 : 0;
+                          setTogglingTrialEnabledUserId(user.id);
+                          setError('');
+                          try {
+                            await backendApi.toggleTrialEnabled(user.id, newVal);
+                            loadUsers();
+                          } catch (e: any) {
+                            setError(e.message);
+                          }
+                          setTogglingTrialEnabledUserId(null);
+                        }}
+                      >
+                        {togglingTrialEnabledUserId === user.id
+                          ? '...'
+                          : user.trialEnabled === 0
+                            ? '开启试用'
+                            : '关闭试用'}
                       </Button>
                       <Button
                         variant="outline"

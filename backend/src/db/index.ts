@@ -51,6 +51,7 @@ async function createTables() {
       max_stores INTEGER NOT NULL DEFAULT 1,
       auto_mode_enabled INTEGER NOT NULL DEFAULT 0,
       trial_used INTEGER NOT NULL DEFAULT 0,
+      trial_enabled INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -118,5 +119,10 @@ async function createTables() {
   // 迁移：为旧数据库添加 trial_used 列
   try {
     await client.execute('ALTER TABLE users ADD COLUMN trial_used INTEGER NOT NULL DEFAULT 0;');
+  } catch { /* 列已存在 */ }
+
+  // 迁移：为旧数据库添加 trial_enabled 列
+  try {
+    await client.execute('ALTER TABLE users ADD COLUMN trial_enabled INTEGER NOT NULL DEFAULT 1;');
   } catch { /* 列已存在 */ }
 }

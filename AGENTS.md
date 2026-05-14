@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # 限时特卖助手 (Limited Time Sale Helper)
 
-**版本:** 1.11.1
-**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 1 + 一次性邀请码 + 试用限制 + 操作校验全覆盖 + ESLint 零错误
-**最近更新:** 2026-05-14 — 部署初始化脚本 (seed.ts) + ESLint 全量修复 (22→0)
+**版本:** 1.12.0
+**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 1 + 一次性邀请码 + 试用限制(trialEnabled 永久关闭) + 试用到期通知 + 操作校验全覆盖 + ESLint 零错误
+**最近更新:** 2026-05-15 — 试用系统升级: trialEnabled 永久关闭试用 + 试用到期醒目横幅 + Wizard 流程试用错误就地显示
 
 ## 相关文档
 - `docs/shopee-flash-sale-api.md` — Shopee API endpoints and response formats
@@ -163,12 +163,15 @@ Built with WXT + React 19 + TypeScript + Tailwind CSS + shadcn/ui + Zustand (ext
 - 管理员可查看所有邀请码及其使用状态（使用者邮箱、使用时间）
 - 前端注册表单「注册密钥」→「邀请码」，placeholder 文字同步更新
 
-### 试用限制 (v1.10.0)
+### 试用限制 (v1.10.0 → v1.12.0)
 - `users` 表 `trial_used` 字段（默认 0），首次执行操作时 `/validate` 自动标记为 1
-- `trial_used >= 1` 的非管理员用户再次操作 → 403 `"试用已结束，请联系管理员升级套餐"`
+- **`trialEnabled` 永久关闭试用 (v1.12.0)**: `users` 表新增 `trial_enabled` 字段（默认 1）。管理员在 AdminPanel 用户列表点击「关闭试用」→ `trialEnabled = 0`，该用户后续所有操作跳过试用检查，也不会自动标记 `trialUsed`。适用于已升级套餐的用户
+- `trial_used >= 1` 且 `trialEnabled = 1` 的非管理员用户再次操作 → 403 `"试用已结束，请联系管理员升级套餐"`
 - 管理员（role=admin）不受试用限制，`trial_used` 也不自动递增
-- AdminPanel 显示试用状态 + 「重置试用/标记已用」按钮
-- JWT payload 包含 `trialUsed`，`checkAdmin()` 返回时自动同步到 storage
+- AdminPanel 显示试用状态 + 「重置试用/标记已用」按钮 + 「关闭试用/开启试用」按钮（红/绿）
+- JWT payload 包含 `trialUsed` + `trialEnabled`，`checkAdmin()` 返回时自动同步到 storage
+- **试用到期通知 (v1.12.0)**: 任何操作触发 403 试用错误时，`trialExpiredBanner` Zustand 状态设值，App.tsx 顶部渲染醒目红底横幅（图标 + 升级引导文案 + 关闭按钮）。5 个检测点：`checkBackgroundStatus`、`executeCopy` instant/scheduled 路径、`runOneDaySkuAndEnable` 异常、`scheduleEnableForFlashSale` 异常
+- **Wizard 试用错误就地显示 (v1.12.0)**: `checkBackgroundStatus` 检测到试用错误且 `oneDaySkuFlow.phase === 'starting_flash_sale'` 时，同步更新 `oneDaySkuFlow` 为 failed 状态，错误直接显示在 wizard 界面中。`addToExistingFlashSale` 的 `waitForBoot` 失败后优先读取 `_enableProgress.error` 而非显示通用「Background Service Worker 未响应」
 
 ### SPC_CDS 校验修复 (v1.10.0)
 - **问题**: `SCHEDULE_COPY` 和 `SCHEDULE_WIZARD_FLOW` 从 `browser.storage.local` 读取 `spcCds`，但 Zustand `setSpcCds` 只写内存不写 storage → 永远为空 → 校验被跳过
@@ -344,6 +347,7 @@ Auto mode (background):
 - **PATCH `/api/admin/users/:id/store-limit`** — Adjust store limit (admin)
 - **PATCH `/api/admin/users/:id/auto-mode`** — Toggle auto mode permission (admin)
 - **PATCH `/api/admin/users/:id/trial`** — Reset/mark trial used status (admin)
+- **PATCH `/api/admin/users/:id/trial-enabled`** — Toggle trial restriction 0=permanently bypass / 1=enabled (admin, v1.12.0)
 - **DELETE `/api/admin/users/:id`** — Delete user with cascade (bindings, events, verification codes) (admin)
 - **GET `/api/admin/analytics`** — Global analytics (admin)
 - **GET `/api/admin/analytics/events`** — Event details (admin)

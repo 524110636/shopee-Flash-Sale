@@ -400,6 +400,7 @@ export interface BackendUser {
   isActive: number;
   autoModeEnabled: number;
   trialUsed: number;
+  trialEnabled: number;
   createdAt: string;
   bindingCount?: number;
 }
@@ -419,7 +420,7 @@ export interface BackendStoreBinding {
 
 export interface BackendAuthState {
   token: string | null;
-  user: { id: number; email: string; role: string; autoModeEnabled: number; trialUsed: number } | null;
+  user: { id: number; email: string; role: string; autoModeEnabled: number; trialUsed: number; trialEnabled: number } | null;
   backendUrl: string;
 }
 
