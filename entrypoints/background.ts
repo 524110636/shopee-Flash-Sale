@@ -1918,6 +1918,59 @@ export default defineBackground({
         }
       }
 
+      // ===== SCHEDULE_ENABLE: 定时开启（Wizard 修复后定时加入闪购）=====
+      if (type === 'SCHEDULE_ENABLE') {
+        try {
+          const { enableParams, fireTime, flashSaleName } = msg;
+          const now = Math.floor(Date.now() / 1000);
+          const delaySec = fireTime - now;
+          console.log('[bg:SCHEDULE_ENABLE]', { fireTime, now, delaySec, flashSaleName });
+
+          if (delaySec <= 0) {
+            return { success: false, error: '目标时间已过，请使用立即加入' };
+          }
+
+          await browser.storage.local.set({
+            _enableParams: enableParams,
+            _scheduledEnable: { fireTime, flashSaleName, flashSaleId: enableParams.flashSaleId },
+          });
+
+          const delayMinutes = Math.max(1, Math.ceil(delaySec / 60));
+          chrome.alarms.create('scheduled_enable', { delayInMinutes: delayMinutes });
+          console.log(`[bg:SCHEDULE_ENABLE] ✅ 定时开启任务已创建，${delayMinutes} 分钟后触发`);
+
+          return { success: true };
+        } catch (e: any) {
+          console.error('[bg:SCHEDULE_ENABLE] ❌ 失败:', e.message);
+          return { success: false, error: e.message };
+        }
+      }
+
+      // ===== SCHEDULE_WIZARD_FLOW: 定时创建 + 定时启用（Wizard 创建新场次）=====
+      if (type === 'SCHEDULE_WIZARD_FLOW') {
+        try {
+          const { timeSlotId, createTime, enableFireTime, enableParams, spcCds: cds, spcCdsVer: cdsVer } = msg;
+          const now = Math.floor(Date.now() / 1000);
+
+          if (createTime <= now) {
+            return { success: false, error: '创建时间已过，请重新操作' };
+          }
+
+          await browser.storage.local.set({
+            _wizardFlowParams: { timeSlotId, enableFireTime, enableParams, cds, cdsVer },
+          });
+
+          const delayMin = Math.max(1, Math.ceil((createTime - now) / 60));
+          chrome.alarms.create('wizard_create', { delayInMinutes: delayMin });
+          console.log(`[bg:SCHEDULE_WIZARD_FLOW] ✅ ${delayMin} 分钟后创建空活动`);
+
+          return { success: true };
+        } catch (e: any) {
+          console.error('[bg:SCHEDULE_WIZARD_FLOW] ❌ 失败:', e.message);
+          return { success: false, error: e.message };
+        }
+      }
+
       // ===== CLEAR_ENABLE_STATE: 清除状态 =====
       if (type === 'CLEAR_ENABLE_STATE') {
         await clearEnableState();
@@ -2008,6 +2061,94 @@ export default defineBackground({
           console.log('[bg:scheduled_copy_enable] 启用循环已启动');
         } catch (e: any) {
           console.error('[bg:scheduled_copy_enable] 失败:', e.message);
+        }
+      }
+
+      if (alarm.name === 'scheduled_enable') {
+        console.log('[bg:scheduled_enable] 定时开启任务触发');
+        try {
+          const paramsResult = await browser.storage.local.get(['_enableParams', '_scheduledEnable']);
+          const params = paramsResult._enableParams as EnableParams | undefined;
+          if (!params) {
+            console.log('[bg:scheduled_enable] 未找到 enable 参数，跳过');
+            await browser.storage.local.remove('_scheduledEnable').catch(() => {});
+            return;
+          }
+
+          const { spcCds: cds, spcCdsVer: cdsVer } = await getSpcCdsFromCookies();
+          if (cds) {
+            params.spcCds = cds;
+            params.spcCdsVer = cdsVer;
+          }
+
+          // 校验店铺访问权限
+          const validation = await validateShopAccess(params.spcCds, 'scheduled_enable');
+          if (!validation.allowed) {
+            console.log('[bg:scheduled_enable] ❌ 店铺验证失败:', validation.error);
+            await browser.storage.local.remove(['_enableParams', '_scheduledEnable']).catch(() => {});
+            return;
+          }
+
+          runEnableLoop(params).catch(err => {
+            console.error('[bg:scheduled_enable] runEnableLoop 异常:', err);
+          });
+          await browser.storage.local.remove(['_enableParams', '_scheduledEnable']).catch(() => {});
+          console.log('[bg:scheduled_enable] 启用循环已启动');
+        } catch (e: any) {
+          console.error('[bg:scheduled_enable] 失败:', e.message);
+        }
+      }
+
+      if (alarm.name === 'wizard_create') {
+        console.log('[bg:wizard_create] 定时创建空活动触发');
+        try {
+          const stored = await browser.storage.local.get('_wizardFlowParams');
+          const params = stored._wizardFlowParams as { timeSlotId: number; enableFireTime: number; enableParams: any; cds: string; cdsVer: string } | undefined;
+          if (!params) return;
+
+          // Step 1: 创建空活动
+          const createData = await injectedFetch<any>(
+            `${FLASH_SALE_API}/set_shop_flash_sale/?SPC_CDS=${params.cds}&SPC_CDS_VER=${params.cdsVer}`,
+            'POST',
+            { time_slot_id: params.timeSlotId }
+          );
+          const newFlashSaleId = createData?.data?.flash_sale_id;
+          if (!newFlashSaleId) throw new Error('创建空活动失败');
+
+          console.log(`[bg:wizard_create] 空活动已创建: #${newFlashSaleId}`);
+
+          // Step 2: 更新 enableParams 中的 flashSaleId
+          params.enableParams.flashSaleId = newFlashSaleId;
+
+          // Step 3: 保存 _wizardFlashSaleId、_enableParams 和 _copiedSaleData
+          // _copiedSaleData 确保用户查看空活动时 loadFlashSaleProducts 能找到商品数据
+          const copiedDataResult = await browser.storage.local.get('_copiedSaleData');
+          const allCopiedData: Record<string, any> = copiedDataResult._copiedSaleData || {};
+          allCopiedData[String(newFlashSaleId)] = {
+            sourceFlashSaleId: 0,
+            sourceFlashSaleName: '一键修复',
+            newFlashSaleId,
+            copiedAt: Date.now(),
+            products: params.enableParams.products,
+            skuOverrides: params.enableParams.skuOverrides,
+            discountRate: params.enableParams.discountRate,
+            flashSaleStock: params.enableParams.flashSaleStock,
+            purchaseLimit: params.enableParams.purchaseLimit,
+          };
+          await browser.storage.local.set({
+            _wizardFlashSaleId: newFlashSaleId,
+            _enableParams: params.enableParams,
+            _copiedSaleData: allCopiedData,
+          });
+
+          // Step 4: 设置定时启用 alarm
+          const now = Math.floor(Date.now() / 1000);
+          const enableDelayMin = Math.max(1, Math.ceil((params.enableFireTime - now) / 60));
+          chrome.alarms.create('scheduled_enable', { delayInMinutes: enableDelayMin });
+          await browser.storage.local.remove('_wizardFlowParams').catch(() => {});
+          console.log(`[bg:wizard_create] 已安排 ${enableDelayMin} 分钟后提交商品参数`);
+        } catch (e: any) {
+          console.error('[bg:wizard_create] 失败:', e.message);
         }
       }
 
