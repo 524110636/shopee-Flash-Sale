@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # 限时特卖助手 (Limited Time Sale Helper)
 
-**版本:** 1.8.6
-**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 1
-**最近更新:** 2026-05-13 — 1 天备货 SKU 折扣流程 4 节点防抖（移除→发布→恢复 + 多折扣间隔，各 2s）
+**版本:** 1.9.0
+**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 1 + 第一次使用流程 + Wizard 优化 Phase 2-3
+**最近更新:** 2026-05-14 — Wizard 两阶段创建 (advanceMin/delayMin) + addToExistingFlashSale 走 Background runEnableLoop + 定时开启 + SCHEDULE_WIZARD_FLOW/SCHEDULE_ENABLE + wizard_create/scheduled_enable alarm + selecting_flash_sale 时间输入框 + slot 选中模式 + 调试按钮 + 空活动 _pendingFlashSaleData/_copiedSaleData 预置
 
 ## 相关文档
 - `docs/shopee-flash-sale-api.md` — Shopee API endpoints and response formats
@@ -33,7 +33,7 @@ limited-time-sale/
 │   │   ├── api.ts                # GraphQL 商品查询 (fetchProducts)
 │   │   ├── backend-api.ts        # 后端 REST API 客户端 (auth, stores, analytics)
 │   │   ├── types.ts              # 全局 TypeScript 类型定义
-│   │   ├── one-day-sku.ts        # 1 天备货 SKU 构建器 (buildOneDaySkuProductInfo, getDiscountRatio, buildDiscountRestoreList, extractSellableStock, generateTierCombinations, getHighestModelPrice, hasDedicatedOneDaySku, hasAnyOneDayDeliverySku, extractSellerDiscounts, isFiveTimesPriceError)
+│   │   ├── one-day-sku.ts        # 1 天备货 SKU 构建器 (buildOneDaySkuProductInfo, getDiscountRatio, buildDiscountRestoreList, extractSellableStock, generateTierCombinations, getHighestModelPrice [可选 productInfoModels], hasDedicatedOneDaySku, hasAnyOneDayDeliverySku, extractSellerDiscounts [过滤已结束折扣], isFiveTimesPriceError)
 │   │   └── style.css             # Tailwind CSS 指令
 │   ├── background.ts             # Service Worker (enable loop, copy flows, alarms, auto mode, analytics event reporting)
 │   └── content.ts                # 内容脚本 (浮动进度 UI, 消息中继)
@@ -62,7 +62,8 @@ limited-time-sale/
 │       ├── SpcStatus.tsx          # SPC_CDS 连接状态 + 流程引导
 │       ├── TemplateEditDialog.tsx # 模板编辑弹窗 (分组折叠, 分页)
 │       ├── TemplateManager.tsx    # 模板管理器 (保存/加载/导出/导入/编辑)
-│       └── TimeSlotModal.tsx      # 场次选择模态窗口 (调用 API 获取实时场次)
+│       ├── TimeSlotModal.tsx      # 场次选择模态窗口 (调用 API 获取实时场次)
+│       └── FirstUseModal.tsx      # 第一次使用: 分页获取店铺全部商品 + 搜索 + 勾选 + 触发一键修复
 ├── docs/
 │   ├── shopee-flash-sale-api.md
 │   └── superpowers/
@@ -402,6 +403,7 @@ The API returns two possible formats (check both):
 - **Enable:** maxRetries, infiniteRetry, discountRate, flashSaleStock, purchaseLimit, isEnabling, enableProgress
 - **Copy:** copySource (flashSale + itemCount), copyMode, copyTaskStatus, isCopying, savedTemplates[], selectedTemplate, hasScheduledCopy, scheduledTaskStatus
 - **One-Day SKU:** oneDaySkuSelectedIds[], oneDaySkuFlow (phase/running/currentIndex/total/message/error/items[]/canStartFlashSale)
+- **First Use:** firstUse (open/loading/products[]/selectedIds/searchKeyword/searchResults[]/fetchedTotal/hasMore/cursor)
 - **SKU Overrides:** `Record<string, SkuOverride>` keyed by `${itemId}-${modelId}` (fields: `discountRate?`, `promoPrice?`, `stock?`, `purchaseLimit?`)
 - **Auto Mode:** autoModeView, autoModeConfig, autoModeStatus, autoModeLogs, firstSelectedActivity
 
@@ -456,10 +458,12 @@ The API returns two possible formats (check both):
 - **AutoModePhase** (v1.7.0) — 自动模式阶段: 'idle' | 'waiting_create' | 'creating' | 'waiting_enable' | 'enabling' | 'completed' | 'stopped'
 - **AutoModeStatus** (v1.7.0) — 自动模式状态: isRunning, sourceFlashSaleId, sourceFlashSaleName, config, currentRound, totalRounds, phase, nextTargetTime?, nextActionTime?, currentFlashSaleId?, lastError?, startedAt, debugMode?, selectedSlotId?, selectedSlotTime?, enableParams?
 - **AutoModeLog** (v1.7.0) — 自动模式日志: id, type ('info'|'success'|'warning'|'error'), message, timestamp
-- **OneDaySkuFlowPhase** — Phase enum: 'idle'|'preparing_sku'|'publishing_product'|'searching_discount'|'removing_discount'|'restoring_discount'|'starting_flash_sale'|'success'|'failed'
-- **OneDaySkuDiscountInfo** — Discount search result: promotionId, name, startTime?, endTime?, raw
-- **OneDaySkuItemStatus** — Per-item status in flow: itemId, itemName, hasOneDaySku, skuCreated, publishStatus, discountRemoved, discountRestored, flashSaleStatus, highestPrice?, error?, discounts?
+- **OneDaySkuFlowPhase** — Phase enum: 'idle'|'preparing_sku'|'publishing_product'|'searching_discount'|'removing_discount'|'restoring_discount'|'starting_flash_sale'|'editing_params'|'selecting_flash_sale'|'success'|'failed'
+- **OneDaySkuDiscountInfo** — Discount search result: promotionId, name, startTime?, endTime?, timeStatus?, raw
+- **OneDaySkuItemStatus** — Per-item status in flow: itemId, itemName, hasOneDaySku, skuCreated, publishStatus ('idle'|'success'|'failed'), discountRemoved, discountRestored, flashSaleStatus, highestPrice?, error?, discounts?
 - **OneDaySkuFlowState** — Flow state: phase, running, currentIndex, total, message, error, items[], canStartFlashSale
+- **ShopProductListItem** (v1.8.7) — 店铺商品简要信息: id, name, status, coverImage, priceMin, priceMax, modelCount, soldCount
+- **FirstUseState** (v1.8.7) — 第一次使用状态: open, loading, products[], selectedIds (Set<number>), searchKeyword, searchResults[], fetchedTotal, hasMore, cursor
 - **CopiedSaleData** — `_copiedSaleData` storage schema (source info + products + skuOverrides)
 - **FlashSaleTemplate** — Named template: name, createdAt, updatedAt, discountRate, flashSaleStock, purchaseLimit, skuOverrides, productInfo[]
 - **TemplateProductInfo** — Template product reference: itemId, name
@@ -538,6 +542,11 @@ The API returns two possible formats (check both):
 - **1 天备货 SKU — `buildDiscountRestoreList(modelList, productId, discountRatio?)`:** 将 model_list 转为 `discount_model_list`（`update_seller_discount_items` 请求体）。已有 `input_promotion_price` 的 SKU 直接用现有折扣价；没有的（新增 SKU）在提供 `discountRatio` 时用 `normalPrice * discountRatio` 计算。
 - **1 天备货 SKU — runOneDaySkuAndEnable 完整流程 (Phase 2):** 在 popup store（非 background）中运行。全流程：`get_product_info` → 检测已有 1 天 SKU 则跳过 → `buildOneDaySkuProductInfo` → 搜索折扣活动（`discount/search`）→ 从折扣中移除（`delete_abnormal_seller_discount_items`，多折扣间隔 2s）→ **防抖 2s** → 发布商品（`update_product_info`）→ 5 倍价格检测&重试（重试路径同样防抖 2s）→ 重新获取商品信息（含 3 次重试、1 秒间隔）→ **防抖 2s** → 恢复折扣含新 SKU（`update_seller_discount_items`，多折扣间隔 2s，检查 `failed_item_list`/`error_list`）。全程 `[一键修复]` 控制台日志。
 - **1 天备货 SKU — 4 节点防抖 (v1.8.6):** 为避免虾皮 API 处理延迟导致请求异常，在折扣移除→发布→恢复流程中加入 4 个防抖节点（各 2s）：① 移除全部折扣后等 2s 再发布；② 发布成功后等 2s 再恢复第一个折扣；③ 多个折扣活动操作之间各间隔 2s；④ 5 倍价格差重试路径同样在移除后等 2s 再重新发布。三个循环从 `for-of` 改为索引循环（`di > 0` 条件跳过首个请求的延迟）。
+- **1 天备货 SKU — 折扣率自动检测 (v1.8.7):** `runOneDaySkuAndEnable` 在遍历商品时通过 `collectedRatios` 收集每个商品的实际折扣率（`getDiscountRatio(originalModelList)`），包括已有 1 天 SKU 的商品和修复后成功的商品。全部收集完成后计算全局 `discountRate`：所有商品折扣率一致时直接用该值，不一致时取平均值。确保修复完成后 Wizard 的 `editing_params` 阶段显示用户实际设定的折扣（如 5.4折→54%）而非默认值 60%。
+- **1 天备货 SKU — 修复后 Wizard 三阶段 (v1.8.7):** `runOneDaySkuAndEnable` 完成后不再直接结束，而是进入 `editing_params` 阶段：展示修复成功的商品卡片（可点击编辑 SKU/全局参数），用户确认后进入 `selecting_flash_sale` 阶段：可选择已有闪购（调用 `addToExistingFlashSale`）或创建新场次（`createNewFlashSaleAndAdd`，先通过 `fetchTimeSlots` 获取可用时段）。`publishStatus` 移除 `skipped`，已有 1 天 SKU 的商品也标记为 `success` 并直接进入 Wizard 流程。
+- **1 天备货 SKU — FirstUse 场景支持 (v1.8.7):** `getHighestModelPrice` 新增可选 `productInfoModels` 参数，`ShopeeProduct.modelList` 为空时（FirstUse 流程仅构造壳对象）从 `product_info.model_list` 取价格。`extractSellerDiscounts` 新增过滤逻辑：`timeStatus === 3` 或 `endTime < now` 的已结束折扣不再返回。
+- **FirstUseModal — 第一次使用流程 (v1.8.7):** 新用户无需手动输入商品 ID。点击「第一次使用」按钮打开模态窗口，通过 `search_product_list` API (`fetchShopProductsPage`) 分页获取店铺全部商品（每页 12，按销量排序），支持关键词搜索。勾选最多 20 个商品后「开始修复」，`runFirstUseFlow` 构造骨架 `ShopeeProduct[]`（仅含 itemid/name/images/price），设置 `oneDaySkuSelectedIds` 后自动调用 `runOneDaySkuAndEnable`。每个商品处理时从 API 获取完整 `product_info` 后构建 1 天备货 SKU。
+- **addToExistingFlashSale / createNewFlashSaleAndAdd / scheduleEnableForFlashSale (v1.9.0):** Wizard `selecting_flash_sale` 阶段的三个提交路径。`addToExistingFlashSale` 已重构：构建 enable items（含 `item_display_image` 从 `p.images?.[0]`、`stock` 上限 `Math.min`、零库存过滤、未打折 SKU 检测、活动结束检查）→ 保存 `_enableParams` → 发送 `START_ENABLE` → Background `runEnableLoop` 多轮重试+错误处理，与手动模式 `enableFlashSaleItems` 路径一致。`createNewFlashSaleAndAdd` 支持两阶段：`advanceMin > 0` 时发送 `SCHEDULE_WIZARD_FLOW` 给 background 定时创建空活动（`wizard_create` alarm），`delayMin` 控制活动开始后多久提交；`advanceMin=0` 时立即创建；空活动创建后设置 `_pendingFlashSaleData` / `_copiedSaleData` 确保 `loadFlashSaleProducts` 能找到商品数据。`scheduleEnableForFlashSale` 新增：定时加入已有活动，发送 `SCHEDULE_ENABLE` 给 background → `scheduled_enable` alarm。UI: `selecting_flash_sale` 阶段顶部显示两个时间输入框 (`wizardAdvanceMin`/`wizardDelayMin`)，slot 列表使用 radio 选中模式 + 统一「开始」按钮 + 调试按钮（传入 `now` 作为 slotStartTime 强制立即执行）。
 
 ## Known Issues / 待验证
 
