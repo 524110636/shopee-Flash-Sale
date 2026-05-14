@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # 限时特卖助手 (Limited Time Sale Helper)
 
-**版本:** 1.9.0
-**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 1 + 第一次使用流程 + Wizard 优化 Phase 2-3
-**最近更新:** 2026-05-14 — Wizard 两阶段创建 (advanceMin/delayMin) + addToExistingFlashSale 走 Background runEnableLoop + 定时开启 + SCHEDULE_WIZARD_FLOW/SCHEDULE_ENABLE + wizard_create/scheduled_enable alarm + selecting_flash_sale 时间输入框 + slot 选中模式 + 调试按钮 + 空活动 _pendingFlashSaleData/_copiedSaleData 预置
+**版本:** 1.9.1
+**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 1 + 第一次使用流程 (含警告弹窗) + Wizard 优化 Phase 2-3
+**最近更新:** 2026-05-14 — 第一次使用前弹出警告弹窗 (FirstUseWarningModal)，提醒用户移出促销活动 + "以后不再提示"复选框持久化到 _firstUseWarningDismissed
 
 ## 相关文档
 - `docs/shopee-flash-sale-api.md` — Shopee API endpoints and response formats
