@@ -77,13 +77,13 @@ backend/                      # Standalone backend service
 ├── src/
 │   ├── index.ts              # Entry: Hono app with CORS, routes mount, health check
 │   ├── db/
-│   │   ├── schema.ts         # Drizzle ORM schema (users, verification_codes, store_bindings, analytics_events)
+│   │   ├── schema.ts         # Drizzle ORM schema (users, verification_codes, store_bindings, analytics_events, invite_codes)
 │   │   └── index.ts          # SQLite init + migration (ALTER TABLE for schema upgrades)
 │   ├── routes/
-│   │   ├── auth.ts           # POST /register, /verify, /login, /check-admin
+│   │   ├── auth.ts           # POST /register (invite code), /verify, /login, /check-admin, /check-auto-mode
 │   │   ├── stores.ts         # GET /, POST /bind, POST /validate, DELETE /:id (JWT-protected)
 │   │   ├── analytics.ts      # POST /events, GET /summary (JWT-protected)
-│   │   └── admin.ts          # GET /users, PATCH /:id/store-limit, DELETE /:id, GET /analytics, GET /analytics/events, GET /bindings, DELETE /bindings/:id (admin-only)
+│   │   └── admin.ts          # GET /users, PATCH /:id/store-limit, PATCH /:id/auto-mode, PATCH /:id/trial, DELETE /:id, GET /analytics, GET /analytics/events, GET /bindings, DELETE /bindings/:id, GET/POST/DELETE /invite-codes (admin-only)
 │   ├── middleware/
 │   │   └── auth.ts           # JWT verification + admin role guard
 │   └── utils/
@@ -96,15 +96,17 @@ backend/                      # Standalone backend service
 ## Backend Architecture
 
 ### Authentication Flow
-1. User registers with email/username + password + **register key** → backend validates key against `REGISTER_KEY` env var → returns 6-digit verification code
+1. User registers with email/username + password + **invite code** → backend validates code against `invite_codes` table (one-time use) → returns 6-digit verification code
 2. User enters code to verify → activates account (`isActive=1`)  
 3. User logs in → receives JWT (7-day expiry, includes `trialUsed`, `autoModeEnabled`)
 4. Extension stores JWT in `chrome.storage.local` via `backend-api.ts`
 5. All subsequent API calls auto-attach `Authorization: Bearer` header
 6. On 401 response, auth is cleared and user is redirected to login
 
-### Registration Key + Trial Limit
-- `.env` 中 `REGISTER_KEY` 控制注册权限，注册时需提供匹配密钥
+### Invite Code + Trial Limit
+- 管理员在 AdminPanel「邀请码」标签页生成一次性邀请码（格式 `INV-xxxxxxxx`）
+- 注册时需提供有效邀请码，使用后立即标记 `is_used=1`，同一邀请码不可重复使用
+- 管理员可删除未使用的邀请码，已使用的不可删除
 - 新用户 `trial_used = 0`，首次执行任何操作时后端 `/validate` 自动标记为 `1`
 - `trial_used >= 1` 的非管理员用户再次操作 → `403 "试用已结束，请联系管理员升级套餐"`
 - 管理员（role=admin）不受试用限制
@@ -174,26 +176,29 @@ backend/                      # Standalone backend service
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/auth/register` | Public | Register (returns verification code) |
+| POST | `/api/auth/register` | Public | Register with invite code (returns verification code) |
 | POST | `/api/auth/verify` | Public | Activate account with code |
 | POST | `/api/auth/login` | Public | Login, returns JWT |
-| POST | `/api/auth/check-admin` | JWT | Check admin role |
+| POST | `/api/auth/check-admin` | JWT | Check admin role + autoModeEnabled + trialUsed |
+| POST | `/api/auth/check-auto-mode` | JWT | Check if user can use auto mode |
 | GET | `/api/stores` | JWT | List user's store bindings |
 | POST | `/api/stores/bind` | JWT | Bind a store (SPC_CDS + shop_id) |
 | POST | `/api/stores/validate` | JWT | Validate store binding + user is active (anti-cracking) |
 | DELETE | `/api/stores/:id` | JWT | Unbind store |
 | POST | `/api/analytics/events` | JWT | Report usage event |
-| GET | `/api/health` | Public | Health check (used by `healthCheck()` in backend-api.ts) |
 | GET | `/api/analytics/summary` | JWT | Personal usage summary |
 | GET | `/api/admin/users` | Admin | User list with binding counts |
 | PATCH | `/api/admin/users/:id/store-limit` | Admin | Adjust store binding limit |
+| PATCH | `/api/admin/users/:id/auto-mode` | Admin | Toggle auto mode permission |
+| PATCH | `/api/admin/users/:id/trial` | Admin | Reset/mark trial used status |
 | DELETE | `/api/admin/users/:id` | Admin | Delete user (cascade: bindings, events, verification codes) |
 | GET | `/api/admin/analytics` | Admin | Global analytics |
 | GET | `/api/admin/analytics/events` | Admin | Event details |
 | GET | `/api/admin/bindings` | Admin | List all store bindings (optional `?userId=`) |
 | DELETE | `/api/admin/bindings/:id` | Admin | Force-unbind any store |
-| PATCH | `/api/admin/users/:id/auto-mode` | Admin | Toggle auto mode permission |
-| PATCH | `/api/admin/users/:id/trial` | Admin | Reset/mark trial used status |
+| GET | `/api/admin/invite-codes` | Admin | List all invite codes with usage status |
+| POST | `/api/admin/invite-codes` | Admin | Generate invite codes (`{ count }`, default 1, max 20) |
+| DELETE | `/api/admin/invite-codes/:id` | Admin | Delete unused invite code |
 | GET | `/api/health` | Public | Health check |
 
 ## Config Files

@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # 限时特卖助手 (Limited Time Sale Helper)
 
-**版本:** 1.10.0
-**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 1 + 注册密钥 + 试用限制 + 操作校验全覆盖
-**最近更新:** 2026-05-14 — 注册密钥 + 试用限制 + SPC_CDS校验修复 (getSpcCdsFromCookies) + 9个操作点校验全覆盖 + 3层错误捕获日志
+**版本:** 1.11.0
+**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 1 + 一次性邀请码 + 试用限制 + 操作校验全覆盖
+**最近更新:** 2026-05-14 — 邀请码系统 (替换全局 REGISTER_KEY) + 管理员面板邀请码管理 + 定制开发弹窗 + tsconfig 修复
 
 ## 相关文档
 - `docs/shopee-flash-sale-api.md` — Shopee API endpoints and response formats
@@ -91,13 +91,13 @@ backend/                      # 独立后端服务
 ├── src/
 │   ├── index.ts              # 入口: Hono HTTP 服务 + CORS + 路由挂载
 │   ├── db/
-│   │   ├── schema.ts         # Drizzle ORM 表定义 (users, verification_codes, store_bindings, analytics_events)
+│   │   ├── schema.ts         # Drizzle ORM 表定义 (users, verification_codes, store_bindings, analytics_events, invite_codes)
 │   │   └── index.ts          # SQLite 初始化 + 自动迁移
 │   ├── routes/
-│   │   ├── auth.ts           # 注册/验证/登录/管理员检查
+│   │   ├── auth.ts           # 注册(邀请码)/验证/登录/管理员检查/自动模式权限检查
 │   │   ├── stores.ts         # 店铺绑定/列表/校验/解绑 (shop_id 唯一性, 同用户自动续期 SPC_CDS, validate 防破解)
 │   │   ├── analytics.ts      # 事件上报/个人摘要
-│   │   └── admin.ts          # 管理员接口 (用户列表, 限额调整, 用户删除, 全局统计, 绑定查询/解绑)
+│   │   └── admin.ts          # 管理员接口 (用户列表, 限额调整, 自动模式/试用管理, 用户删除, 全局统计, 绑定查询/解绑, 邀请码管理)
 │   ├── middleware/
 │   │   └── auth.ts           # JWT 验证 + admin 角色守卫
 │   └── utils/
@@ -153,9 +153,16 @@ Built with WXT + React 19 + TypeScript + Tailwind CSS + shadcn/ui + Zustand (ext
 - 无法通过修改前端代码绕过（验证在后端执行）
 - `validateShopAccess()` 包含详细 `[bg:validate]` 日志：开始校验 → 请求 URL → 后端响应 → 通过/失败
 
-### 注册密钥 + 试用限制 (v1.10.0)
-- **注册密钥**: 注册需提供 `registerKey`，后端校验 `process.env.REGISTER_KEY`，不匹配返回 403
-- **试用限制**: `users` 表新增 `trial_used` 字段（默认 0），首次执行操作时 `/validate` 自动标记为 1
+### 邀请码系统 (v1.11.0)
+- **一次性邀请码**: 替换全局 `REGISTER_KEY`，管理员在 AdminPanel「邀请码」标签页生成
+- 格式 `INV-xxxxxxxx`（8 位随机 hex），生成数量可配置（1-20）
+- 注册时校验：查 `invite_codes` 表，`is_used=0` 才有效，使用后标记 `is_used=1, used_by=<userId>, used_at=now`
+- 同一邀请码不可重复使用，已使用的不可删除
+- 管理员可查看所有邀请码及其使用状态（使用者邮箱、使用时间）
+- 前端注册表单「注册密钥」→「邀请码」，placeholder 文字同步更新
+
+### 试用限制 (v1.10.0)
+- `users` 表 `trial_used` 字段（默认 0），首次执行操作时 `/validate` 自动标记为 1
 - `trial_used >= 1` 的非管理员用户再次操作 → 403 `"试用已结束，请联系管理员升级套餐"`
 - 管理员（role=admin）不受试用限制，`trial_used` 也不自动递增
 - AdminPanel 显示试用状态 + 「重置试用/标记已用」按钮
@@ -320,7 +327,8 @@ Auto mode (background):
 - **Price rules:** Must be integer, strictly less than origin price
 
 ### Backend API Endpoints
-- **POST `/api/auth/register`** — Register (requires `registerKey`, returns verification code)
+- **POST `/api/auth/register`** — Register with invite code (replaces `registerKey`, returns verification code)
+- **POST `/api/auth/check-auto-mode`** — Check if user can use auto mode (JWT)
 - **POST `/api/auth/verify`** — Activate account with code
 - **POST `/api/auth/login`** — Login, returns JWT
 - **POST `/api/auth/check-admin`** — Check admin role (JWT)
@@ -339,6 +347,9 @@ Auto mode (background):
 - **GET `/api/admin/analytics/events`** — Event details (admin)
 - **GET `/api/admin/bindings?userId=X`** — List store bindings with user info (admin)
 - **DELETE `/api/admin/bindings/:id`** — Force-unbind any store (admin)
+- **GET `/api/admin/invite-codes`** — List invite codes with usage status + user email (admin)
+- **POST `/api/admin/invite-codes`** — Generate invite codes (`{ count }`, max 20) (admin)
+- **DELETE `/api/admin/invite-codes/:id`** — Delete unused invite code (admin)
 - **GET `/api/health`** — Health check
 
 ### Copy Flash Sale Flow
@@ -562,6 +573,9 @@ The API returns two possible formats (check both):
 - **1 天备货 SKU — FirstUse 场景支持 (v1.8.7):** `getHighestModelPrice` 新增可选 `productInfoModels` 参数，`ShopeeProduct.modelList` 为空时（FirstUse 流程仅构造壳对象）从 `product_info.model_list` 取价格。`extractSellerDiscounts` 新增过滤逻辑：`timeStatus === 3` 或 `endTime < now` 的已结束折扣不再返回。
 - **FirstUseModal — 第一次使用流程 (v1.8.7):** 新用户无需手动输入商品 ID。点击「第一次使用」按钮打开模态窗口，通过 `search_product_list` API (`fetchShopProductsPage`) 分页获取店铺全部商品（每页 12，按销量排序），支持关键词搜索。勾选最多 20 个商品后「开始修复」，`runFirstUseFlow` 构造骨架 `ShopeeProduct[]`（仅含 itemid/name/images/price），设置 `oneDaySkuSelectedIds` 后自动调用 `runOneDaySkuAndEnable`。每个商品处理时从 API 获取完整 `product_info` 后构建 1 天备货 SKU。
 - **addToExistingFlashSale / createNewFlashSaleAndAdd / scheduleEnableForFlashSale (v1.9.0):** Wizard `selecting_flash_sale` 阶段的三个提交路径。`addToExistingFlashSale` 已重构：构建 enable items（含 `item_display_image` 从 `p.images?.[0]`、`stock` 上限 `Math.min`、零库存过滤、未打折 SKU 检测、活动结束检查）→ 保存 `_enableParams` → 发送 `START_ENABLE` → Background `runEnableLoop` 多轮重试+错误处理，与手动模式 `enableFlashSaleItems` 路径一致。`createNewFlashSaleAndAdd` 支持两阶段：`advanceMin > 0` 时发送 `SCHEDULE_WIZARD_FLOW` 给 background 定时创建空活动（`wizard_create` alarm），`delayMin` 控制活动开始后多久提交；`advanceMin=0` 时立即创建；空活动创建后设置 `_pendingFlashSaleData` / `_copiedSaleData` 确保 `loadFlashSaleProducts` 能找到商品数据。`scheduleEnableForFlashSale` 新增：定时加入已有活动，发送 `SCHEDULE_ENABLE` 给 background → `scheduled_enable` alarm。UI: `selecting_flash_sale` 阶段顶部显示两个时间输入框 (`wizardAdvanceMin`/`wizardDelayMin`)，slot 列表使用 radio 选中模式 + 统一「开始」按钮 + 调试按钮（传入 `now` 作为 slotStartTime 强制立即执行）。
+- **邀请码系统 (v1.11.0):** 替换全局 `REGISTER_KEY` 为一次性邀请码。`invite_codes` 表字段：id, code(UNIQUE), is_used, used_by, created_at, used_at。注册时 `POST /register` 校验邀请码（查表 is_used=0），成功后标记 is_used=1。管理员在 AdminPanel「邀请码」标签页生成（格式 `INV-xxxxxxxx`，批量 1-20 个）、查看使用状态、删除未使用邀请码。前端注册表单「注册密钥」→「邀请码」。`.env.example` 移除 `REGISTER_KEY`。
+- **定制开发弹窗 (v1.11.0):** 非管理员用户右上角显示渐变「定制开发」按钮（orange-400→amber-500），点击弹出模态窗口宣传虾皮定制开发服务。模态窗口使用渐变色头部 + 功能列表 + 琥珀色行动号召卡片。
+- **tsconfig 修复 (v1.11.0):** `tsconfig.json` 排除列表中移除 `.wxt`，修复 VSCode 中 `browser` 全局类型找不到的问题（WXT 在 `.wxt/wxt.d.ts` 中生成类型声明）。
 
 ## Known Issues / 待验证
 
