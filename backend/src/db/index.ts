@@ -71,6 +71,14 @@ async function createTables() {
       is_active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+    CREATE TABLE IF NOT EXISTS invite_codes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT NOT NULL UNIQUE,
+      is_used INTEGER NOT NULL DEFAULT 0,
+      used_by INTEGER,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      used_at TEXT
+    );
     CREATE TABLE IF NOT EXISTS analytics_events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL REFERENCES users(id),

@@ -35,6 +35,15 @@ export const storeBindings = sqliteTable('store_bindings', {
   createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
 });
 
+export const inviteCodes = sqliteTable('invite_codes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  code: text('code').notNull().unique(),
+  isUsed: integer('is_used').notNull().default(0),
+  usedBy: integer('used_by'),
+  createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
+  usedAt: text('used_at'),
+});
+
 export const analyticsEvents = sqliteTable('analytics_events', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: integer('user_id').notNull().references(() => users.id),
@@ -47,4 +56,5 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type VerificationCode = typeof verificationCodes.$inferSelect;
 export type StoreBinding = typeof storeBindings.$inferSelect;
+export type InviteCode = typeof inviteCodes.$inferSelect;
 export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;

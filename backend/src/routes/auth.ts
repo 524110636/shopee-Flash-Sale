@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { eq, and } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { getDb } from '../db/index.js';
-import { users, verificationCodes } from '../db/schema.js';
+import { users, verificationCodes, inviteCodes } from '../db/schema.js';
 import { signToken } from '../utils/jwt.js';
 import { generateVerificationCode, getExpiresAt, isCodeExpired } from '../utils/code.js';
 import { authMiddleware } from '../middleware/auth.js';
@@ -11,14 +11,25 @@ const auth = new Hono();
 
 /** 注册：创建未激活账户并返回验证码 */
 auth.post('/register', async (c) => {
-  const { email, password, registerKey } = await c.req.json<{ email: string; password: string; registerKey: string }>();
+  const { email, password, inviteCode } = await c.req.json<{ email: string; password: string; inviteCode: string }>();
 
   if (!email || !password) {
     return c.json({ error: '邮箱和密码不能为空' }, 400);
   }
 
-  if (!registerKey || registerKey !== process.env.REGISTER_KEY) {
-    return c.json({ error: '注册密钥无效，请联系管理员获取' }, 403);
+  if (!inviteCode) {
+    return c.json({ error: '邀请码不能为空，请联系管理员获取' }, 403);
+  }
+
+  // 验证邀请码
+  const db = getDb();
+  const invite = await db.select()
+    .from(inviteCodes)
+    .where(and(eq(inviteCodes.code, inviteCode), eq(inviteCodes.isUsed, 0)))
+    .limit(1);
+
+  if (invite.length === 0) {
+    return c.json({ error: '邀请码无效或已被使用' }, 403);
   }
 
   // 支持邮箱格式或纯用户名（内部系统）
@@ -31,8 +42,6 @@ auth.post('/register', async (c) => {
   if (password.length < 6) {
     return c.json({ error: '密码长度不能少于 6 位' }, 400);
   }
-
-  const db = getDb();
 
   const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (existingUser.length > 0) {
@@ -49,6 +58,18 @@ auth.post('/register', async (c) => {
     isActive: 0,
     role: 'user',
   });
+
+  // 获取新插入的 user id
+  const newUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
+
+  // 标记邀请码已使用
+  await db.update(inviteCodes)
+    .set({
+      isUsed: 1,
+      usedBy: newUser[0].id,
+      usedAt: new Date().toISOString(),
+    })
+    .where(eq(inviteCodes.id, invite[0].id));
 
   await db.insert(verificationCodes).values({
     email,

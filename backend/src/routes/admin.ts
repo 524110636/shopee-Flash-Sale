@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { eq, sql } from 'drizzle-orm';
 import { getDb } from '../db/index.js';
-import { users, storeBindings, analyticsEvents, verificationCodes } from '../db/schema.js';
+import { users, storeBindings, analyticsEvents, verificationCodes, inviteCodes } from '../db/schema.js';
+import crypto from 'crypto';
 import { authMiddleware, adminMiddleware } from '../middleware/auth.js';
 
 const admin = new Hono();
@@ -238,6 +239,59 @@ admin.get('/analytics/events', async (c) => {
     : await query;
 
   return c.json({ events });
+});
+
+/** 邀请码列表 */
+admin.get('/invite-codes', async (c) => {
+  const db = getDb();
+  const codes = await db.select({
+    id: inviteCodes.id,
+    code: inviteCodes.code,
+    isUsed: inviteCodes.isUsed,
+    usedBy: inviteCodes.usedBy,
+    createdAt: inviteCodes.createdAt,
+    usedAt: inviteCodes.usedAt,
+    userEmail: users.email,
+  })
+    .from(inviteCodes)
+    .leftJoin(users, eq(inviteCodes.usedBy, users.id))
+    .orderBy(inviteCodes.createdAt);
+
+  return c.json({ inviteCodes: codes });
+});
+
+/** 生成邀请码 */
+admin.post('/invite-codes', async (c) => {
+  const { count } = await c.req.json<{ count?: number }>();
+  const num = Math.min(Math.max(count || 1, 1), 20);
+
+  const db = getDb();
+  const codes: string[] = [];
+
+  for (let i = 0; i < num; i++) {
+    const code = 'INV-' + crypto.randomBytes(4).toString('hex');
+    await db.insert(inviteCodes).values({ code });
+    codes.push(code);
+  }
+
+  return c.json({ codes, count: codes.length }, 201);
+});
+
+/** 删除未使用的邀请码 */
+admin.delete('/invite-codes/:id', async (c) => {
+  const id = parseInt(c.req.param('id'), 10);
+  const db = getDb();
+
+  const code = await db.select().from(inviteCodes).where(eq(inviteCodes.id, id)).limit(1);
+  if (code.length === 0) {
+    return c.json({ error: '邀请码不存在' }, 404);
+  }
+  if (code[0].isUsed) {
+    return c.json({ error: '不能删除已使用的邀请码' }, 400);
+  }
+
+  await db.delete(inviteCodes).where(eq(inviteCodes.id, id));
+  return c.json({ message: '邀请码已删除' });
 });
 
 export default admin;

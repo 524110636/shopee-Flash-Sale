@@ -50,8 +50,8 @@ export default function App() {
     loadAutoModeStatus,
     oneDaySkuSelectedIds, oneDaySkuFlow,
     toggleOneDaySkuSelection, setOneDaySkuSelection, runOneDaySkuAndEnable,
-    firstUse, openFirstUse,
-    dismissFlashSaleStart, goToFlashSaleSelection, addToExistingFlashSale, createNewFlashSaleAndAdd, scheduleEnableForFlashSale,
+    openFirstUse,
+    goToFlashSaleSelection, addToExistingFlashSale, createNewFlashSaleAndAdd, scheduleEnableForFlashSale,
   } = useAppStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [flashSaleListOpen, setFlashSaleListOpen] = useState(true);
@@ -63,6 +63,7 @@ export default function App() {
   const [isTriggeringScheduled, setIsTriggeringScheduled] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [showCustomDev, setShowCustomDev] = useState(false);
   const [phase3Slots, setPhase3Slots] = useState<TimeSlot[] | null>(null);
   const [phase3SlotsLoading, setPhase3SlotsLoading] = useState(false);
   const [wizardEditProduct, setWizardEditProduct] = useState<ShopeeProduct | null>(null);
@@ -274,6 +275,14 @@ export default function App() {
               onClick={() => setShowAdminPanel(true)}
             >
               管理
+            </button>
+          )}
+          {!backendApi.isAdmin() && !autoModeActive && (
+            <button
+              className="text-[10px] px-2 py-1 rounded bg-gradient-to-r from-orange-400 to-amber-500 text-white hover:from-orange-500 hover:to-amber-600 transition-colors shadow-sm"
+              onClick={() => setShowCustomDev(true)}
+            >
+              定制开发
             </button>
           )}
         </div>
@@ -1526,6 +1535,61 @@ export default function App() {
 
       <FirstUseWarningModal />
       <FirstUseModal />
+
+      {showCustomDev && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowCustomDev(false)}>
+          <div
+            className="bg-white rounded-xl shadow-2xl w-[400px] max-w-[92vw] max-h-[85vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="bg-gradient-to-r from-shopee-brand to-orange-500 px-6 py-5 rounded-t-xl">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-bold text-white">定制虾皮台湾本土各种插件</h2>
+                <button
+                  className="text-white/70 hover:text-white text-xl leading-none"
+                  onClick={() => setShowCustomDev(false)}
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <p className="text-sm font-medium text-foreground">专注虾皮生态定制开发，打造专属运营利器</p>
+              <p className="text-sm text-muted-foreground">我们提供一站式插件解决方案，涵盖：</p>
+              <ul className="space-y-2.5">
+                {[
+                  'AI赋能店铺运营',
+                  '热搜词深度挖掘与趋势分析',
+                  '全店铺智能化管理系统',
+                  '广告投放自动优化引擎',
+                  '运营数据可视化报表',
+                  '各类重复流程自动化定制',
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm">
+                    <span className="w-5 h-5 rounded-full bg-shopee-brand/10 text-shopee-brand flex items-center justify-center shrink-0 mt-0.5">
+                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </span>
+                    <span className="text-foreground/80">{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 px-4 py-3">
+                <p className="text-sm text-amber-800 leading-relaxed">
+                  限时特惠活动进行中，无论你遇到什么繁琐的运营难题，都可以告诉我们，我们将为你量身定制高效解决方案，助力店铺快速增长。联系方式：微信：aluvivip
+                </p>
+              </div>
+              <button
+                className="w-full py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-shopee-brand to-orange-500 rounded-lg hover:opacity-90 transition-opacity shadow-md"
+                onClick={() => setShowCustomDev(false)}
+              >
+                我知道了
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import * as backendApi from '@/entrypoints/popup/backend-api';
 import type { BackendUser, BackendAdminAnalytics, BackendStoreBinding } from '@/entrypoints/popup/types';
 
-type AdminTab = 'users' | 'analytics' | 'bindings';
+type AdminTab = 'users' | 'analytics' | 'bindings' | 'invite-codes';
 
 export function AdminPanel() {
   const [tab, setTab] = useState<AdminTab>('users');
@@ -21,6 +21,12 @@ export function AdminPanel() {
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   const [togglingAutoModeUserId, setTogglingAutoModeUserId] = useState<number | null>(null);
   const [resettingTrialUserId, setResettingTrialUserId] = useState<number | null>(null);
+
+  // 邀请码管理状态
+  const [inviteCodes, setInviteCodes] = useState<Array<{ id: number; code: string; isUsed: number; usedBy: number | null; createdAt: string; usedAt: string | null; userEmail: string | null }>>([]);
+  const [createCount, setCreateCount] = useState(1);
+  const [creatingCodes, setCreatingCodes] = useState(false);
+  const [deletingCodeId, setDeletingCodeId] = useState<number | null>(null);
 
   const loadUsers = async () => {
     setLoading(true); setError('');
@@ -44,6 +50,17 @@ export function AdminPanel() {
     setLoading(false);
   };
 
+  const loadInviteCodes = async () => {
+    setLoading(true); setError('');
+    try {
+      const result = await backendApi.getInviteCodes();
+      setInviteCodes(result.inviteCodes);
+    } catch (e: any) {
+      setError(e.message);
+    }
+    setLoading(false);
+  };
+
   const loadBindings = async () => {
     setLoading(true); setError('');
     try {
@@ -58,6 +75,7 @@ export function AdminPanel() {
   useEffect(() => {
     if (tab === 'users') loadUsers();
     else if (tab === 'analytics') loadAnalytics();
+    else if (tab === 'invite-codes') loadInviteCodes();
     else loadBindings();
   }, [tab]);
 
@@ -114,6 +132,14 @@ export function AdminPanel() {
           onClick={() => setTab('analytics')}
         >
           使用统计
+        </Button>
+        <Button
+          variant={tab === 'invite-codes' ? 'default' : 'outline'}
+          size="sm"
+          className="h-7 px-3 text-xs"
+          onClick={() => setTab('invite-codes')}
+        >
+          邀请码
         </Button>
       </div>
 
@@ -338,6 +364,90 @@ export function AdminPanel() {
               </Button>
             </div>
           )}
+        </div>
+      )}
+
+      {tab === 'invite-codes' && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              max={20}
+              value={createCount}
+              onChange={e => setCreateCount(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
+              className="w-16 px-2 py-1 text-xs border rounded text-center"
+            />
+            <Button
+              size="sm"
+              className="h-7 text-xs bg-gradient-to-r from-orange-400 to-amber-500 hover:from-orange-500 hover:to-amber-600 text-white"
+              disabled={creatingCodes}
+              onClick={async () => {
+                setCreatingCodes(true); setError('');
+                try {
+                  await backendApi.createInviteCodes(createCount);
+                  setCreateCount(1);
+                  loadInviteCodes();
+                } catch (e: any) {
+                  setError(e.message);
+                }
+                setCreatingCodes(false);
+              }}
+            >
+              {creatingCodes ? '生成中...' : '生成邀请码'}
+            </Button>
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            共 {inviteCodes.length} 个邀请码 · 未使用 {inviteCodes.filter(c => !c.isUsed).length} 个
+          </div>
+          <div className="space-y-1.5 max-h-72 overflow-y-auto">
+            {loading ? (
+              <div className="py-4 text-center text-xs text-muted-foreground">加载中...</div>
+            ) : inviteCodes.length === 0 ? (
+              <div className="py-4 text-center text-xs text-muted-foreground">暂无邀请码，点击上方按钮生成</div>
+            ) : (
+              inviteCodes.map(ic => (
+                <div key={ic.id} className="flex items-center justify-between p-2 rounded-md border text-xs">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono font-medium text-sm">{ic.code}</span>
+                      <span className={`px-1 py-0.5 text-[10px] rounded ${ic.isUsed ? 'bg-gray-100 text-muted-foreground' : 'bg-green-50 text-green-700'}`}>
+                        {ic.isUsed ? '已使用' : '未使用'}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 text-muted-foreground">
+                      {ic.isUsed ? (
+                        <>由 {ic.userEmail || '未知用户'} 于 {ic.usedAt ? new Date(ic.usedAt).toLocaleString() : '-'} 使用</>
+                      ) : (
+                        <>创建于 {new Date(ic.createdAt + 'Z').toLocaleString()}</>
+                      )}
+                    </div>
+                  </div>
+                  {!ic.isUsed && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 px-2 text-[10px] font-normal text-red-500 border-red-200 hover:bg-red-50 shrink-0 ml-2"
+                      disabled={deletingCodeId === ic.id}
+                      onClick={async () => {
+                        if (!confirm('确定要删除该邀请码吗？')) return;
+                        setDeletingCodeId(ic.id); setError('');
+                        try {
+                          await backendApi.deleteInviteCode(ic.id);
+                          loadInviteCodes();
+                        } catch (e: any) {
+                          setError(e.message);
+                        }
+                        setDeletingCodeId(null);
+                      }}
+                    >
+                      {deletingCodeId === ic.id ? '删除中...' : '删除'}
+                    </Button>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>

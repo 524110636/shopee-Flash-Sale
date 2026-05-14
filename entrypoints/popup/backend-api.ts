@@ -93,8 +93,8 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
 // ===== Auth API =====
 
-export async function register(email: string, password: string, registerKey: string) {
-  return request<{ message: string; code: string; expiresAt: string }>('POST', '/api/auth/register', { email, password, registerKey });
+export async function register(email: string, password: string, inviteCode: string) {
+  return request<{ message: string; code: string; expiresAt: string }>('POST', '/api/auth/register', { email, password, inviteCode });
 }
 
 export async function verify(email: string, code: string) {
@@ -198,4 +198,18 @@ export async function adminUnbindStore(bindingId: number) {
 
 export async function adminDeleteUser(userId: number) {
   return request<{ message: string }>('DELETE', `/api/admin/users/${userId}`);
+}
+
+// ===== Invite Code API =====
+
+export async function getInviteCodes() {
+  return request<{ inviteCodes: Array<{ id: number; code: string; isUsed: number; usedBy: number | null; createdAt: string; usedAt: string | null; userEmail: string | null }> }>('GET', '/api/admin/invite-codes');
+}
+
+export async function createInviteCodes(count?: number) {
+  return request<{ codes: string[]; count: number }>('POST', '/api/admin/invite-codes', { count: count || 1 });
+}
+
+export async function deleteInviteCode(id: number) {
+  return request<{ message: string }>('DELETE', `/api/admin/invite-codes/${id}`);
 }
