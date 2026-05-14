@@ -2117,7 +2117,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 构造完成 hasOneDaySku=${buildResult.hasOneDaySku} skuCreated=${buildResult.skuCreated} highestPrice=${buildResult.highestPrice}`);
         } catch (buildErr: any) {
           console.error(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 构造更新请求失败`, buildErr.message);
-          throw new Error(`构造更新请求失败: ${buildErr.message}`);
+          throw new Error(`构造更新请求失败: ${buildErr.message}`, { cause: buildErr });
         }
 
         // Step 3: 搜索折扣活动（发布前，确保后续可恢复）

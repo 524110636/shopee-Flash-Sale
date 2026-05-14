@@ -76,7 +76,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     });
   } catch (e: any) {
     // fetch 网络错误（后端未启动、DNS 失败、连接被拒绝等）
-    throw new Error(`无法连接后端服务 (${_baseUrl})，请确认后端已启动: ${e.message}`);
+    throw new Error(`无法连接后端服务 (${_baseUrl})，请确认后端已启动: ${e.message}`, { cause: e });
   }
 
   if (response.status === 401) {

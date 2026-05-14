@@ -29,7 +29,7 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
     startAutoMode, stopAutoMode,
     flashSaleList, fetchFlashSaleList, isLoadingFlashSaleList,
     loadFlashSaleProducts, products, isLoadingFlashSales,
-    skuOverrides, discountRate, flashSaleStock, purchaseLimit, setSkuOverride,
+    skuOverrides, discountRate, setSkuOverride,
   } = useAppStore();
 
   const [mode, setMode] = useState<'rounds' | 'days'>('rounds');

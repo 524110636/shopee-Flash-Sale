@@ -25,7 +25,7 @@ export function FirstUseModal() {
     if (firstUse.open && firstUse.products.length === 0) {
       fetchFirstUseProducts(12);
     }
-  }, [firstUse.open]);
+  }, [firstUse.open, firstUse.products.length, fetchFirstUseProducts]);
 
   // Debounced remote search
   useEffect(() => {
@@ -49,7 +49,7 @@ export function FirstUseModal() {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [localSearch]);
+  }, [localSearch, firstUse.searchKeyword, searchFirstUseProducts]);
 
   const isSearching = !!firstUse.searchKeyword;
   const displayProducts = isSearching ? firstUse.searchResults : firstUse.products;

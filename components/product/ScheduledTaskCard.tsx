@@ -11,7 +11,7 @@ const STEPS = [
 export function ScheduledTaskCard() {
   const { scheduledTaskStatus, hasScheduledCopy, checkScheduledCopy } = useAppStore();
 
-  const [now, setNow] = useState(Date.now());
+  const [_now, setNow] = useState(Date.now());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // 1-second tick for live countdown (same pattern as AutoModePanel)

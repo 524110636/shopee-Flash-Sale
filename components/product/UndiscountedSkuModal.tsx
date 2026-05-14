@@ -29,6 +29,7 @@ export function UndiscountedSkuModal({ skus, onClose, autoSkipSeconds, onResolve
   const hasTriggered = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // countdown intentionally omitted from deps — re-creating the interval every second would break the countdown
   useEffect(() => {
     if (!autoMode || countdown <= 0) return;
     timerRef.current = setInterval(() => {
@@ -40,6 +41,7 @@ export function UndiscountedSkuModal({ skus, onClose, autoSkipSeconds, onResolve
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoMode]);
 
   useEffect(() => {
