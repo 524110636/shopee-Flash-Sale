@@ -5,7 +5,7 @@ import type { ShopeeProduct, EnableItem, EnableResult, EnableProgress, SkuOverri
 const GRAPHQL_URL = 'https://seller.shopee.tw/api/marketing/v4/graphql/query/';
 const FLASH_SALE_API = 'https://seller.shopee.tw/api/marketing/v4/shop_flash_sale';
 const COPY_MAX_RETRIES = 10;
-const DEFAULT_BACKEND_URL = 'http://localhost:5724';
+const DEFAULT_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5724';
 
 const PRODUCTS_QUERY = `query Products($productIds: [String], $statusType: Int) {
   products(productIds: $productIds, statusType: $statusType) {

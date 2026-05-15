@@ -839,6 +839,13 @@ export default function App() {
                     <div className="text-[10px] text-muted-foreground text-center py-2">正在加载商品数据...</div>
                   )}
 
+                  {/* 修复完成提示 */}
+                  {oneDaySkuFlow.items.some(i => i.publishStatus === 'success') && (
+                    <p className="text-[11px] text-green-700 text-center leading-relaxed">
+                      修复完成，请点击上方商品列表修改限时特卖商品价格，库存，限购等信息(默认参数是你的折扣信息。)，然后点击下一步：选择限时特卖。
+                    </p>
+                  )}
+
                   {/* 全局参数 */}
                   <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                     <div className="flex items-center gap-1">

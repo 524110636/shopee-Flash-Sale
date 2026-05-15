@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { execSync } from 'child_process';
 import { initializeDatabase } from './db/index.js';
 import authRoutes from './routes/auth.js';
 import storesRoutes from './routes/stores.js';
@@ -33,8 +34,18 @@ async function main() {
 
   app.get('/api/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
+  const server = serve({ fetch: app.fetch, port: PORT });
   console.log(`[Server] Listening on http://localhost:${PORT}`);
-  serve({ fetch: app.fetch, port: PORT });
+
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`[Server] Port ${PORT} in use, killing existing process...`);
+      try { execSync(`npx kill-port ${PORT}`, { stdio: 'ignore' }); } catch {}
+      server.listen(PORT);
+    } else {
+      throw err;
+    }
+  });
 }
 
 main().catch((err) => {
