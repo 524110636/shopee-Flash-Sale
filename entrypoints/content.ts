@@ -36,6 +36,15 @@ let failedDetailItems: FailedItemDetail[] = [];
 let detailsExpanded = false;
 let removeTimer: ReturnType<typeof setTimeout> | null = null;
 
+// Minimize / countdown state
+let panelMinimized = false;
+let minimizedBarEl: HTMLElement | null = null;
+let minimizeBtnEl: HTMLElement | null = null;
+let autoCountdownTimer: ReturnType<typeof setInterval> | null = null;
+let autoStatusData: any = null;
+let wasAutoVisible = false;
+let wasProgressVisible = false;
+
 function buildProgressSection() {
   if (!progressSectionEl || headerEl) return; // 已构建
 
@@ -204,7 +213,6 @@ function renderFailedDetails() {
 function updateProgress(data: ProgressData, failedDetails?: FailedItemDetail[]) {
   createPanel();
   buildProgressSection();
-  if (progressSectionEl) progressSectionEl.style.display = 'block';
 
   failedDetailItems = failedDetails || [];
   renderFailedDetails();
@@ -228,15 +236,27 @@ function updateProgress(data: ProgressData, failedDetails?: FailedItemDetail[]) 
     barEl.style.width = `${Math.min(pct, 100)}%`;
   }
 
+  // Show or hide based on minimize state
+  if (panelMinimized) {
+    if (progressSectionEl) progressSectionEl.style.display = 'none';
+    updateMinimizedContent();
+  } else {
+    if (progressSectionEl) progressSectionEl.style.display = 'block';
+  }
+
   // 清除旧的自动消失定时器
   if (removeTimer) clearTimeout(removeTimer);
   removeTimer = null;
 }
 
 function showComplete(data: ProgressData, failedDetails?: FailedItemDetail[]) {
+  createPanel();
+  buildProgressSection();
   if (!progressSectionEl || !headerEl) return;
 
-  progressSectionEl.style.display = 'block';
+  if (!panelMinimized) {
+    progressSectionEl.style.display = 'block';
+  }
   failedDetailItems = failedDetails || [];
   renderFailedDetails();
 
@@ -262,6 +282,8 @@ function showComplete(data: ProgressData, failedDetails?: FailedItemDetail[]) {
   // 隐藏停止按钮（已完成）
   if (stopBtnEl) stopBtnEl.style.display = 'none';
 
+  if (panelMinimized) updateMinimizedContent();
+
   // 3 秒后淡出进度区域
   if (removeTimer) clearTimeout(removeTimer);
   removeTimer = setTimeout(() => {
@@ -272,6 +294,13 @@ function showComplete(data: ProgressData, failedDetails?: FailedItemDetail[]) {
     const autoVisible = autoSectionEl && autoSectionEl.style.display !== 'none';
     const copyVisible = copySectionEl && copySectionEl.style.display !== 'none';
     if (!autoVisible && !copyVisible && panelContainer?.parentNode) {
+      // Clean up timers and reset state
+      if (autoCountdownTimer) {
+        clearInterval(autoCountdownTimer);
+        autoCountdownTimer = null;
+      }
+      autoStatusData = null;
+      panelMinimized = false;
       panelContainer.parentNode.removeChild(panelContainer);
       panelContainer = null;
       autoSectionEl = null;
@@ -285,6 +314,8 @@ function showComplete(data: ProgressData, failedDetails?: FailedItemDetail[]) {
       stopBtnEl = null;
       toggleBtnEl = null;
       detailsContainerEl = null;
+      minimizedBarEl = null;
+      minimizeBtnEl = null;
     }
   }, 3000);
 }
@@ -297,6 +328,10 @@ let copyHeaderEl: HTMLElement | null = null;
 let copyBodyEl: HTMLElement | null = null;
 let copyCountdownTimer: ReturnType<typeof setInterval> | null = null;
 let copyRemoveTimer: ReturnType<typeof setTimeout> | null = null;
+let copyMinimized = false;
+let copyMinimizeBtnEl: HTMLElement | null = null;
+let copyMinimizedBarEl: HTMLDivElement | null = null;
+let copyLastTargetTime = 0;
 
 function createCopyUI() {
   if (copyContainer) return;
@@ -326,8 +361,39 @@ function createCopyUI() {
     fontSize: '13px',
     color: '#374151',
     lineHeight: '1.5',
-    transition: 'opacity 0.4s ease',
+    transition: 'all 0.3s ease',
   });
+
+  // Minimize button
+  copyMinimizeBtnEl = document.createElement('button');
+  copyMinimizeBtnEl.textContent = '−';
+  copyMinimizeBtnEl.title = '最小化';
+  Object.assign(copyMinimizeBtnEl.style, {
+    position: 'absolute',
+    top: '2px',
+    right: '6px',
+    width: '20px',
+    height: '20px',
+    padding: '0',
+    fontSize: '14px',
+    fontWeight: '700',
+    lineHeight: '18px',
+    color: '#9ca3af',
+    background: 'none',
+    border: 'none',
+    borderRadius: '3px',
+    cursor: 'pointer',
+    textAlign: 'center',
+    transition: 'color 0.2s ease',
+    zIndex: '1',
+  });
+  copyMinimizeBtnEl.addEventListener('mouseenter', () => { if (copyMinimizeBtnEl) copyMinimizeBtnEl.style.color = '#374151'; });
+  copyMinimizeBtnEl.addEventListener('mouseleave', () => { if (copyMinimizeBtnEl) copyMinimizeBtnEl.style.color = '#9ca3af'; });
+  copyMinimizeBtnEl.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleCopyMinimize();
+  });
+  copyContainer.appendChild(copyMinimizeBtnEl);
 
   // 标题
   copyHeaderEl = document.createElement('div');
@@ -358,6 +424,21 @@ function createCopyUI() {
   });
   copyContainer.appendChild(copyBodyEl);
 
+  // Minimized bar (hidden by default)
+  copyMinimizedBarEl = document.createElement('div');
+  copyMinimizedBarEl.style.display = 'none';
+  Object.assign(copyMinimizedBarEl.style, {
+    cursor: 'pointer',
+    textAlign: 'center',
+    padding: '4px 0',
+    fontSize: '11px',
+    color: '#374151',
+    lineHeight: '1.3',
+    userSelect: 'none',
+  });
+  copyMinimizedBarEl.addEventListener('click', () => toggleCopyMinimize());
+  copyContainer.appendChild(copyMinimizedBarEl);
+
   document.body.appendChild(copyContainer);
 }
 
@@ -366,45 +447,129 @@ function destroyCopyUI() {
   if (copyRemoveTimer) clearTimeout(copyRemoveTimer);
   copyCountdownTimer = null;
   copyRemoveTimer = null;
+  copyMinimized = false;
+  copyMinimizeBtnEl = null;
+  copyMinimizedBarEl = null;
   if (copyContainer?.parentNode) copyContainer.parentNode.removeChild(copyContainer);
   copyContainer = null;
   copyHeaderEl = null;
   copyBodyEl = null;
 }
 
+function toggleCopyMinimize() {
+  if (!copyContainer || !copyMinimizedBarEl || !copyMinimizeBtnEl) return;
+
+  copyMinimized = !copyMinimized;
+
+  if (copyMinimized) {
+    // Hide main content
+    if (copyHeaderEl) copyHeaderEl.style.display = 'none';
+    if (copyBodyEl) copyBodyEl.style.display = 'none';
+    // Hide divider (second child after minimize button)
+    const children = copyContainer.children;
+    for (let i = 0; i < children.length; i++) {
+      const c = children[i] as HTMLElement;
+      if (c !== copyMinimizeBtnEl && c !== copyMinimizedBarEl) {
+        c.style.display = 'none';
+      }
+    }
+
+    // Shrink panel
+    copyContainer.style.padding = '4px 8px';
+    copyContainer.style.minWidth = 'auto';
+    copyContainer.style.maxWidth = '180px';
+
+    // Show minimized bar
+    copyMinimizeBtnEl.textContent = '▶';
+    copyMinimizeBtnEl.title = '展开';
+    copyMinimizedBarEl.style.display = 'block';
+    updateCopyMinimizedContent();
+  } else {
+    // Restore
+    if (copyHeaderEl) copyHeaderEl.style.display = '';
+    if (copyBodyEl) copyBodyEl.style.display = '';
+    const children = copyContainer.children;
+    for (let i = 0; i < children.length; i++) {
+      const c = children[i] as HTMLElement;
+      if (c !== copyMinimizeBtnEl && c !== copyMinimizedBarEl) {
+        c.style.display = '';
+      }
+    }
+
+    // Restore panel size
+    copyContainer.style.padding = '14px 18px';
+    copyContainer.style.minWidth = '210px';
+    copyContainer.style.maxWidth = '280px';
+
+    // Hide minimized bar
+    copyMinimizeBtnEl.textContent = '−';
+    copyMinimizeBtnEl.title = '最小化';
+    copyMinimizedBarEl.style.display = 'none';
+  }
+}
+
+function updateCopyMinimizedContent() {
+  if (!copyMinimizedBarEl || !copyMinimized) return;
+
+  const now = Math.floor(Date.now() / 1000);
+  let text = '📋 复制任务';
+
+  if (copyLastTargetTime > 0) {
+    const remaining = copyLastTargetTime - now;
+    if (remaining > 0) {
+      const m = Math.floor(remaining / 60);
+      const s = remaining % 60;
+      text = `📋 ${m}:${String(s).padStart(2, '0')}`;
+    } else {
+      text = '📋 等待执行';
+    }
+  }
+
+  copyMinimizedBarEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap">◀ ${text}</div>`;
+}
+
 function showCopyCountdown(targetStartTime: number, sourceName: string) {
   createCopyUI();
   if (copyHeaderEl) copyHeaderEl.textContent = '📋 复制任务已安排';
-  if (!copyBodyEl) return;
+
+  // Store for minimized display
+  copyLastTargetTime = targetStartTime;
 
   // Clear existing countdown timer
   if (copyCountdownTimer) clearInterval(copyCountdownTimer);
 
   function updateCountdown() {
-    if (!copyBodyEl) return;
     const now = Math.floor(Date.now() / 1000);
     const remaining = targetStartTime - now;
 
     if (remaining <= 0) {
-      // Countdown expired — show "等待执行"
       if (copyCountdownTimer) clearInterval(copyCountdownTimer);
       copyCountdownTimer = null;
-      copyBodyEl.innerHTML = `
-        <div style="margin-bottom:6px">源活动: ${escapeHtml(sourceName)}</div>
-        <div style="color:#f59e0b;font-weight:500">等待执行...</div>
-      `;
+      copyLastTargetTime = 0;
+      if (copyBodyEl && !copyMinimized) {
+        copyBodyEl.innerHTML = `
+          <div style="margin-bottom:6px">源活动: ${escapeHtml(sourceName)}</div>
+          <div style="color:#f59e0b;font-weight:500">等待执行...</div>
+        `;
+      }
+      if (copyMinimized) updateCopyMinimizedContent();
       return;
     }
 
     const minutes = Math.floor(remaining / 60);
     const seconds = remaining % 60;
-    copyBodyEl.innerHTML = `
-      <div style="margin-bottom:6px">源活动: ${escapeHtml(sourceName)}</div>
-      <div style="margin-bottom:4px;color:#374151">活动开始还有:</div>
-      <div style="font-size:22px;font-weight:700;color:#2563eb;text-align:center;padding:4px 0">
-        ${minutes} 分 ${String(seconds).padStart(2, '0')} 秒
-      </div>
-    `;
+    if (copyBodyEl && !copyMinimized) {
+      copyBodyEl.innerHTML = `
+        <div style="margin-bottom:6px">源活动: ${escapeHtml(sourceName)}</div>
+        <div style="margin-bottom:4px;color:#374151">活动开始还有:</div>
+        <div style="font-size:22px;font-weight:700;color:#2563eb;text-align:center;padding:4px 0">
+          ${minutes} 分 ${String(seconds).padStart(2, '0')} 秒
+        </div>
+      `;
+    }
+
+    // Update minimized bar on every tick
+    if (copyMinimized) updateCopyMinimizedContent();
   }
 
   updateCountdown();
@@ -420,8 +585,9 @@ function updateCopyStep(currentStep: number, totalSteps: number, description: st
     clearInterval(copyCountdownTimer);
     copyCountdownTimer = null;
   }
+  copyLastTargetTime = 0;
 
-  if (copyBodyEl) {
+  if (copyBodyEl && !copyMinimized) {
     copyBodyEl.innerHTML = `
       <div style="margin-bottom:6px">
         <span style="display:inline-block;padding:1px 8px;border-radius:10px;background:#2563eb;color:#fff;font-size:11px;font-weight:500">
@@ -431,6 +597,8 @@ function updateCopyStep(currentStep: number, totalSteps: number, description: st
       <div style="color:#374151;font-weight:500">${escapeHtml(description)}</div>
     `;
   }
+
+  if (copyMinimized) updateCopyMinimizedContent();
 }
 
 function showCopyComplete(success: boolean, error?: string) {
@@ -441,17 +609,20 @@ function showCopyComplete(success: boolean, error?: string) {
     clearInterval(copyCountdownTimer);
     copyCountdownTimer = null;
   }
+  copyLastTargetTime = 0;
 
   if (copyHeaderEl) {
     copyHeaderEl.textContent = success ? '✅ 复制完成（全部成功）' : '⚠️ 复制完成（有失败）';
     copyHeaderEl.style.color = success ? '#16a34a' : '#dc2626';
   }
 
-  if (copyBodyEl) {
+  if (copyBodyEl && !copyMinimized) {
     copyBodyEl.innerHTML = success
       ? '<div style="color:#16a34a">商品配置已复制到新活动</div>'
       : `<div style="color:#dc2626">${escapeHtml(error || '未知错误')}</div>`;
   }
+
+  if (copyMinimized) updateCopyMinimizedContent();
 
   // Auto-fade after 3s (same as enable progress)
   if (copyRemoveTimer) clearTimeout(copyRemoveTimer);
@@ -508,8 +679,39 @@ function createPanel() {
     fontSize: '12px',
     color: '#374151',
     lineHeight: '1.5',
-    transition: 'opacity 0.4s ease',
+    transition: 'all 0.3s ease',
   });
+
+  // Minimize button (top-right corner)
+  minimizeBtnEl = document.createElement('button');
+  minimizeBtnEl.textContent = '−';
+  minimizeBtnEl.title = '最小化';
+  Object.assign(minimizeBtnEl.style, {
+    position: 'absolute',
+    top: '2px',
+    right: '6px',
+    width: '20px',
+    height: '20px',
+    padding: '0',
+    fontSize: '14px',
+    fontWeight: '700',
+    lineHeight: '18px',
+    color: '#9ca3af',
+    background: 'none',
+    border: 'none',
+    borderRadius: '3px',
+    cursor: 'pointer',
+    textAlign: 'center',
+    transition: 'color 0.2s ease',
+    zIndex: '1',
+  });
+  minimizeBtnEl.addEventListener('mouseenter', () => { if (minimizeBtnEl) minimizeBtnEl.style.color = '#374151'; });
+  minimizeBtnEl.addEventListener('mouseleave', () => { if (minimizeBtnEl) minimizeBtnEl.style.color = '#9ca3af'; });
+  minimizeBtnEl.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleMinimize();
+  });
+  panelContainer.appendChild(minimizeBtnEl);
 
   // Auto mode section
   autoSectionEl = document.createElement('div');
@@ -526,20 +728,152 @@ function createPanel() {
   copySectionEl.style.display = 'none';
   panelContainer.appendChild(copySectionEl);
 
+  // Minimized bar (hidden by default)
+  minimizedBarEl = document.createElement('div');
+  minimizedBarEl.style.display = 'none';
+  Object.assign(minimizedBarEl.style, {
+    cursor: 'pointer',
+    textAlign: 'center',
+    padding: '4px 0',
+    fontSize: '11px',
+    color: '#374151',
+    lineHeight: '1.3',
+    userSelect: 'none',
+  });
+  minimizedBarEl.addEventListener('click', () => toggleMinimize());
+  panelContainer.appendChild(minimizedBarEl);
+
   document.body.appendChild(panelContainer);
+}
+
+function toggleMinimize() {
+  if (!panelContainer || !minimizedBarEl || !minimizeBtnEl) return;
+
+  panelMinimized = !panelMinimized;
+
+  if (panelMinimized) {
+    // Save current visibility
+    wasAutoVisible = autoSectionEl?.style.display === 'block';
+    wasProgressVisible = progressSectionEl?.style.display === 'block';
+
+    // Hide sections
+    if (autoSectionEl) autoSectionEl.style.display = 'none';
+    if (progressSectionEl) progressSectionEl.style.display = 'none';
+    if (copySectionEl) copySectionEl.style.display = 'none';
+
+    // Shrink panel
+    panelContainer.style.padding = '4px 8px';
+    panelContainer.style.minWidth = 'auto';
+    panelContainer.style.maxWidth = '180px';
+
+    // Show minimized bar
+    minimizeBtnEl.textContent = '▶';
+    minimizeBtnEl.title = '展开';
+    minimizedBarEl.style.display = 'block';
+    updateMinimizedContent();
+  } else {
+    // Restore sections
+    if (autoSectionEl) autoSectionEl.style.display = wasAutoVisible ? 'block' : 'none';
+    if (progressSectionEl) progressSectionEl.style.display = wasProgressVisible ? 'block' : 'none';
+
+    // Restore panel size
+    panelContainer.style.padding = '10px 14px';
+    panelContainer.style.minWidth = '210px';
+    panelContainer.style.maxWidth = '300px';
+
+    // Hide minimized bar
+    minimizeBtnEl.textContent = '−';
+    minimizeBtnEl.title = '最小化';
+    minimizedBarEl.style.display = 'none';
+  }
+}
+
+function updateMinimizedContent() {
+  if (!minimizedBarEl || !panelMinimized) return;
+
+  const lines: string[] = [];
+  const now = Math.floor(Date.now() / 1000);
+
+  // Auto mode countdown
+  if (autoStatusData?.isRunning) {
+    const targetTime = autoStatusData.nextActionTime || autoStatusData.nextTargetTime;
+    if (targetTime) {
+      const remaining = targetTime - now;
+      if (remaining > 0) {
+        const m = Math.floor(remaining / 60);
+        const s = remaining % 60;
+        lines.push(`🤖 ${m}:${String(s).padStart(2, '0')}`);
+      } else {
+        lines.push('🤖 即将执行');
+      }
+    } else {
+      lines.push(`🤖 第${autoStatusData.currentRound || 0}/${autoStatusData.totalRounds || 0}轮`);
+    }
+  }
+
+  // Enable progress
+  if (wasProgressVisible && !autoStatusData?.isRunning) {
+    lines.push('🚀 修复中...');
+  }
+
+  if (lines.length === 0) {
+    lines.push('⏳ 运行中');
+  }
+
+  minimizedBarEl.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap">◀ ${lines.join(' · ')}</div>`;
+}
+
+function updateAutoCountdown() {
+  if (!autoStatusData?.isRunning) {
+    if (autoCountdownTimer) {
+      clearInterval(autoCountdownTimer);
+      autoCountdownTimer = null;
+    }
+    return;
+  }
+
+  const targetTime = autoStatusData.nextActionTime || autoStatusData.nextTargetTime;
+  const el = document.getElementById('__auto_countdown__');
+  if (!el || !targetTime) return;
+
+  const now = Math.floor(Date.now() / 1000);
+  const remaining = targetTime - now;
+
+  if (remaining <= 0) {
+    el.innerHTML = '<span style="color:#f59e0b">即将执行...</span>';
+  } else {
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    el.innerHTML = `${m} 分 <span style="font-size:16px">${String(s).padStart(2, '0')}</span> 秒`;
+  }
+
+  // Also update minimized bar
+  if (panelMinimized) updateMinimizedContent();
 }
 
 function renderAutoSection(status: any) {
   createPanel();
   if (!autoSectionEl) return;
 
+  // Store status for countdown / minimized bar
+  autoStatusData = status;
+
   const isRunning = status?.isRunning;
   if (!isRunning) {
     autoSectionEl.style.display = 'none';
+    // Clear countdown timer
+    if (autoCountdownTimer) {
+      clearInterval(autoCountdownTimer);
+      autoCountdownTimer = null;
+    }
+    // Update minimized bar (may still show progress)
+    if (panelMinimized) updateMinimizedContent();
     return;
   }
 
-  autoSectionEl.style.display = 'block';
+  if (!panelMinimized) {
+    autoSectionEl.style.display = 'block';
+  }
   const phase = status.phase || 'idle';
   const phaseText = ({
     idle: '准备中',
@@ -551,18 +885,36 @@ function renderAutoSection(status: any) {
     stopped: '已停止',
   } as Record<string, string>)[phase] || phase;
 
+  const targetTime = status.nextActionTime || status.nextTargetTime;
+  const countdownHtml = targetTime
+    ? `<div id="__auto_countdown__" style="font-size:20px;font-weight:700;color:#2563eb;text-align:center;padding:6px 0">--</div>`
+    : '';
+
   autoSectionEl.innerHTML = `
     <div style="font-weight:600;font-size:13px;margin-bottom:6px;color:#1f2937">🤖 自动模式 <span style="color:#16a34a;font-size:11px">● 运行中</span></div>
     <div style="font-size:11px;color:#6b7280;margin-bottom:4px">
       第 ${status.currentRound || 0}/${status.totalRounds || 0} 轮 | ${phaseText}
     </div>
-    ${status.nextTargetTime ? `<div style="font-size:11px;color:#6b7280;margin-bottom:4px">下一场: ${fmtContentTime(status.nextTargetTime)}</div>` : ''}
+    ${status.nextTargetTime ? `<div style="font-size:11px;color:#6b7280;margin-bottom:2px">下一场: ${fmtContentTime(status.nextTargetTime)}</div>` : ''}
+    ${countdownHtml}
     <button id="__auto_stop_btn__" style="
       margin-top:4px;width:100%;padding:3px 0;font-size:11px;font-weight:500;
       color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;
       cursor:pointer;text-align:center;
     ">⏹ 停止自动模式</button>
   `;
+
+  // Start / restart countdown timer
+  if (autoCountdownTimer) {
+    clearInterval(autoCountdownTimer);
+  }
+  if (targetTime) {
+    updateAutoCountdown();
+    autoCountdownTimer = setInterval(updateAutoCountdown, 1000);
+  }
+
+  // Update minimized bar
+  if (panelMinimized) updateMinimizedContent();
 
   setTimeout(() => {
     const btn = document.getElementById('__auto_stop_btn__');

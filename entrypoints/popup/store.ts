@@ -2918,7 +2918,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       oneDaySkuFlow: {
         ...state.oneDaySkuFlow,
         phase: 'selecting_flash_sale',
-        message: '请选择目标限时特卖场次',
+        message: '',
+        error: null,
       },
     });
   },
@@ -2926,6 +2927,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   addToExistingFlashSale: async (flashSaleId: number) => {
     const state = get();
     const { oneDaySkuFlow, products, discountRate, flashSaleStock, purchaseLimit, skuOverrides, spcCds, spcCdsVer, maxRetries, infiniteRetry } = state;
+    // 防止重复点击
+    if (state.isEnabling || oneDaySkuFlow.running || oneDaySkuFlow.message) return;
     const successItems = oneDaySkuFlow.items.filter(i => i.publishStatus === 'success');
     if (successItems.length === 0) return;
 
@@ -3134,6 +3137,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     const state = get();
     const { oneDaySkuFlow, spcCds, spcCdsVer, products, discountRate, flashSaleStock, purchaseLimit, skuOverrides, maxRetries, infiniteRetry } = state;
 
+    // 防止重复点击
+    if (state.isEnabling || oneDaySkuFlow.running || oneDaySkuFlow.message) return;
+
     const successItems = oneDaySkuFlow.items.filter(i => i.publishStatus === 'success');
     if (successItems.length === 0) return;
 
@@ -3250,6 +3256,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   scheduleEnableForFlashSale: async (flashSaleId: number, targetStartTime: number, flashSaleName: string, delayMinutes?: number) => {
     const state = get();
     const { oneDaySkuFlow, products, discountRate, flashSaleStock, purchaseLimit, skuOverrides, spcCds, spcCdsVer, maxRetries, infiniteRetry } = state;
+    // 防止重复点击
+    if (state.isEnabling || oneDaySkuFlow.running || oneDaySkuFlow.message) return;
     const successItems = oneDaySkuFlow.items.filter(i => i.publishStatus === 'success');
     if (successItems.length === 0) return;
 

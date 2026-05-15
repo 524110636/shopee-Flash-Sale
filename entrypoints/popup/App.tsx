@@ -960,11 +960,13 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* 定时开启状态消息 */}
-                  {oneDaySkuFlow.message && (
+                  {/* 状态消息 */}
+                  {oneDaySkuFlow.message ? (
                     <div className="rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] text-amber-800">
                       {oneDaySkuFlow.message}
                     </div>
+                  ) : (
+                    <div className="text-[10px] text-blue-700">请选择目标限时特卖场次</div>
                   )}
 
                   {/* 已有限时特卖列表 */}
@@ -994,6 +996,7 @@ export default function App() {
                                 <Button
                                   size="sm"
                                   className="h-7 shrink-0 px-2 text-[10px] bg-green-600 hover:bg-green-700 text-white"
+                                  disabled={isEnabling || oneDaySkuFlow.running || !!oneDaySkuFlow.message}
                                   onClick={() => addToExistingFlashSale(sale.flash_sale_id)}
                                 >
                                   立即加入
@@ -1004,6 +1007,7 @@ export default function App() {
                                   size="sm"
                                   variant="outline"
                                   className="h-7 shrink-0 px-1.5 text-[10px] border-amber-300 text-amber-700 hover:bg-amber-50"
+                                  disabled={isEnabling || oneDaySkuFlow.running || !!oneDaySkuFlow.message}
                                   title={`活动开始后 ${wizardDelayMin} 分钟自动提交 (${fmtTime(sale.start_time + Math.max(1, parseInt(wizardDelayMin) || 5) * 60)})`}
                                   onClick={() => {
                                     const dm = Math.max(1, parseInt(wizardDelayMin) || 5);
@@ -1087,7 +1091,7 @@ export default function App() {
                       <Button
                         size="sm"
                         className="w-full h-8 text-xs bg-shopee-brand hover:bg-shopee-brand/90 text-white disabled:opacity-50"
-                        disabled={!selectedWizardSlotId || isEnabling || oneDaySkuFlow.running}
+                        disabled={!selectedWizardSlotId || isEnabling || oneDaySkuFlow.running || !!oneDaySkuFlow.message}
                         onClick={() => {
                           const slot = phase3Slots.find(s => s.timeslot_id === selectedWizardSlotId);
                           if (!slot) return;
@@ -1102,7 +1106,7 @@ export default function App() {
                         size="sm"
                         variant="outline"
                         className="w-full h-6 text-[10px] border-dashed border-gray-300 text-gray-500 hover:bg-gray-50"
-                        disabled={!selectedWizardSlotId || isEnabling || oneDaySkuFlow.running}
+                        disabled={!selectedWizardSlotId || isEnabling || oneDaySkuFlow.running || !!oneDaySkuFlow.message}
                         onClick={() => {
                           const slot = phase3Slots.find(s => s.timeslot_id === selectedWizardSlotId);
                           if (!slot) return;
