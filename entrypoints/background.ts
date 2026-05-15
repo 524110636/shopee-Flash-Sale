@@ -6,6 +6,19 @@ const GRAPHQL_URL = 'https://seller.shopee.tw/api/marketing/v4/graphql/query/';
 const FLASH_SALE_API = 'https://seller.shopee.tw/api/marketing/v4/shop_flash_sale';
 const COPY_MAX_RETRIES = 10;
 const DEFAULT_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5724';
+const FALLBACK_BACKEND_URL = import.meta.env.VITE_BACKEND_FALLBACK_URL || '';
+
+function tryBackendFetch(url: string, init?: RequestInit, baseUrl?: string): Promise<Response> {
+  return fetch(url, init).catch((primaryErr) => {
+    if (!FALLBACK_BACKEND_URL) throw primaryErr;
+    const fromUrl = baseUrl || DEFAULT_BACKEND_URL;
+    const fallbackUrl = url.replace(fromUrl, FALLBACK_BACKEND_URL);
+    console.warn('[bg] 主域名请求失败，尝试 IP 直连:', fallbackUrl);
+    return fetch(fallbackUrl, init).catch(() => {
+      throw primaryErr;
+    });
+  });
+}
 
 const PRODUCTS_QUERY = `query Products($productIds: [String], $statusType: Int) {
   products(productIds: $productIds, statusType: $statusType) {
@@ -165,14 +178,14 @@ async function reportAnalyticsEvent(eventType: string, eventData: Record<string,
     const auth = result.backendAuth as { token?: string } | undefined;
     const backendUrl = result.backendUrl as string | undefined;
     if (!auth?.token || !backendUrl) return;
-    await fetch(`${backendUrl}/api/analytics/events`, {
+    await tryBackendFetch(`${backendUrl}/api/analytics/events`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${auth.token}`,
       },
       body: JSON.stringify({ eventType, eventData }),
-    });
+    }, backendUrl);
   } catch {
     // fire-and-forget, ignore errors
   }
@@ -192,14 +205,14 @@ async function validateShopAccess(spcCds: string, action: string): Promise<{ all
     // fallback to default URL (store.ts 仅持久化非默认值)
     const baseUrl = backendUrl || DEFAULT_BACKEND_URL;
     console.log(`[bg:validate] 请求 POST ${baseUrl}/api/stores/validate`);
-    const response = await fetch(`${baseUrl}/api/stores/validate`, {
+    const response = await tryBackendFetch(`${baseUrl}/api/stores/validate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${auth.token}`,
       },
       body: JSON.stringify({ spcCds, action }),
-    });
+    }, baseUrl);
     const data = await response.json();
     console.log(`[bg:validate] 后端响应: status=${response.status}, data=`, JSON.stringify(data));
     if (!response.ok) {
@@ -1762,13 +1775,13 @@ export default defineBackground({
               return { success: false, error: '未登录后端系统，请先登录' };
             }
             const baseUrl = backendUrl || DEFAULT_BACKEND_URL;
-            const permResp = await fetch(`${baseUrl}/api/auth/check-auto-mode`, {
+            const permResp = await tryBackendFetch(`${baseUrl}/api/auth/check-auto-mode`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${auth.token}`,
               },
-            });
+            }, baseUrl);
             const permData = await permResp.json() as { allowed?: boolean };
             if (!permResp.ok || !permData.allowed) {
               console.warn('[bg:START_AUTO_MODE] Step0 失败: 无自动模式权限');
@@ -2002,7 +2015,7 @@ export default defineBackground({
         }
       }
 
-      // ===== SCHEDULE_ENABLE: 定时开启（Wizard 修复后定时加入闪购）=====
+      // ===== SCHEDULE_ENABLE: 定时开启（Wizard 修复后定时加入限时特卖）=====
       if (type === 'SCHEDULE_ENABLE') {
         try {
           const { enableParams, fireTime, flashSaleName } = msg;

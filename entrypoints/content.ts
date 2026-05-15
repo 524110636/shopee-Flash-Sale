@@ -20,7 +20,6 @@ interface FailedItemDetail {
   errMsg: string;
 }
 
-let container: HTMLDivElement | null = null;
 let panelContainer: HTMLDivElement | null = null;
 let autoSectionEl: HTMLElement | null = null;
 let progressSectionEl: HTMLElement | null = null;
@@ -37,35 +36,8 @@ let failedDetailItems: FailedItemDetail[] = [];
 let detailsExpanded = false;
 let removeTimer: ReturnType<typeof setTimeout> | null = null;
 
-function createProgressUI() {
-  if (container) return;
-  // 清理残留 DOM（内容脚本重新加载后部分变量重置但旧元素仍在页面上）
-  const stale = document.getElementById('__flash_sale_progress__');
-  if (stale) stale.remove();
-
-  container = document.createElement('div');
-  container.id = '__flash_sale_progress__';
-  Object.assign(container.style, {
-    position: 'fixed',
-    right: '0',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    zIndex: '99999',
-    background: 'rgba(255,255,255,0.92)',
-    backdropFilter: 'blur(8px)',
-    WebkitBackdropFilter: 'blur(8px)',
-    border: '1px solid #e5e7eb',
-    borderRight: 'none',
-    borderRadius: '8px 0 0 8px',
-    padding: '14px 18px',
-    minWidth: '190px',
-    boxShadow: '-2px 2px 12px rgba(0,0,0,0.08)',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    fontSize: '13px',
-    color: '#374151',
-    lineHeight: '1.5',
-    transition: 'opacity 0.4s ease',
-  });
+function buildProgressSection() {
+  if (!progressSectionEl || headerEl) return; // 已构建
 
   // 标题
   headerEl = document.createElement('div');
@@ -76,7 +48,7 @@ function createProgressUI() {
     marginBottom: '10px',
     color: '#1f2937',
   });
-  container.appendChild(headerEl);
+  progressSectionEl.appendChild(headerEl);
 
   // 成功/失败行
   const row = document.createElement('div');
@@ -89,13 +61,12 @@ function createProgressUI() {
 
   successEl = document.createElement('span');
   successEl.innerHTML = '成功: <strong style="color:#16a34a">0</strong>';
-
   failedEl = document.createElement('span');
   failedEl.innerHTML = '失败: <strong style="color:#dc2626">0</strong>';
 
   row.appendChild(successEl);
   row.appendChild(failedEl);
-  container.appendChild(row);
+  progressSectionEl.appendChild(row);
 
   // 元信息行
   metaEl = document.createElement('div');
@@ -104,7 +75,7 @@ function createProgressUI() {
     color: '#6b7280',
     marginBottom: '8px',
   });
-  container.appendChild(metaEl);
+  progressSectionEl.appendChild(metaEl);
 
   // 进度条
   const track = document.createElement('div');
@@ -125,7 +96,7 @@ function createProgressUI() {
   });
 
   track.appendChild(barEl);
-  container.appendChild(track);
+  progressSectionEl.appendChild(track);
 
   // 失败详情切换按钮（默认隐藏）
   toggleBtnEl = document.createElement('button');
@@ -151,7 +122,7 @@ function createProgressUI() {
     detailsExpanded = !detailsExpanded;
     renderFailedDetails();
   });
-  container.appendChild(toggleBtnEl);
+  progressSectionEl.appendChild(toggleBtnEl);
 
   // 失败详情列表容器（默认隐藏）
   detailsContainerEl = document.createElement('div');
@@ -164,7 +135,7 @@ function createProgressUI() {
     border: '1px solid #fecaca',
     background: '#fff',
   });
-  container.appendChild(detailsContainerEl);
+  progressSectionEl.appendChild(detailsContainerEl);
 
   // 停止按钮
   stopBtnEl = document.createElement('button');
@@ -192,9 +163,7 @@ function createProgressUI() {
     }
     browser.runtime.sendMessage({ type: 'STOP_ENABLE' }).catch(() => {});
   });
-  container.appendChild(stopBtnEl);
-
-  document.body.appendChild(container);
+  progressSectionEl.appendChild(stopBtnEl);
 }
 
 function renderFailedDetails() {
@@ -233,11 +202,18 @@ function renderFailedDetails() {
 }
 
 function updateProgress(data: ProgressData, failedDetails?: FailedItemDetail[]) {
-  if (!container) createProgressUI();
+  createPanel();
+  buildProgressSection();
+  if (progressSectionEl) progressSectionEl.style.display = 'block';
 
   failedDetailItems = failedDetails || [];
   renderFailedDetails();
 
+  if (stopBtnEl) stopBtnEl.style.display = '';
+  if (headerEl) {
+    headerEl.textContent = '🚀 限时特卖进度';
+    headerEl.style.color = '#1f2937';
+  }
   if (successEl) {
     successEl.innerHTML = `成功: <strong style="color:#16a34a">${data.successSkus}</strong>`;
   }
@@ -251,11 +227,16 @@ function updateProgress(data: ProgressData, failedDetails?: FailedItemDetail[]) 
     const pct = Math.round((data.successSkus / data.totalSkus) * 100);
     barEl.style.width = `${Math.min(pct, 100)}%`;
   }
+
+  // 清除旧的自动消失定时器
+  if (removeTimer) clearTimeout(removeTimer);
+  removeTimer = null;
 }
 
 function showComplete(data: ProgressData, failedDetails?: FailedItemDetail[]) {
-  if (!container) return;
+  if (!progressSectionEl || !headerEl) return;
 
+  progressSectionEl.style.display = 'block';
   failedDetailItems = failedDetails || [];
   renderFailedDetails();
 
@@ -281,20 +262,29 @@ function showComplete(data: ProgressData, failedDetails?: FailedItemDetail[]) {
   // 隐藏停止按钮（已完成）
   if (stopBtnEl) stopBtnEl.style.display = 'none';
 
-  // 3 秒后淡出移除
+  // 3 秒后淡出进度区域
   if (removeTimer) clearTimeout(removeTimer);
   removeTimer = setTimeout(() => {
-    if (container) {
-      container.style.opacity = '0';
-      setTimeout(() => {
-        if (container?.parentNode) container.parentNode.removeChild(container);
-        container = null;
-        successEl = null;
-        failedEl = null;
-        metaEl = null;
-        barEl = null;
-        headerEl = null;
-      }, 400);
+    if (progressSectionEl) {
+      progressSectionEl.style.display = 'none';
+    }
+    // 若无其他区域活跃则移除面板
+    const autoVisible = autoSectionEl && autoSectionEl.style.display !== 'none';
+    const copyVisible = copySectionEl && copySectionEl.style.display !== 'none';
+    if (!autoVisible && !copyVisible && panelContainer?.parentNode) {
+      panelContainer.parentNode.removeChild(panelContainer);
+      panelContainer = null;
+      autoSectionEl = null;
+      progressSectionEl = null;
+      copySectionEl = null;
+      successEl = null;
+      failedEl = null;
+      metaEl = null;
+      barEl = null;
+      headerEl = null;
+      stopBtnEl = null;
+      toggleBtnEl = null;
+      detailsContainerEl = null;
     }
   }, 3000);
 }
@@ -492,11 +482,9 @@ function normalizeImageUrl(image: string): string {
 // ===== Unified Panel =====
 function createPanel() {
   if (panelContainer) return;
-  // 清理旧元素
-  ['__flash_sale_progress__', '__flash_sale_copy_progress__'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.remove();
-  });
+  // 清理残留 DOM（内容脚本重新加载后部分变量重置但旧元素仍在页面上）
+  const stale = document.getElementById('__flash_sale_panel__');
+  if (stale) stale.remove();
 
   panelContainer = document.createElement('div');
   panelContainer.id = '__flash_sale_panel__';

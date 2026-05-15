@@ -7,8 +7,24 @@ interface AuthData {
   user: { id: number; email: string; role: string; autoModeEnabled: number; trialUsed: number; trialEnabled: number };
 }
 
+const _fallbackUrl = import.meta.env.VITE_BACKEND_FALLBACK_URL || '';
+
 let _baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5724';
 let _auth: AuthData | null = null;
+
+function tryFetch(url: string, init?: RequestInit): Promise<Response> {
+  // 先尝试用主域名请求
+  return fetch(url, init).catch((primaryErr) => {
+    if (!_fallbackUrl) throw primaryErr;
+    const fallbackUrl = url.replace(_baseUrl, _fallbackUrl);
+    console.warn('[backend-api] 主域名请求失败，尝试 IP 直连:', fallbackUrl);
+    // IP 直连兜底
+    return fetch(fallbackUrl, init).catch(() => {
+      // 兜底也失败了，抛原始错误（主域名的错误信息对用户更有意义）
+      throw primaryErr;
+    });
+  });
+}
 
 export function getBaseUrl() {
   return _baseUrl;
@@ -113,7 +129,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
   let response: Response;
   try {
-    response = await fetch(`${_baseUrl}${path}`, {
+    response = await tryFetch(`${_baseUrl}${path}`, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
@@ -123,8 +139,13 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   }
 
   if (response.status === 401) {
+    let errorMsg = '认证已过期，请重新登录';
+    try {
+      const data = await response.json();
+      if (data.error) errorMsg = data.error;
+    } catch {}
     await clearAuth();
-    throw new Error('认证已过期，请重新登录');
+    throw new Error(errorMsg);
   }
 
   if (!response.ok) {
@@ -242,7 +263,7 @@ export async function getAdminAnalyticsEvents(type?: string) {
 // ===== Health Check =====
 
 export async function healthCheck(): Promise<void> {
-  const response = await fetch(`${_baseUrl}/api/health`);
+  const response = await tryFetch(`${_baseUrl}/api/health`);
   if (!response.ok) {
     throw new Error(`后端返回错误状态 (HTTP ${response.status})`);
   }

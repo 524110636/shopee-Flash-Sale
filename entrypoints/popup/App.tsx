@@ -46,7 +46,7 @@ export default function App() {
     hasScheduledCopy, checkScheduledCopy, triggerScheduledCopyNow,
     _completedCopyInfo, acknowledgeCompletedCopy,
     autoModeActive, autoModeStatus, enterAutoMode, exitAutoMode,
-    autoModeDeniedMessage, clearAutoModeDeniedMessage,
+    showAutoModeUpgradeModal, clearAutoModeDeniedMessage,
     trialExpiredBanner, dismissTrialExpiredBanner,
     loadAutoModeStatus,
     oneDaySkuSelectedIds, oneDaySkuFlow,
@@ -301,17 +301,68 @@ export default function App() {
           <AuthPanel />
           {isLoggedIn && <StoreStatus />}
 
-          {autoModeDeniedMessage && (
-            <div className="mx-4 mt-2 p-2.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded flex items-center justify-between">
-              <span>{autoModeDeniedMessage}</span>
-              <button
-                className="ml-2 text-amber-500 hover:text-amber-700 shrink-0"
-                onClick={clearAutoModeDeniedMessage}
-              >
-                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
+          {showAutoModeUpgradeModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              <div className="mx-4 w-full max-w-sm bg-white rounded-xl shadow-2xl overflow-hidden">
+                {/* 头部 */}
+                <div className="bg-gradient-to-r from-shopee-brand to-orange-500 px-5 py-4">
+                  <h3 className="text-base font-bold text-white">开通自动模式，效率提升10倍</h3>
+                  <p className="mt-1 text-xs text-white/80">解放双手，让插件替你完成重复操作</p>
+                  <p className="mt-1 text-xs text-white/80">只需开通一次，永久使用自动模式，不限店铺，不限数量</p>
+                </div>
+                {/* 内容 */}
+                <div className="px-5 py-4 space-y-3">
+                  <div className="flex gap-2.5">
+                    <span className="mt-0.5 text-sm shrink-0">🔄</span>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-800">全自动监控</p>
+                      <p className="text-[11px] text-gray-500">无需手动刷新，24小时自动检测限时特卖场次，活动一出现立即抢占</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2.5">
+                    <span className="mt-0.5 text-sm shrink-0">📋</span>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-800">智能复制模板</p>
+                      <p className="text-[11px] text-gray-500">一键复用已有活动配置，批量创建新场次商品，告别重复操作</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2.5">
+                    <span className="mt-0.5 text-sm shrink-0">⏰</span>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-800">定时任务调度</p>
+                      <p className="text-[11px] text-gray-500">支持提前创建空活动 + 到点自动提交，精准卡位秒杀时段</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2.5">
+                    <span className="mt-0.5 text-sm shrink-0">🔧</span>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-800">批量一键修复</p>
+                      <p className="text-[11px] text-gray-500">自动为全场商品添加次日达SKU，同步处理折扣移除与恢复</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2.5">
+                    <span className="mt-0.5 text-sm shrink-0">📊</span>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-800">实时进度追踪</p>
+                      <p className="text-[11px] text-gray-500">可视化展示每一步操作状态，异常自动重试，无需人工盯屏</p>
+                    </div>
+                  </div>
+                </div>
+                {/* 底部 */}
+                <div className="px-5 pb-4 space-y-2.5">
+                  <p className="text-[11px] text-center text-gray-400">
+                    如需升级套餐，请联系客服或管理员
+                  </p>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full bg-shopee-brand hover:bg-shopee-brand/90"
+                    onClick={clearAutoModeDeniedMessage}
+                  >
+                    我知道了
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -491,7 +542,7 @@ export default function App() {
                   <p className="text-sm font-bold text-red-700">试用已到期</p>
                   <p className="mt-0.5 text-xs text-red-600">{trialExpiredBanner}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    如需继续使用，请联系管理员升级套餐。升级后管理员将为您关闭试用限制，即可正常使用。
+                    如需继续使用，请联系管理员升级套餐。升级后即可畅享无限限时特卖，快速增长店铺业绩。
                   </p>
                 </div>
                 <button
@@ -873,7 +924,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* Wizard Phase 2: 选择闪购 */}
+              {/* Wizard Phase 2: 选择限时特卖 */}
               {oneDaySkuFlow.phase === 'selecting_flash_sale' && (
                 <div className="space-y-2 rounded border border-blue-200 bg-blue-50/60 px-2 py-2">
                   <div className="text-[11px] font-medium text-blue-900">选择目标限时特卖</div>
@@ -916,7 +967,7 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* 已有闪购列表 */}
+                  {/* 已有限时特卖列表 */}
                   {flashSaleList.filter(s => s.status === 0 || s.status === 1).length > 0 && (
                     <div className="space-y-1">
                       <div className="text-[10px] text-blue-700">添加到已有场次：</div>
@@ -927,23 +978,28 @@ export default function App() {
                           const now = Math.floor(Date.now() / 1000);
                           const isActive = now >= sale.start_time && now < sale.end_time;
                           const isUpcoming = sale.start_time > now;
+                          const isEnded = !isActive && !isUpcoming;
                           return (
-                            <div key={sale.flash_sale_id} className="flex items-center gap-1">
+                            <div key={sale.flash_sale_id} className={`flex items-center gap-1 ${isEnded ? 'opacity-50 pointer-events-none' : ''}`}>
                               <div className="flex-1 min-w-0 rounded border border-blue-200 bg-white px-2 py-1.5">
                                 <div className="text-[11px] font-medium truncate">{sale.name || `限时特卖 #${sale.flash_sale_id}`}</div>
                                 <div className="text-[10px] text-muted-foreground">
                                   {fmtTime(sale.start_time)}
-                                  {isActive ? <span className="text-shopee-green font-medium"> 进行中</span> : <span className="text-blue-600"> 即将开始</span>}
+                                  {isActive && <span className="text-shopee-green font-medium"> 进行中</span>}
+                                  {isUpcoming && <span className="text-blue-600"> 即将开始</span>}
+                                  {isEnded && <span className="text-gray-400"> 已结束</span>}
                                 </div>
                               </div>
-                              <Button
-                                size="sm"
-                                className="h-7 shrink-0 px-2 text-[10px] bg-green-600 hover:bg-green-700 text-white"
-                                onClick={() => addToExistingFlashSale(sale.flash_sale_id)}
-                              >
-                                立即加入
-                              </Button>
-                              {isUpcoming && (
+                              {!isEnded && (
+                                <Button
+                                  size="sm"
+                                  className="h-7 shrink-0 px-2 text-[10px] bg-green-600 hover:bg-green-700 text-white"
+                                  onClick={() => addToExistingFlashSale(sale.flash_sale_id)}
+                                >
+                                  立即加入
+                                </Button>
+                              )}
+                              {isUpcoming && !isEnded && (
                                 <Button
                                   size="sm"
                                   variant="outline"
@@ -1027,20 +1083,35 @@ export default function App() {
 
                   {/* 统一的开始按钮 */}
                   {phase3Slots && (
-                    <Button
-                      size="sm"
-                      className="w-full h-8 text-xs bg-shopee-brand hover:bg-shopee-brand/90 text-white disabled:opacity-50"
-                      disabled={!selectedWizardSlotId || isEnabling || oneDaySkuFlow.running}
-                      onClick={() => {
-                        const slot = phase3Slots.find(s => s.timeslot_id === selectedWizardSlotId);
-                        if (!slot) return;
-                        const am = Math.max(0, parseInt(wizardAdvanceMin) || 0);
-                        const dm = Math.max(1, parseInt(wizardDelayMin) || 5);
-                        createNewFlashSaleAndAdd(slot.timeslot_id, slot.start_time, am, dm);
-                      }}
-                    >
-                      {selectedWizardSlotId ? '开始' : '请先选择一个场次'}
-                    </Button>
+                    <div className="space-y-1">
+                      <Button
+                        size="sm"
+                        className="w-full h-8 text-xs bg-shopee-brand hover:bg-shopee-brand/90 text-white disabled:opacity-50"
+                        disabled={!selectedWizardSlotId || isEnabling || oneDaySkuFlow.running}
+                        onClick={() => {
+                          const slot = phase3Slots.find(s => s.timeslot_id === selectedWizardSlotId);
+                          if (!slot) return;
+                          const am = Math.max(0, parseInt(wizardAdvanceMin) || 0);
+                          const dm = Math.max(1, parseInt(wizardDelayMin) || 5);
+                          createNewFlashSaleAndAdd(slot.timeslot_id, slot.start_time, am, dm);
+                        }}
+                      >
+                        {selectedWizardSlotId ? '开始' : '请先选择一个场次'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full h-6 text-[10px] border-dashed border-gray-300 text-gray-500 hover:bg-gray-50"
+                        disabled={!selectedWizardSlotId || isEnabling || oneDaySkuFlow.running}
+                        onClick={() => {
+                          const slot = phase3Slots.find(s => s.timeslot_id === selectedWizardSlotId);
+                          if (!slot) return;
+                          createNewFlashSaleAndAdd(slot.timeslot_id, Math.floor(Date.now() / 1000), 0, 0);
+                        }}
+                      >
+                        调试: 立即创建并提交（跳过等待）
+                      </Button>
+                    </div>
                   )}
 
 
@@ -1598,6 +1669,7 @@ export default function App() {
                   '广告投放自动优化引擎',
                   '运营数据可视化报表',
                   '各类重复流程自动化定制',
+                  '出售本扩展所有源代码：自己轻松构建实现盈利'
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-sm">
                     <span className="w-5 h-5 rounded-full bg-shopee-brand/10 text-shopee-brand flex items-center justify-center shrink-0 mt-0.5">

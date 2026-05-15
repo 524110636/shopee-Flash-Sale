@@ -52,7 +52,7 @@ stores.post('/validate', async (c) => {
 
   // 2. 检查试用限制（admin 不受限，trialEnabled=0 则永久关闭试用检查）
   if (userRecord[0].role !== 'admin' && userRecord[0].trialEnabled !== 0 && userRecord[0].trialUsed >= 1) {
-    return c.json({ error: '试用已结束，请联系管理员升级套餐' }, 403);
+    return c.json({ error: '如需继续使用，请联系管理员升级套餐。升级后即可畅享无限限时特卖，快速增长店铺业绩。' }, 403);
   }
 
   // 3. 检查该店铺是否仍绑定在当前用户下且绑定有效

@@ -127,7 +127,7 @@ interface AppState {
   autoModeStatus: AutoModeStatus | null;
   autoModeLogs: AutoModeLog[];
   firstSelectedActivity: { flashSaleId: number; flashSaleName: string } | null;
-  autoModeDeniedMessage: string;
+  showAutoModeUpgradeModal: boolean;
 
   // 后端管理认证状态
   isLoggedIn: boolean;
@@ -335,7 +335,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   autoModeStatus: null,
   autoModeLogs: [],
   firstSelectedActivity: null,
-  autoModeDeniedMessage: '',
+  showAutoModeUpgradeModal: false,
 
   // 后端管理初始值
   isLoggedIn: false,
@@ -1886,15 +1886,15 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   enterAutoMode: () => {
     if (!backendApi.canUseAutoMode()) {
-      set({ autoModeDeniedMessage: '该功能仅限高级用户，请联络管理员开通。' });
+      set({ showAutoModeUpgradeModal: true });
       return;
     }
-    set({ autoModeActive: true, autoModeDeniedMessage: '' });
+    set({ autoModeActive: true, showAutoModeUpgradeModal: false });
   },
 
   exitAutoMode: () => set({ autoModeActive: false }),
 
-  clearAutoModeDeniedMessage: () => set({ autoModeDeniedMessage: '' }),
+  clearAutoModeDeniedMessage: () => set({ showAutoModeUpgradeModal: false }),
 
   setFirstSelectedActivity: (sale: FlashSale) => {
     set({ firstSelectedActivity: { flashSaleId: sale.flash_sale_id, flashSaleName: sale.name } });
@@ -2132,9 +2132,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         const modelList = Array.isArray(productInfo.model_list) ? productInfo.model_list : [];
         console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: 获取商品信息成功，已有 ${modelList.length} 个SKU`);
 
-        // 检测是否已有任意 1 天备货 SKU，有则无需修复但仍进入后续编辑→闪购流程
+        // 检测是否已有任意 1 天备货 SKU，有则无需修复但仍进入后续编辑→限时特卖流程
         if (hasAnyOneDayDeliverySku(modelList)) {
-          console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: ⏭️ 已有1天备货SKU，无需修复，直接进入编辑→闪购`);
+          console.log(`[一键修复] ${i + 1}/${selectedProducts.length} ${product.name}: ⏭️ 已有1天备货SKU，无需修复，直接进入编辑→限时特卖`);
           const existingRatio = getDiscountRatio(modelList);
           if (existingRatio !== null) collectedRatios.push(existingRatio);
           nextItems[i] = {
@@ -2906,7 +2906,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         ...state.oneDaySkuFlow,
         phase: 'success' as const,
         canStartFlashSale: false,
-        message: state.oneDaySkuFlow.message.replace('，请选择目标限时特卖', '').replace('，可选择开启闪购', ''),
+        message: state.oneDaySkuFlow.message.replace('，请选择目标限时特卖', '').replace('，可选择开启限时特卖', ''),
       },
     }));
   },
@@ -2980,7 +2980,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       return;
     }
 
-    // 预验证 1: 检查闪购活动是否已结束
+    // 预验证 1: 检查限时特卖活动是否已结束
     const targetSale = state.flashSaleList.find(s => s.flash_sale_id === flashSaleId);
     if (targetSale && Math.floor(Date.now() / 1000) >= targetSale.end_time) {
       set({
@@ -3147,6 +3147,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ oneDaySkuFlow: { ...get().oneDaySkuFlow, message: '正在创建新的限时特卖场次...' } });
 
     try {
+      // 校验店铺访问权限（含试用限制），在创建限时特卖前拦截
+      await backendApi.validateShopAccess(spcCds, 'wizard_flow');
       const now = Math.floor(Date.now() / 1000);
       const createTime = advanceMin > 0 ? slotStartTime - advanceMin * 60 : now;
 
@@ -3179,7 +3181,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         const createUrl = `https://seller.shopee.tw/api/marketing/v4/shop_flash_sale/set_shop_flash_sale/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`;
         const createResp = await injectedFetch<any>(createUrl, 'POST', { time_slot_id: timeSlotId });
         const newFlashSaleId = createResp?.data?.flash_sale_id;
-        if (!newFlashSaleId) throw new Error(createResp?.msg || '创建闪购场次失败');
+        if (!newFlashSaleId) throw new Error(createResp?.msg || '创建限时特卖场次失败');
 
         // 设置预置商品数据，让 loadFlashSaleProducts 能找到（空活动 API 返回无商品）
         set({
@@ -3238,7 +3240,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         oneDaySkuFlow: {
           ...get().oneDaySkuFlow,
           phase: 'failed',
-          error: `创建闪购失败: ${errMsg}`,
+          error: `创建限时特卖失败: ${errMsg}`,
           canStartFlashSale: false,
         },
       });
