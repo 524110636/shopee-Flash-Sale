@@ -121,6 +121,7 @@ export default [
         HTMLTableCaptionElement: "readonly",
         KeyboardEvent: "readonly",
         MouseEvent: "readonly",
+        atob: "readonly",
         TextEncoder: "readonly",
         TextDecoder: "readonly",
         RequestInit: "readonly",

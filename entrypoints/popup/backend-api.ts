@@ -19,24 +19,61 @@ export function setBaseUrl(url: string) {
 }
 
 export function getAuthUser() {
-  return _auth?.user ?? null;
+  if (!_auth) return null;
+  if (isTokenExpired(_auth.token)) return null;
+  return _auth.user;
 }
 
 export function getToken() {
   return _auth?.token ?? null;
 }
 
+function base64UrlDecode(str: string): string {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  return atob(str);
+}
+
+function isValidJwtStructure(token: string): boolean {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+    const payload = JSON.parse(base64UrlDecode(parts[1]));
+    return typeof payload.userId === 'number'
+      && typeof payload.email === 'string'
+      && typeof payload.role === 'string'
+      && typeof payload.exp === 'number'
+      && typeof payload.iat === 'number';
+  } catch {
+    return false;
+  }
+}
+
+function isTokenExpired(token: string): boolean {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+    const payload = JSON.parse(base64UrlDecode(parts[1]));
+    return payload.exp && payload.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+}
+
 export function isLoggedIn() {
-  return _auth !== null;
+  if (!_auth) return false;
+  if (isTokenExpired(_auth.token)) return false;
+  return true;
 }
 
 export function isAdmin() {
+  if (!isLoggedIn()) return false;
   return _auth?.user?.role === 'admin';
 }
 
 export function canUseAutoMode(): boolean {
-  if (!_auth?.user) return false;
-  return _auth.user.role === 'admin' || _auth.user.autoModeEnabled === 1;
+  if (!isLoggedIn()) return false;
+  return _auth!.user.role === 'admin' || _auth!.user.autoModeEnabled === 1;
 }
 
 export async function loadAuthFromStorage() {
@@ -44,10 +81,17 @@ export async function loadAuthFromStorage() {
     const result = await browser.storage.local.get(STORAGE_KEY);
     const data = result[STORAGE_KEY] as AuthData | undefined;
     if (data?.token && data?.user) {
+      if (!isValidJwtStructure(data.token)) {
+        console.warn('[backend-api] token 结构无效，已清除');
+        await browser.storage.local.remove(STORAGE_KEY);
+        return false;
+      }
       _auth = data;
       return true;
     }
-  } catch {}
+  } catch (e) {
+    console.error('[backend-api] loadAuthFromStorage 失败:', e);
+  }
   return false;
 }
 
@@ -75,8 +119,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch (e: any) {
-    // fetch 网络错误（后端未启动、DNS 失败、连接被拒绝等）
-    throw new Error(`无法连接后端服务 (${_baseUrl})，请确认后端已启动: ${e.message}`, { cause: e });
+    throw new Error('无法连接后端服务，请确认后端已启动', { cause: e });
   }
 
   if (response.status === 401) {
@@ -84,10 +127,23 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     throw new Error('认证已过期，请重新登录');
   }
 
-  const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.error || `请求失败 (${response.status})`);
+    let errorMsg: string;
+    try {
+      const contentType = response.headers.get('Content-Type') || '';
+      if (contentType.includes('application/json')) {
+        const errorData = await response.json();
+        errorMsg = errorData.error || `请求失败 (${response.status})`;
+      } else {
+        errorMsg = `请求失败 (${response.status})`;
+      }
+    } catch {
+      errorMsg = `请求失败 (${response.status})`;
+    }
+    throw new Error(errorMsg);
   }
+
+  const data = await response.json();
   return data as T;
 }
 

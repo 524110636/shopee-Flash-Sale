@@ -135,6 +135,9 @@ interface AppState {
   backendUrl: string;
   storeBindings: BackendStoreBinding[];
   isCheckingAuth: boolean;
+  backendUnreachable: boolean;
+  authError: string | null;
+  storeBindingsError: string | null;
 
   // 当前店铺信息（从 login API 获取）
   shopId: number | null;
@@ -340,6 +343,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   backendUrl: import.meta.env.VITE_BACKEND_URL || 'http://localhost:5724',
   storeBindings: [],
   isCheckingAuth: false,
+  backendUnreachable: false,
+  authError: null,
+  storeBindingsError: null,
 
   // 当前店铺信息初始值
   shopId: null,
@@ -2091,7 +2097,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         running: true,
         currentIndex: 0,
         total: selectedProducts.length,
-        message: '正在检查专用 1 天备货 SKU...',
+        message: '正在优化商品...',
         error: null,
         items: initialItems,
         canStartFlashSale: false,
@@ -2111,7 +2117,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           ...state2.oneDaySkuFlow,
           phase: 'preparing_sku',
           currentIndex: i + 1,
-          message: `获取商品信息 ${i + 1}/${selectedProducts.length}: ${product.name}`,
+          message: `正在优化商品 (${i + 1}/${selectedProducts.length})...`,
         },
       }));
 
@@ -2182,7 +2188,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             oneDaySkuFlow: {
               ...state2.oneDaySkuFlow,
               phase: 'removing_discount',
-              message: `移除折扣活动 ${i + 1}/${selectedProducts.length}: ${product.name}`,
+              message: `正在优化商品 (${i + 1}/${selectedProducts.length})...`,
             },
           }));
 
@@ -2228,7 +2234,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           oneDaySkuFlow: {
             ...state2.oneDaySkuFlow,
             phase: 'publishing_product',
-            message: `发布商品 ${i + 1}/${selectedProducts.length}: ${product.name}`,
+            message: `正在优化商品 (${i + 1}/${selectedProducts.length})...`,
           },
         }));
 
@@ -2253,7 +2259,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             oneDaySkuFlow: {
               ...state2.oneDaySkuFlow,
               phase: 'searching_discount',
-              message: `搜索折扣活动 ${i + 1}/${selectedProducts.length}: ${product.name}`,
+              message: `正在优化商品 (${i + 1}/${selectedProducts.length})...`,
             },
           }));
 
@@ -2273,7 +2279,7 @@ export const useAppStore = create<AppState>((set, get) => ({
               oneDaySkuFlow: {
                 ...state2.oneDaySkuFlow,
                 phase: 'removing_discount',
-                message: `移除折扣活动 ${i + 1}/${selectedProducts.length}: ${product.name}`,
+                message: `正在优化商品 (${i + 1}/${selectedProducts.length})...`,
               },
             }));
 
@@ -2308,7 +2314,7 @@ export const useAppStore = create<AppState>((set, get) => ({
                 oneDaySkuFlow: {
                   ...state2.oneDaySkuFlow,
                   phase: 'publishing_product',
-                  message: `重新发布商品 ${i + 1}/${selectedProducts.length}: ${product.name}`,
+                  message: `正在优化商品 (${i + 1}/${selectedProducts.length})...`,
                 },
               }));
               publishResult = await attemptPublish();
@@ -2382,7 +2388,7 @@ export const useAppStore = create<AppState>((set, get) => ({
               oneDaySkuFlow: {
                 ...state2.oneDaySkuFlow,
                 phase: 'restoring_discount',
-                message: `恢复折扣活动 ${i + 1}/${selectedProducts.length}: ${product.name}`,
+                message: `正在优化商品 (${i + 1}/${selectedProducts.length})...`,
               },
             }));
 
@@ -2580,18 +2586,35 @@ export const useAppStore = create<AppState>((set, get) => ({
       const hasAuth = await backendApi.loadAuthFromStorage();
       if (hasAuth) {
         try {
-          await backendApi.checkAdmin();
-          const user = backendApi.getAuthUser();
-          set({ isLoggedIn: true, authUser: user });
-          // 同步刷新店铺绑定（避免 UI 先渲染空列表导致误操作）
+          const adminData = await backendApi.checkAdmin();
+          const storedUser = backendApi.getAuthUser();
+          if (storedUser) {
+            set({
+              isLoggedIn: true,
+              authUser: {
+                ...storedUser,
+                autoModeEnabled: adminData.autoModeEnabled,
+                trialUsed: adminData.trialUsed,
+                trialEnabled: adminData.trialEnabled,
+              },
+              backendUnreachable: false,
+            });
+          }
           await get().refreshStoreBindings();
-        } catch {
-          // Token invalid or server unavailable — log out silently
-          await backendApi.clearAuth();
-          set({ isLoggedIn: false, authUser: null });
+        } catch (_e: any) {
+          if (!backendApi.isLoggedIn()) {
+            // 401 — auth was cleared by request()
+            set({ isLoggedIn: false, authUser: null });
+          } else {
+            // Network error — keep logged in, flag backend unreachable
+            set({ backendUnreachable: true });
+          }
         }
       }
-    } catch {}
+    } catch (e: any) {
+      console.error('[checkAuthOnStartup] 启动认证失败:', e);
+      set({ authError: e.message || '认证检查失败' });
+    }
     set({ isCheckingAuth: false });
   },
 
@@ -2611,9 +2634,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!backendApi.isLoggedIn()) return;
     try {
       const result = await backendApi.getStores();
-      set({ storeBindings: result.stores });
+      set({ storeBindings: result.stores, storeBindingsError: null });
     } catch {
-      // Server may be offline
+      if (!backendApi.isLoggedIn()) {
+        // 401 — auth was cleared by request(), sync state
+        set({ isLoggedIn: false, authUser: null, storeBindings: [] });
+      } else {
+        set({ storeBindingsError: '无法获取店铺绑定列表' });
+      }
     }
   },
 
@@ -2624,8 +2652,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       await backendApi.bindStore(state.spcCds, state.shopId ?? undefined, state.accountId ?? undefined, state.shopUsername || undefined);
       await get().refreshStoreBindings();
       return null;
-    } catch (e: any) {
-      return e.message || '绑定失败';
+    } catch (_e: any) {
+      if (!backendApi.isLoggedIn()) {
+        return '认证已过期，请重新登录';
+      }
+      return '绑定失败，请确认后端服务可用';
     }
   },
 

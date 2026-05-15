@@ -141,11 +141,11 @@ export default function App() {
   const oneDaySkuPhaseLabel = useMemo(() => {
     const labels: Record<string, string> = {
       idle: '待处理',
-      preparing_sku: '检查 SKU',
-      publishing_product: '发布商品',
-      searching_discount: '查询折扣',
-      removing_discount: '移除折扣',
-      restoring_discount: '恢复折扣',
+      preparing_sku: '优化中',
+      publishing_product: '优化中',
+      searching_discount: '优化中',
+      removing_discount: '优化中',
+      restoring_discount: '优化中',
       starting_flash_sale: '开启特卖',
       editing_params: '编辑参数',
       selecting_flash_sale: '选择场次',

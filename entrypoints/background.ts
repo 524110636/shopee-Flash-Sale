@@ -989,6 +989,16 @@ async function handleAutoModeCreate() {
     const { spcCds, spcCdsVer } = await getSpcCdsFromCookies();
     if (!spcCds) throw new Error('SPC_CDS 不存在，请确认已登录 seller.shopee.tw');
 
+    const autoValidation = await validateShopAccess(spcCds, 'auto_mode_create');
+    if (!autoValidation.allowed) {
+      status.lastError = `店铺验证失败: ${autoValidation.error}`;
+      status.isRunning = false;
+      status.phase = 'stopped';
+      await saveAutoModeStatus(status);
+      await logAutoMode('error', `店铺验证失败，自动模式已停止: ${autoValidation.error}`);
+      return;
+    }
+
     // 关闭进行中的活动
     const listData = await injectedFetch<any>(
       `${FLASH_SALE_API}/get_shop_flash_sale_list/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&offset=0&limit=50&type=0`
@@ -1478,20 +1488,23 @@ export default defineBackground({
             hasSpcCds: !!scCds,
             spcCdsPreview: scCds ? scCds.slice(0, 16) + '...' : '无',
           });
-          if (scCds) {
-            const scValidation = await validateShopAccess(scCds, 'scheduled_copy');
-            console.log('[bg:SCHEDULE_COPY] 校验结果:', { allowed: scValidation.allowed, error: scValidation.error || null });
-            if (!scValidation.allowed) {
-              console.error('[bg:SCHEDULE_COPY] ❌ 店铺验证失败:', scValidation.error);
-              await browser.storage.local.set({
-                _copyTaskStatus: { scheduled: true, executed: true, success: false, error: scValidation.error },
-              });
-              return { success: false, error: scValidation.error };
-            }
-            console.log('[bg:SCHEDULE_COPY] ✅ 店铺验证通过');
-          } else {
-            console.warn('[bg:SCHEDULE_COPY] ⚠️ 未找到 SPC_CDS，跳过店铺校验');
+          if (!scCds) {
+            console.error('[bg:SCHEDULE_COPY] ❌ 未找到 SPC_CDS，操作已取消');
+            await browser.storage.local.set({
+              _copyTaskStatus: { scheduled: true, executed: true, success: false, error: '未找到 SPC_CDS，操作已取消' },
+            });
+            return { success: false, error: '未找到 SPC_CDS，操作已取消' };
           }
+          const scValidation = await validateShopAccess(scCds, 'scheduled_copy');
+          console.log('[bg:SCHEDULE_COPY] 校验结果:', { allowed: scValidation.allowed, error: scValidation.error || null });
+          if (!scValidation.allowed) {
+            console.error('[bg:SCHEDULE_COPY] ❌ 店铺验证失败:', scValidation.error);
+            await browser.storage.local.set({
+              _copyTaskStatus: { scheduled: true, executed: true, success: false, error: scValidation.error },
+            });
+            return { success: false, error: scValidation.error };
+          }
+          console.log('[bg:SCHEDULE_COPY] ✅ 店铺验证通过');
 
           await browser.storage.local.set({
             _scheduledCopy: params,
@@ -2133,10 +2146,13 @@ export default defineBackground({
           }
 
           const { spcCds: cds, spcCdsVer: cdsVer } = await getSpcCdsFromCookies();
-          if (cds) {
-            params.spcCds = cds;
-            params.spcCdsVer = cdsVer;
+          if (!cds) {
+            console.error('[scheduled_copy_enable] ❌ 未找到 SPC_CDS，操作已取消');
+            await browser.storage.local.remove('_enableParams');
+            return;
           }
+          params.spcCds = cds;
+          params.spcCdsVer = cdsVer;
 
           await browser.storage.local.set({ _enableParams: params });
 
@@ -2148,11 +2164,13 @@ export default defineBackground({
             return;
           }
 
-          runEnableLoop(params).catch(err => {
+          try {
+            await runEnableLoop(params);
+            console.log('[bg:scheduled_copy_enable] 启用循环已启动');
+          } catch (err: any) {
             console.error('[scheduled_copy_enable] runEnableLoop 异常:', err);
-          });
+          }
           await browser.storage.local.remove('_enableParams');
-          console.log('[bg:scheduled_copy_enable] 启用循环已启动');
         } catch (e: any) {
           console.error('[bg:scheduled_copy_enable] 失败:', e.message);
         }
@@ -2170,10 +2188,13 @@ export default defineBackground({
           }
 
           const { spcCds: cds, spcCdsVer: cdsVer } = await getSpcCdsFromCookies();
-          if (cds) {
-            params.spcCds = cds;
-            params.spcCdsVer = cdsVer;
+          if (!cds) {
+            console.error('[bg:scheduled_enable] ❌ 未找到 SPC_CDS，操作已取消');
+            await browser.storage.local.remove(['_enableParams', '_scheduledEnable']).catch(() => {});
+            return;
           }
+          params.spcCds = cds;
+          params.spcCdsVer = cdsVer;
 
           // 校验店铺访问权限
           const validation = await validateShopAccess(params.spcCds, 'scheduled_enable');
@@ -2183,11 +2204,13 @@ export default defineBackground({
             return;
           }
 
-          runEnableLoop(params).catch(err => {
+          try {
+            await runEnableLoop(params);
+            console.log('[bg:scheduled_enable] 启用循环已启动');
+          } catch (err: any) {
             console.error('[bg:scheduled_enable] runEnableLoop 异常:', err);
-          });
+          }
           await browser.storage.local.remove(['_enableParams', '_scheduledEnable']).catch(() => {});
-          console.log('[bg:scheduled_enable] 启用循环已启动');
         } catch (e: any) {
           console.error('[bg:scheduled_enable] 失败:', e.message);
         }
@@ -2199,6 +2222,13 @@ export default defineBackground({
           const stored = await browser.storage.local.get('_wizardFlowParams');
           const params = stored._wizardFlowParams as { timeSlotId: number; enableFireTime: number; enableParams: any; cds: string; cdsVer: string } | undefined;
           if (!params) return;
+
+          const wizValidation = await validateShopAccess(params.cds, 'wizard_create');
+          if (!wizValidation.allowed) {
+            console.error('[bg:wizard_create] 店铺验证失败:', wizValidation.error);
+            await browser.storage.local.remove('_wizardFlowParams').catch(() => {});
+            return;
+          }
 
           // Step 1: 创建空活动
           const createData = await injectedFetch<any>(

@@ -175,10 +175,10 @@ auth.post('/login', async (c) => {
 auth.post('/check-admin', authMiddleware, async (c) => {
   const jwtUser = c.get('user');
   const db = getDb();
-  const userRecord = await db.select({ autoModeEnabled: users.autoModeEnabled, trialUsed: users.trialUsed, trialEnabled: users.trialEnabled })
+  const userRecord = await db.select({ role: users.role, autoModeEnabled: users.autoModeEnabled, trialUsed: users.trialUsed, trialEnabled: users.trialEnabled })
     .from(users).where(eq(users.id, jwtUser.userId)).limit(1);
   return c.json({
-    isAdmin: jwtUser.role === 'admin',
+    isAdmin: userRecord[0]?.role === 'admin',
     autoModeEnabled: userRecord[0]?.autoModeEnabled ?? 0,
     trialUsed: userRecord[0]?.trialUsed ?? 0,
     trialEnabled: userRecord[0]?.trialEnabled ?? 1,
