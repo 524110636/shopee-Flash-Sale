@@ -49,7 +49,9 @@ This creates the admin user (from `INIT_ADMIN_EMAIL`/`INIT_ADMIN_PASSWORD`) and 
 ## Project Structure
 
 ```
-entrypoints/                  # WXT entrypoints
+├── public/                     # WXT public assets (contact QR code, etc.)
+├── USER_MANUAL.md              # User manual (Feishu-style, Chinese)
+├── entrypoints/                  # WXT entrypoints
 ├── popup/                    # Popup UI (React, viewport=420px)
 │   ├── App.tsx               # Main React component (layout, conditional panels)
 │   ├── main.tsx              # React mount entry
@@ -68,7 +70,7 @@ components/
 ├── lib/
 │   └── utils.ts              # cn() utility
 └── product/                  # Business components
-    ├── AuthPanel.tsx          # Login/register with inline verification/settings UI (login gate)
+    ├── AuthPanel.tsx          # Login/register with inline verification/settings UI (login gate, terms of service modal)
     ├── StoreStatus.tsx        # Store binding status + bind button
     ├── AdminPanel.tsx         # Admin: user list, quota adjustment, analytics
     ├── AutoModePanel.tsx      # Auto mode panel
@@ -101,7 +103,7 @@ backend/                      # Standalone backend service
 │   ├── middleware/
 │   │   └── auth.ts           # JWT verification + admin role guard
 │   └── utils/
-│       ├── jwt.ts            # JWT sign/verify (jose, HS256, 7-day expiry)
+│       ├── jwt.ts            # JWT sign/verify (jose, HS256, 7-day expiry, rejects default JWT_SECRET at startup)
 │       └── code.ts           # 6-digit verification code generator (5-min expiry)
 ├── package.json
 └── tsconfig.json
@@ -111,18 +113,19 @@ backend/                      # Standalone backend service
 
 ### Authentication Flow
 1. User registers with email/username + password + **invite code** → backend validates code against `invite_codes` table (one-time use) → returns 6-digit verification code
-2. User enters code to verify → activates account (`isActive=1`)  
+2. User enters code → clicks verify button (manual; auto-verify removed to enforce terms agreement) → activates account (`isActive=1`)
 3. User logs in → receives JWT (7-day expiry, includes `trialUsed`, `autoModeEnabled`)
 4. Extension stores JWT in `chrome.storage.local` via `backend-api.ts`
 5. All subsequent API calls auto-attach `Authorization: Bearer` header
 6. On 401 response, auth is cleared and user is redirected to login
+7. **Terms of Service**: Registration requires explicit checkbox agreement (`agreedToTerms`). A ~1500-word terms document includes Shopee-specific disclaimers (traffic penalties, API instability) mixed into standard boilerplate — legally present but practically unread. Modal accessible via link in the checkbox label.
 
 ### Invite Code + Trial Limit
 - 管理员在 AdminPanel「邀请码」标签页生成一次性邀请码（格式 `INV-xxxxxxxx`）
 - 注册时需提供有效邀请码，使用后立即标记 `is_used=1`，同一邀请码不可重复使用
 - 管理员可删除未使用的邀请码，已使用的不可删除
 - 新用户 `trial_used = 0`、`trial_enabled = 1`（默认启用试用检查）
-- `trial_used >= 1` 的非管理员用户再次操作 → `403 "试用已结束，请联系管理员升级套餐"`
+- `trial_used >= 1` 的非管理员用户再次操作 → `403 "试用已结束，"`
 - 管理员（role=admin）不受试用限制
 - **`trialEnabled` 永久关闭试用**: 管理员在 AdminPanel 用户列表点击「关闭试用」→ `trialEnabled = 0`，该用户后续所有操作跳过试用检查（适用于已升级套餐的用户）。`trialEnabled=0` 时也不会自动标记 `trialUsed`
 - 管理员可「重置试用」（`trialUsed=0`）或「标记已用」（`trialUsed=1`）
@@ -149,13 +152,26 @@ backend/                      # Standalone backend service
 - Also allows `https://seller.shopee.tw`
 - No wildcard pattern; the function checks `origin.startsWith('chrome-extension://')`
 
+### Security Hardening (Anti-Cracking Phase 2)
+- **Client-side hardening**: `backend-api.ts` `request()` fails hard on all errors (no silent success paths). JWT structure validation (`isValidJwtStructure()`) checks 3-segment base64url format + required payload fields (`userId`, `email`, `role`, `exp`, `iat`). Token expiry checked in `isLoggedIn()` and `getAuthUser()`.
+- **Startup auth via backend**: `checkAuthOnStartup()` uses `checkAdmin()` response for mutable fields (`autoModeEnabled`, `trialUsed`, `trialEnabled`), not `getAuthUser()` storage data. Distinguishes 401 (clear auth) from network errors (`backendUnreachable` flag).
+- **Store binding hardening**: `refreshStoreBindings()` handles 401 by syncing auth/state to logged-out. `bindCurrentStore()` sanitizes error messages (no raw `e.message`).
+- **Background validation gap closure**: `wizard_create` alarm handler and `handleAutoModeCreate()` now call `validateShopAccess()` before Shopee API calls. `SCHEDULE_COPY`, `scheduled_copy_enable`, `scheduled_enable` handlers: spcCds missing → abort with error (was: skip validation). `runEnableLoop()` calls changed from fire-and-forget `.catch()` to `await` with try/catch.
+- **Backend**: `jwt.ts` rejects startup if `JWT_SECRET` matches `.env.example` default value. `auth.ts` `/check-admin` reads `users.role` from DB (not JWT claim) for `isAdmin` determination.
+- **Background backend URL**: `background.ts` `DEFAULT_BACKEND_URL` uses `import.meta.env.VITE_BACKEND_URL` (build-time replacement), so production builds automatically point to the correct server. Fallback is `http://localhost:5724` for dev.
+- **Backend port conflict**: `index.ts` server catches `EADDRINUSE` and auto-runs `npx kill-port` to free the port before re-listening.
+- **401 error passthrough**: `backend-api.ts` `request()` on 401 now reads `response.json()` first to extract the backend's `error` field (e.g. `"邮箱或密码错误"`). Falls back to `'认证已过期，请重新登录'` only when the response body is empty or unparseable. `clearAuth()` still called on all 401s.
+- **IP fallback for VPN users**: `backend-api.ts` `tryFetch()` wraps the primary `request()` call. On network error, retries with `_fallbackUrl` (from `VITE_BACKEND_FALLBACK_URL` env var, e.g. `http://43.99.86.228:5724`). Both URLs configured in `.env.example`.
+
 ## Login Gate (Extension)
 - `App.tsx` checks `isCheckingAuth` on mount → shows loading spinner
 - If `!isLoggedIn` → full-screen AuthPanel (login/register)
-- If logged in but no store bindings → blocking "请先绑定店铺" message over main features
+- If `!storeBindingsLoaded` → spinner with "正在加载店铺信息..." (prevents flash of unbound UI on slow networks)
+- If logged in but no store bindings → blocking "请先绑定店铺" message, or red error card if `storeBindingsError` is set with a retry button
 - If logged in + has bindings + current shop SPC_CDS/shop_id NOT in bindings → amber "当前店铺未绑定" hint (no longer a hard block)
 - Admin panel is accessible even without personal store bindings
 - `isCurrentStoreBound` uses `shopId` match first, falls back to `spcCds` match for legacy data
+- Diagnostic logging: `[init]` prefix in store.ts traces `checkAuthOnStartup` / `refreshStoreBindings` paths; `[render]` prefix in App.tsx traces render gate state changes
 
 ## Important Patterns
 
@@ -177,7 +193,7 @@ backend/                      # Standalone backend service
 - **`skipSkuKeys` in auto-mode**: `AutoModePanel` can detect undiscounted SKUs and let user skip them before starting. The `runEnableLoop` in background.ts filters out skipped SKUs via a `skipSet`
 - **Copy button visibility**: The "复制" button in the activity list uses filled brand color (`bg-shopee-brand text-white`) instead of outline, with a "新/待开启" badge for newly created activities
 - **No test files**: Testing is manual via Chrome extension reload
-- **One-day SKU feature**: `one-day-sku.ts` provides SKU builder functions for adding/updating a dedicated "批發客戶下訂-請勿下單" SKU with 1-day shipping. Full flow: `get_product_info` → `buildOneDaySkuProductInfo()` → search discounts → remove from discounts → `update_product_info` → re-fetch product info (with retry) → restore discounts. Runs in popup (not background) via `runOneDaySkuAndEnable()` in store.ts. Discount restore now applies to ALL products including the newly created SKUs. After fix, enters 3-phase wizard: `editing_params` (edit SKU params + global defaults) → `selecting_flash_sale` (pick existing flash sale or create new) → `starting_flash_sale` (submit via `addToExistingFlashSale` or `createNewFlashSaleAndAdd`). Discount rate is auto-detected from actual product discounts during the fix flow and synced to global `discountRate`.
+- **One-day SKU feature**: `one-day-sku.ts` provides SKU builder functions for adding/updating a dedicated "批發客戶下訂-請勿下單" SKU with 1-day shipping. Full flow: `get_product_info` → `buildOneDaySkuProductInfo()` → search discounts → remove from discounts → `update_product_info` → re-fetch product info (with retry) → restore discounts. **All user-facing progress messages are obfuscated** to generic "正在优化商品 (X/N)..." — phase labels (检查SKU/发布商品/查询折扣/移除折扣/恢复折扣) are all shown as "优化中". Technical details only appear in `[一键修复]` console logs for developer debugging. Runs in popup (not background) via `runOneDaySkuAndEnable()` in store.ts. Discount restore now applies to ALL products including the newly created SKUs. After fix, enters 3-phase wizard: `editing_params` (edit SKU params + global defaults, **green hint guides user to click product cards to edit prices/stock/limit**) → `selecting_flash_sale` (pick existing flash sale or create new) → `starting_flash_sale` (submit via `addToExistingFlashSale` or `createNewFlashSaleAndAdd`). Discount rate is auto-detected from actual product discounts during the fix flow and synced to global `discountRate`.
 - **Discount rate auto-detection**: During `runOneDaySkuAndEnable`, `collectedRatios: number[]` captures `getDiscountRatio()` from each product (both newly fixed and already-has-SKU). After the loop, if all ratios match, sets `discountRate` to that value; if different, uses the average. This ensures the post-fix wizard shows the actual product discount (e.g., 5.4折 → 54%) instead of the default 60%.
 - **Wizard post-fix phases**: `editing_params` shows fix results with editable global params (折扣率/库存/限购) and per-product SkuTable. `selecting_flash_sale` lists existing active/upcoming sales with "定时" button (calls `scheduleEnableForFlashSale`) and "加入" button (calls `addToExistingFlashSale`), plus time slot selection (via `fetchTimeSlots`) for creating new sales. Top of phase shows two timing inputs: `wizardAdvanceMin` (提前N分钟创建空活动) and `wizardDelayMin` (活动开始后N分钟提交商品). Slot list uses radio-style selection with a unified "开始" button. Debug button "立即创建 Demo" forces immediate creation+enable by passing `now` as slotStartTime with advanceMin=delayMin=0. `addToExistingFlashSale` now goes through Background SW `runEnableLoop` (not direct popup API call) with full retry/error handling. `createNewFlashSaleAndAdd` supports two-phase: when advanceMin>0, sends `SCHEDULE_WIZARD_FLOW` to background for deferred creation via `wizard_create` alarm, then `scheduled_enable` alarm for timed enable. Empty activity product display is handled by `_pendingFlashSaleData` (in-memory) and `_copiedSaleData` (storage) pre-population.
 - **First Use flow**: `FirstUseWarningModal` appears first (unless dismissed via "以后不再提示" checkbox, persisted in `_firstUseWarningDismissed` storage key), warning users to remove products from all promotional activities (multi-buy, free shipping, bundle, add-on) except discount promotions before using the plugin. After confirming, `FirstUseModal` opens for product selection. `FirstUseModal` lets users fetch all shop products via `search_product_list` API (paginated, `fetchShopProductsPage`), search by keyword, select up to 20 products, and trigger `runFirstUseFlow`. `runFirstUseFlow` converts `ShopProductListItem[]` to `ShopeeProduct[]` (with empty modelList), sets `oneDaySkuSelectedIds`, and auto-calls `runOneDaySkuAndEnable`. `getHighestModelPrice()` accepts optional `productInfoModels` param for when ShopeeProduct.modelList is empty (FirstUse scenario).
@@ -188,6 +204,14 @@ backend/                      # Standalone backend service
 - **Console logging**: Every step emits `[一键修复]` prefixed logs with product name, action, and result data for debugging in DevTools Console.
 - **Model count safety**: Shopee limits models to 100 per product. `buildOneDaySkuProductInfo()` checks `nextModelList.length + tierCombinations.length > 100` before creating new SKUs, throwing a clear error if exceeded.
 - **Stock extraction**: `extractSellableStock()` handles both `stock_setting_list` (request format) and `stock_detail` (response format) to extract sellable stock for new models.
+- **Content script unified floating panel**: `content.ts` uses a single `createPanel()` that builds three sections: `autoSectionEl` (auto mode status), `progressSectionEl` (enable progress, built lazily by `buildProgressSection()`), `copySectionEl` (copy countdown/progress). The old competing `createProgressUI()` that destroyed other sections was removed. `showComplete()` auto-hides the progress section after 3s and removes the full panel only when no other sections are visible. All three flows (manual enable, wizard enable, auto mode) now share the same floating panel.
+- **Auto mode real-time countdown**: `renderAutoSection()` renders a `#__auto_countdown__` element that ticks every second via `updateAutoCountdown()`, showing minutes:seconds remaining until `nextActionTime` (operation time) or `nextTargetTime` (flash sale start). Timer clears automatically when auto mode stops.
+- **Minimize/restore buttons**: Unified panel has a `−` minimize button (top-right). `toggleMinimize()` collapses the panel to a thin right-side strip showing `◀` arrow + one-line countdown/status summary, updating in real-time. Click the arrow to restore. Copy UI has separate `toggleCopyMinimize()` with the same behavior. `panelMinimized` / `copyMinimized` flags track state; `updateMinimizedContent()` / `updateCopyMinimizedContent()` refresh the compact display.
+- **`showComplete()` initialization fix**: `showComplete()` now calls `createPanel()` + `buildProgressSection()` before checking `headerEl`, preventing silent failure when `ENABLE_COMPLETE` arrives without a preceding `ENABLE_PROGRESS` (e.g., zero items or immediate error).
+- **Wizard duplicate-click prevention**: "立即加入"/"定时"/"开始"/"调试" buttons disabled when `isEnabling || oneDaySkuFlow.running || !!oneDaySkuFlow.message`. Store-level guards in `addToExistingFlashSale`, `scheduleEnableForFlashSale`, `createNewFlashSaleAndAdd` reject re-entry: `if (state.isEnabling || oneDaySkuFlow.running || oneDaySkuFlow.message) return`. `goToFlashSaleSelection` clears `message` and `error` so guide text doesn't block buttons.
+- **Minimize/restore copy visibility fix**: `toggleMinimize()` in content.ts now saves/restores `wasCopyVisible` alongside `wasAutoVisible` and `wasProgressVisible`, preventing copy section from staying hidden after expand.
+- **"使用说明" button**: Non-admin users see a "使用说明" button (left of "定制开发") that opens the Feishu user manual wiki in a new tab via `window.open()`.
+- **QR code contact modal**: "定制开发" modal contact section has a "查看二维码" button that opens a centered overlay showing `contact-qr.png` (作者微信二维码) from `public/`, using `browser.runtime.getURL()`.
 
 ## Backend API Endpoints
 
@@ -225,3 +249,51 @@ backend/                      # Standalone backend service
 - `tsconfig.json` (root): `strict=true`, `moduleResolution=Bundler`, `baseUrl=.`, `paths: @/* → ./*`
 - `tsconfig.json` (backend): `strict=true`, `moduleResolution=Bundler`, `outDir: ./dist`
 - `tailwind.config.ts`: Content paths `entrypoints/**/*.{ts,tsx}`, `components/**/*.{ts,tsx}`
+
+<!-- gitnexus:start -->
+# GitNexus — Code Intelligence
+
+This project is indexed by GitNexus as **limited-time-sale** (1779 symbols, 2799 relationships, 112 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+
+> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
+
+## Always Do
+
+- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
+- **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
+- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
+- When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
+- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
+
+## Never Do
+
+- NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
+- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
+- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
+- NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
+
+## Resources
+
+| Resource | Use for |
+|----------|---------|
+| `gitnexus://repo/limited-time-sale/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/limited-time-sale/clusters` | All functional areas |
+| `gitnexus://repo/limited-time-sale/processes` | All execution flows |
+| `gitnexus://repo/limited-time-sale/process/{name}` | Step-by-step execution trace |
+
+## CLI
+
+| Task | Read this skill file |
+|------|---------------------|
+| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
+| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
+| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
+| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
+| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
+| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+| Work in the Popup area (98 symbols) | `.claude/skills/generated/popup/SKILL.md` |
+| Work in the Product area (76 symbols) | `.claude/skills/generated/product/SKILL.md` |
+| Work in the Entrypoints area (55 symbols) | `.claude/skills/generated/entrypoints/SKILL.md` |
+| Work in the Ui area (16 symbols) | `.claude/skills/generated/ui/SKILL.md` |
+
+<!-- gitnexus:end -->

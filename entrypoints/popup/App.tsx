@@ -65,13 +65,14 @@ export default function App() {
   const [isStopping, setIsStopping] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showCustomDev, setShowCustomDev] = useState(false);
+  const [showQRCode, setShowQRCode] = useState(false);
   const [phase3Slots, setPhase3Slots] = useState<TimeSlot[] | null>(null);
   const [phase3SlotsLoading, setPhase3SlotsLoading] = useState(false);
   const [wizardEditProduct, setWizardEditProduct] = useState<ShopeeProduct | null>(null);
   const [wizardAdvanceMin, setWizardAdvanceMin] = useState('5');
   const [wizardDelayMin, setWizardDelayMin] = useState('5');
   const [selectedWizardSlotId, setSelectedWizardSlotId] = useState<number | null>(null);
-  const { checkAuthOnStartup, isLoggedIn, isCheckingAuth, storeBindings, shopId, pendingUndiscountedSkus, showUndiscountedModal } = useAppStore();
+  const { checkAuthOnStartup, isLoggedIn, isCheckingAuth, storeBindings, storeBindingsLoaded, storeBindingsError, shopId, pendingUndiscountedSkus, showUndiscountedModal } = useAppStore();
 
   // 检测当前店铺 SPC_CDS 是否在用户绑定列表中
   const isCurrentStoreBound = useMemo(() => {
@@ -236,6 +237,18 @@ export default function App() {
     }
   };
 
+  // 诊断：追踪初始化状态变化
+  useEffect(() => {
+    console.log('[render] App 渲染门控状态:', {
+      isCheckingAuth,
+      isLoggedIn,
+      storeBindingsLoaded,
+      storeBindingsCount: storeBindings.length,
+      storeBindingsError,
+      backendUnreachable: useAppStore.getState().backendUnreachable,
+    });
+  }, [isCheckingAuth, isLoggedIn, storeBindingsLoaded, storeBindings.length, storeBindingsError]);
+
   // 登录门控：未登录时只显示认证界面
   if (isCheckingAuth) {
     return (
@@ -252,6 +265,18 @@ export default function App() {
     return (
       <div className="w-[500px] min-h-[500px] bg-background flex items-center justify-center">
         <AuthPanel />
+      </div>
+    );
+  }
+
+  // 已登录但店铺绑定尚未加载完成 — 防止网络慢时闪现"请先绑定店铺"
+  if (!storeBindingsLoaded) {
+    return (
+      <div className="w-[500px] min-h-[500px] p-4 bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-6 h-6 border-2 border-shopee-brand border-t-transparent rounded-full mx-auto"></div>
+          <p className="mt-2 text-xs text-muted-foreground">正在加载店铺信息...</p>
+        </div>
       </div>
     );
   }
@@ -276,6 +301,14 @@ export default function App() {
               onClick={() => setShowAdminPanel(true)}
             >
               管理
+            </button>
+          )}
+          {!backendApi.isAdmin() && !autoModeActive && (
+            <button
+              className="text-[10px] px-2 py-1 rounded border border-white/40 text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+              onClick={() => window.open('https://pcn1rb88nrns.feishu.cn/wiki/S4lTwyMX3i1BndkJFdUcwhCvnBg?from=from_copylink', '_blank')}
+            >
+              使用说明
             </button>
           )}
           {!backendApi.isAdmin() && !autoModeActive && (
@@ -369,15 +402,35 @@ export default function App() {
           {isLoggedIn && storeBindings.filter(b => b.isActive).length === 0 && !showAdminPanel ? (
             <Card className="mx-4 mt-3">
               <CardContent className="py-8">
-                <div className="text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-shopee-brand-light flex items-center justify-center mx-auto">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EE4D2D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="12" cy="12" r="3"/>
-                    </svg>
+                {storeBindingsError ? (
+                  <div className="text-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
+                    </div>
+                    <div className="text-sm font-medium text-red-700">无法加载店铺绑定</div>
+                    <div className="text-xs text-muted-foreground max-w-[280px] mx-auto">{storeBindingsError}</div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => useAppStore.getState().refreshStoreBindings()}
+                    >
+                      重试
+                    </Button>
                   </div>
-                  <div className="text-sm font-medium text-shopee-brand">请先绑定店铺</div>
-                  <div className="text-xs text-muted-foreground max-w-[280px] mx-auto">使用扩展功能前需要先绑定一个 Shopee 店铺</div>
-                </div>
+                ) : (
+                  <div className="text-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-shopee-brand-light flex items-center justify-center mx-auto">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EE4D2D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </div>
+                    <div className="text-sm font-medium text-shopee-brand">请先绑定店铺</div>
+                    <div className="text-xs text-muted-foreground max-w-[280px] mx-auto">使用扩展功能前需要先绑定一个 Shopee 店铺</div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ) : isLoggedIn && isCurrentStoreBound === false && !showAdminPanel ? (
@@ -1689,6 +1742,19 @@ export default function App() {
                 <p className="text-sm text-amber-800 leading-relaxed">
                   限时特惠活动进行中，无论你遇到什么繁琐的运营难题，都可以告诉我们，我们将为你量身定制高效解决方案，助力店铺快速增长。联系方式：微信：aluvivip
                 </p>
+                <button
+                  className="mt-2 text-xs px-3 py-1.5 rounded border border-amber-400 text-amber-700 hover:bg-amber-100 transition-colors inline-flex items-center gap-1"
+                  onClick={() => setShowQRCode(true)}
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <rect x="7" y="7" width="3" height="3"/>
+                    <rect x="14" y="7" width="3" height="3"/>
+                    <rect x="7" y="14" width="3" height="3"/>
+                    <rect x="14" y="14" width="3" height="3"/>
+                  </svg>
+                  查看二维码
+                </button>
               </div>
               <button
                 className="w-full py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-shopee-brand to-orange-500 rounded-lg hover:opacity-90 transition-opacity shadow-md"
@@ -1697,6 +1763,31 @@ export default function App() {
                 我知道了
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showQRCode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowQRCode(false)}>
+          <div
+            className="bg-white rounded-xl shadow-2xl p-6 max-w-[92vw]"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-foreground">扫码添加作者微信</h3>
+              <button
+                className="text-muted-foreground hover:text-foreground text-lg leading-none"
+                onClick={() => setShowQRCode(false)}
+              >
+                ×
+              </button>
+            </div>
+            <img
+              src={browser.runtime.getURL('contact-qr.png')}
+              alt="作者微信二维码"
+              className="w-64 h-64 rounded-lg mx-auto"
+            />
+            <p className="text-center text-xs text-muted-foreground mt-3">微信：aluvivip</p>
           </div>
         </div>
       )}

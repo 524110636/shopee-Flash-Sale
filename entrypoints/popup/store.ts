@@ -134,6 +134,7 @@ interface AppState {
   authUser: BackendAuthState['user'];
   backendUrl: string;
   storeBindings: BackendStoreBinding[];
+  storeBindingsLoaded: boolean;
   isCheckingAuth: boolean;
   backendUnreachable: boolean;
   authError: string | null;
@@ -342,6 +343,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   authUser: null,
   backendUrl: import.meta.env.VITE_BACKEND_URL || 'http://localhost:5724',
   storeBindings: [],
+  storeBindingsLoaded: false,
   isCheckingAuth: false,
   backendUnreachable: false,
   authError: null,
@@ -2571,23 +2573,29 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   checkAuthOnStartup: async () => {
+    console.log('[init] checkAuthOnStartup 开始, isCheckingAuth=true');
     set({ isCheckingAuth: true });
     try {
       const defaultUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5724';
       const result = await browser.storage.local.get('backendUrl');
+      console.log('[init] backendUrl storage:', { stored: result.backendUrl, default: defaultUrl });
       if (result.backendUrl && result.backendUrl !== defaultUrl) {
-        // 用户手动设置过非默认地址，恢复该设置
         backendApi.setBaseUrl(result.backendUrl);
         set({ backendUrl: result.backendUrl });
+        console.log('[init] 使用自定义 backendUrl:', result.backendUrl);
       } else if (result.backendUrl === defaultUrl) {
-        // storage 中存的是旧默认值，清理掉（避免代码默认值变更后被覆盖）
         await browser.storage.local.remove('backendUrl');
+        console.log('[init] 清理旧默认 backendUrl');
       }
       const hasAuth = await backendApi.loadAuthFromStorage();
+      console.log('[init] loadAuthFromStorage:', hasAuth);
       if (hasAuth) {
+        console.log('[init] 有 auth, 开始 checkAdmin...');
         try {
           const adminData = await backendApi.checkAdmin();
+          console.log('[init] checkAdmin 成功:', { isAdmin: adminData.isAdmin, autoModeEnabled: adminData.autoModeEnabled, trialUsed: adminData.trialUsed, trialEnabled: adminData.trialEnabled });
           const storedUser = backendApi.getAuthUser();
+          console.log('[init] storedUser:', storedUser ? { email: storedUser.email, role: storedUser.role } : null);
           if (storedUser) {
             set({
               isLoggedIn: true,
@@ -2599,22 +2607,39 @@ export const useAppStore = create<AppState>((set, get) => ({
               },
               backendUnreachable: false,
             });
+            console.log('[init] isLoggedIn=true, backendUnreachable=false');
+          } else {
+            console.warn('[init] storedUser 为 null, 未设置 isLoggedIn');
           }
+          console.log('[init] 开始 refreshStoreBindings...');
           await get().refreshStoreBindings();
+          console.log('[init] refreshStoreBindings 完成');
         } catch (_e: any) {
+          console.error('[init] checkAdmin/refreshStoreBindings 失败:', _e?.message || _e);
           if (!backendApi.isLoggedIn()) {
-            // 401 — auth was cleared by request()
+            console.log('[init] 401 - 清除 auth');
             set({ isLoggedIn: false, authUser: null });
           } else {
-            // Network error — keep logged in, flag backend unreachable
-            set({ backendUnreachable: true });
+            console.log('[init] 网络错误 - backendUnreachable=true');
+            set({ backendUnreachable: true, storeBindingsLoaded: true });
           }
         }
+      } else {
+        console.log('[init] 无 auth, 跳过绑定加载');
       }
     } catch (e: any) {
-      console.error('[checkAuthOnStartup] 启动认证失败:', e);
-      set({ authError: e.message || '认证检查失败' });
+      console.error('[init] checkAuthOnStartup 外层异常:', e?.message || e);
+      set({ authError: e.message || '认证检查失败', storeBindingsLoaded: true });
     }
+    const finalState = get();
+    console.log('[init] checkAuthOnStartup 结束:', {
+      isCheckingAuth: false,
+      isLoggedIn: finalState.isLoggedIn,
+      storeBindingsLoaded: finalState.storeBindingsLoaded,
+      storeBindingsCount: finalState.storeBindings.length,
+      storeBindingsError: finalState.storeBindingsError,
+      backendUnreachable: finalState.backendUnreachable,
+    });
     set({ isCheckingAuth: false });
   },
 
@@ -2627,20 +2652,29 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   logoutUser: async () => {
     await backendApi.clearAuth();
-    set({ isLoggedIn: false, authUser: null, storeBindings: [] });
+    set({ isLoggedIn: false, authUser: null, storeBindings: [], storeBindingsLoaded: false });
   },
 
   refreshStoreBindings: async () => {
-    if (!backendApi.isLoggedIn()) return;
+    console.log('[init] refreshStoreBindings 进入, isLoggedIn:', backendApi.isLoggedIn());
+    if (!backendApi.isLoggedIn()) {
+      console.warn('[init] refreshStoreBindings 退出: 未登录');
+      return;
+    }
     try {
+      console.log('[init] 调用 getStores()...');
       const result = await backendApi.getStores();
-      set({ storeBindings: result.stores, storeBindingsError: null });
-    } catch {
+      console.log('[init] getStores() 成功, 返回', result.stores.length, '条绑定:', result.stores.map((s: any) => ({ id: s.id, shopId: s.shopId, isActive: s.isActive })));
+      set({ storeBindings: result.stores, storeBindingsError: null, storeBindingsLoaded: true });
+      console.log('[init] storeBindings 已设置, storeBindingsLoaded=true');
+    } catch (e: any) {
+      console.error('[init] getStores() 失败:', e?.message || e);
       if (!backendApi.isLoggedIn()) {
-        // 401 — auth was cleared by request(), sync state
-        set({ isLoggedIn: false, authUser: null, storeBindings: [] });
+        console.log('[init] getStores 401 - 清除 auth');
+        set({ isLoggedIn: false, authUser: null, storeBindings: [], storeBindingsLoaded: true });
       } else {
-        set({ storeBindingsError: '无法获取店铺绑定列表' });
+        console.log('[init] getStores 网络错误 - 设置 storeBindingsError');
+        set({ storeBindingsError: '无法获取店铺绑定列表', storeBindingsLoaded: true });
       }
     }
   },

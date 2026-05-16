@@ -44,6 +44,7 @@ let autoCountdownTimer: ReturnType<typeof setInterval> | null = null;
 let autoStatusData: any = null;
 let wasAutoVisible = false;
 let wasProgressVisible = false;
+let wasCopyVisible = false;
 
 function buildProgressSection() {
   if (!progressSectionEl || headerEl) return; // 已构建
@@ -755,6 +756,7 @@ function toggleMinimize() {
     // Save current visibility
     wasAutoVisible = autoSectionEl?.style.display === 'block';
     wasProgressVisible = progressSectionEl?.style.display === 'block';
+    wasCopyVisible = copySectionEl?.style.display === 'block';
 
     // Hide sections
     if (autoSectionEl) autoSectionEl.style.display = 'none';
@@ -775,6 +777,7 @@ function toggleMinimize() {
     // Restore sections
     if (autoSectionEl) autoSectionEl.style.display = wasAutoVisible ? 'block' : 'none';
     if (progressSectionEl) progressSectionEl.style.display = wasProgressVisible ? 'block' : 'none';
+    if (copySectionEl) copySectionEl.style.display = wasCopyVisible ? 'block' : 'none';
 
     // Restore panel size
     panelContainer.style.padding = '10px 14px';

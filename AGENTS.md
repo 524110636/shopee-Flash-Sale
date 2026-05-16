@@ -1,14 +1,62 @@
 # AGENTS.md
+# 用户写入的文件
+## 常用命令
+# ===== PM2 进程管理 =====
+
+查看状态
+npx pm2 status
+
+查看日志（最近 20 行）
+npx pm2 logs limited-time-sale --lines 20
+
+重启
+npx pm2 restart limited-time-sale
+
+停止
+npx pm2 stop limited-time-sale
+
+启动（首次或停止后）
+npx pm2 start src/index.ts --name limited-time-sale --interpreter tsx
+
+删除进程
+npx pm2 delete limited-time-sale
+
+
+# ===== 端口排查 =====
+
+查看 5724 端口谁在占用
+ss -tlnp | grep 5724
+
+杀掉占用端口的进程
+npx kill-port 5724
+
+
+# ===== 健康检查 =====
+
+服务器本地
+curl http://localhost:5724/api/health
+
+外部（测试防火墙是否放行）
+curl http://43.99.86.228:5724/api/health
+
+
+# ===== 构建扩展 =====
+
+本地开发机执行
+npm run build
+
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 # 限时特卖助手 (Limited Time Sale Helper)
 
-**版本:** 1.12.0
-**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 1 + 一次性邀请码 + 试用限制(trialEnabled 永久关闭) + 试用到期通知 + 操作校验全覆盖 + ESLint 零错误
-**最近更新:** 2026-05-15 — 试用系统升级: trialEnabled 永久关闭试用 + 试用到期醒目横幅 + Wizard 流程试用错误就地显示
+**版本:** 1.13.3
+**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 2 + 一次性邀请码 + 试用限制(trialEnabled 永久关闭) + 使用条款系统 + UI 文案脱敏 + ESLint 零错误 + 部署优化 + 401透传 + IP回退 + 悬浮面板增强 + storeBindingsLoaded门控 + 使用说明按钮 + 二维码联系弹窗
+**最近更新:** 2026-05-16 — 用户体验完善: storeBindingsLoaded加载门控 + 诊断日志 + 使用说明按钮(飞书文档) + 定制开发二维码弹窗 + copySectionEl可见性修复 + USER_MANUAL.md用户手册
 
 ## 相关文档
+- `USER_MANUAL.md` — 用户使用手册 (飞书风格, 面向用户, 含常见问题排查)
+- `SSH_CONNECT.md` — SSH 服务器连接指南
 - `docs/shopee-flash-sale-api.md` — Shopee API endpoints and response formats
 - `docs/superpowers/specs/2026-05-02-copy-flash-sale-design.md` — Copy flash sale design spec
 - `docs/superpowers/plans/2026-05-02-copy-flash-sale-plan.md` — Copy flash sale implementation plan
@@ -50,7 +98,7 @@ limited-time-sale/
 │   │   └── utils.ts              # shadcn cn() 工具函数 (clsx + tailwind-merge)
 │   └── product/                  # 业务组件
 │       ├── AutoModePanel.tsx      # 自动模式面板 (模板选择, 场次选择, 参数配置, 日志)
-│       ├── AuthPanel.tsx          # 登录/注册/验证码内联验证/设置 UI
+│       ├── AuthPanel.tsx          # 登录/注册/验证码内联验证/设置 UI + 使用条款 Modal + 勾选协议
 │       ├── StoreStatus.tsx        # 店铺绑定状态 + 绑定按钮
 │       ├── AdminPanel.tsx         # 管理员面板 (用户列表, 限额调整, 统计)
 │       ├── CopyConfirmPanel.tsx   # 复制确认面板 (时段选择, 模板选择, 查看/Demo 按钮)
@@ -74,8 +122,10 @@ limited-time-sale/
 │           ├── 2026-05-02-copy-flash-sale-design.md
 │           ├── 2026-05-05-ux-optimization-spec.md
 │           └── 2026-05-05-ux-optimization-checklist.md
+├── public/                        # WXT 公共资源 (contact-qr.png 作者微信二维码)
+├── USER_MANUAL.md                 # 用户使用手册 (飞书风格, 面向用户)
 ├── backup/                        # 项目备份 (gitignore 排除)
-├── CLAUDE.md                      # 本文档
+├── CLAUDE.md                      # Claude Code 项目指南
 ├── components.json                # shadcn/ui 配置 (baseColor=slate, cssVariables=true)
 ├── package.json                   # 依赖与脚本
 ├── package-lock.json
@@ -172,6 +222,26 @@ Built with WXT + React 19 + TypeScript + Tailwind CSS + shadcn/ui + Zustand (ext
 - JWT payload 包含 `trialUsed` + `trialEnabled`，`checkAdmin()` 返回时自动同步到 storage
 - **试用到期通知 (v1.12.0)**: 任何操作触发 403 试用错误时，`trialExpiredBanner` Zustand 状态设值，App.tsx 顶部渲染醒目红底横幅（图标 + 升级引导文案 + 关闭按钮）。5 个检测点：`checkBackgroundStatus`、`executeCopy` instant/scheduled 路径、`runOneDaySkuAndEnable` 异常、`scheduleEnableForFlashSale` 异常
 - **Wizard 试用错误就地显示 (v1.12.0)**: `checkBackgroundStatus` 检测到试用错误且 `oneDaySkuFlow.phase === 'starting_flash_sale'` 时，同步更新 `oneDaySkuFlow` 为 failed 状态，错误直接显示在 wizard 界面中。`addToExistingFlashSale` 的 `waitForBoot` 失败后优先读取 `_enableProgress.error` 而非显示通用「Background Service Worker 未响应」
+
+### 安全加固 Phase 2 (v1.13.0)
+- **P0 — 客户端宽容降级移除**: `backend-api.ts` `request()` 重构 — `!response.ok` 检查移到 `response.json()` 之前，Content-Type 守卫防止非 JSON 响应被误 parse，网络错误不再暴露 `_baseUrl`。所有错误路径均 `throw`，绝不返回假成功数据。
+- **P0 — JWT 结构/过期校验**: `loadAuthFromStorage()` 加入 `isValidJwtStructure()` 检查（3段 base64url、payload 含 userId/email/role/exp/iat），校验失败清 storage。`isLoggedIn()` + `getAuthUser()` 加入 `isTokenExpired()` 检查（payload.exp * 1000 < Date.now()）。
+- **P0 — 启动认证服务端确认**: `checkAuthOnStartup()` 使用 `checkAdmin()` 返回值作为 `autoModeEnabled`/`trialUsed`/`trialEnabled` 来源（非 storage 数据）。区分 401（清 auth）与网络错误（设 `backendUnreachable` 标志）。外层 catch 不再静默吞错。
+- **P0 — Store 绑定加固**: `refreshStoreBindings()` 401 时同步清理 `isLoggedIn`/`authUser`/`storeBindings`。`bindCurrentStore()` 错误消息脱敏（不返回 raw `e.message`）。
+- **P1 — 后台验证缺口闭合**: `wizard_create` alarm handler + `handleAutoModeCreate()` 加入 `validateShopAccess()` 调用。`SCHEDULE_COPY`/`scheduled_copy_enable`/`scheduled_enable` 中 spcCds 缺失时 abort 并返回错误（旧代码仅 `console.warn` 跳过）。`runEnableLoop()` 从 fire-and-forget `.catch()` 改为 `await`+try/catch，`_enableParams` 移除放到 await 之后。
+- **P2 — 服务端加固**: `backend/src/routes/auth.ts` 中 `/check-admin` 的 `isAdmin` 改为从 DB 查询 `users.role`（不信任 JWT claim）。`backend/src/utils/jwt.ts` 启动时检查 `JWT_SECRET` 是否为 `.env.example` 硬编码值，匹配则拒绝启动。
+
+### 使用条款及免责声明 (v1.13.0)
+- 注册表单新增必勾选 checkbox：「我已阅读并同意《使用条款及免责声明》」
+- 未勾选时注册按钮 disabled，点击验证码获取区域也会提示需先勾选
+- 点击链接文字弹出 Modal，内含 ~1500 字完整使用条款（含标准 EULA 模板 + 虾皮特定免责：自动化操作风险、店铺降权、流量下降、API 时效等，混在通用条款中）
+- 注册和验证均改为手动点击按钮触发（移除验证码自动提交），防止绕过条款
+
+### 一键修复 UI 文案脱敏 (v1.13.0)
+- `runOneDaySkuAndEnable` 所有用户可见的 `message` 字段改为通用「正在优化商品 (X/N)...」
+- 原文案：`获取商品信息 X/N: 商品名` / `搜索折扣活动 X/N: 商品名` / `移除折扣活动 X/N: 商品名` / `发布商品 X/N: 商品名` / `恢复折扣活动 X/N: 商品名` → 统一为「正在优化商品」
+- `App.tsx` phase 标签：`检查 SKU` / `发布商品` / `查询折扣` / `移除折扣` / `恢复折扣` → 统一为「优化中」
+- `console.log` `[一键修复]` 日志保持不变（开发者调试用）
 
 ### SPC_CDS 校验修复 (v1.10.0)
 - **问题**: `SCHEDULE_COPY` 和 `SCHEDULE_WIZARD_FLOW` 从 `browser.storage.local` 读取 `spcCds`，但 Zustand `setSpcCds` 只写内存不写 storage → 永远为空 → 校验被跳过
@@ -457,12 +527,12 @@ The API returns two possible formats (check both):
 - **Edit (v1.5.0)**: Each template row has a sky-blue "编辑" button that opens `TemplateEditDialog`. The dialog displays global params (折扣率%, 活动库存, 限购数量) and SKU overrides grouped by Item ID. Parent rows show ▶/▼ toggle, product name, SKU count, and an inline "Model ID + +SKU" quick-add. Expanded child rows show editable inputs for 折扣%, 限时价, 活动库存, 限购数量 with a 移除 button. Supports "全部展开/收起" for the current page. Paginated at 8 Item IDs per page with ‹上一页/下一页› controls. Bottom bar shows total product + SKU counts. Save calls `updateTemplate` which merges changes into existing template and sets `updatedAt`.
 
 ### Content Script Progress UI
-- **Two separate floating panels:** enable progress (`__flash_sale_progress__`) and copy task (`__flash_sale_copy_progress__`), both positioned fixed right side at z-index 99999
+- **Unified floating panel (v1.13.2):** `createPanel()` builds three sections in a single container (`#__flash_sale_panel__`): `autoSectionEl` (auto mode status), `progressSectionEl` (enable progress, lazily built by `buildProgressSection()`), and `copySectionEl` (copy countdown/progress). The old competing `createProgressUI()` that destroyed other sections was removed. `showComplete()` auto-hides the progress section after 3s and only removes the full panel when no other sections are visible. All three flows (manual enable, wizard enable, auto mode) now share the same floating panel.
 - Semi-transparent with backdrop-filter blur
 - Enable panel: shows success/failed counts, round number, progress bar, stop button; auto-fades 3s after completion
 - Copy panel: shows countdown when scheduled, step progress during execution, auto-fades 3s after completion
 - **Storage backup:** On init, reads `_enableProgress` and `_copyCountdown` from storage to show UI without waiting for messages. `storage.onChanged` listener updates UI in real-time when messages are missed.
-- **Stale DOM cleanup:** `createProgressUI()` and `createCopyUI()` remove leftover elements from content script reloads before creating new ones.
+- **Stale DOM cleanup:** `createPanel()` removes leftover `#__flash_sale_panel__` before creating a new one.
 - **Failed detail images (v1.5.0):** `renderFailedDetails()` uses `normalizeImageUrl()` to prepend `https://cf.shopee.tw/file/` to raw image IDs from the API. Checks for `http://`, `https://`, `data:` prefixes before prepending (supports mixed URL formats).
 
 ### Type Definitions (types.ts full catalog)
@@ -575,7 +645,7 @@ The API returns two possible formats (check both):
 - **1 天备货 SKU — runOneDaySkuAndEnable 完整流程 (Phase 2):** 在 popup store（非 background）中运行。全流程：`get_product_info` → 检测已有 1 天 SKU 则跳过 → `buildOneDaySkuProductInfo` → 搜索折扣活动（`discount/search`）→ 从折扣中移除（`delete_abnormal_seller_discount_items`，多折扣间隔 2s）→ **防抖 2s** → 发布商品（`update_product_info`）→ 5 倍价格检测&重试（重试路径同样防抖 2s）→ 重新获取商品信息（含 3 次重试、1 秒间隔）→ **防抖 2s** → 恢复折扣含新 SKU（`update_seller_discount_items`，多折扣间隔 2s，检查 `failed_item_list`/`error_list`）。全程 `[一键修复]` 控制台日志。
 - **1 天备货 SKU — 4 节点防抖 (v1.8.6):** 为避免虾皮 API 处理延迟导致请求异常，在折扣移除→发布→恢复流程中加入 4 个防抖节点（各 2s）：① 移除全部折扣后等 2s 再发布；② 发布成功后等 2s 再恢复第一个折扣；③ 多个折扣活动操作之间各间隔 2s；④ 5 倍价格差重试路径同样在移除后等 2s 再重新发布。三个循环从 `for-of` 改为索引循环（`di > 0` 条件跳过首个请求的延迟）。
 - **1 天备货 SKU — 折扣率自动检测 (v1.8.7):** `runOneDaySkuAndEnable` 在遍历商品时通过 `collectedRatios` 收集每个商品的实际折扣率（`getDiscountRatio(originalModelList)`），包括已有 1 天 SKU 的商品和修复后成功的商品。全部收集完成后计算全局 `discountRate`：所有商品折扣率一致时直接用该值，不一致时取平均值。确保修复完成后 Wizard 的 `editing_params` 阶段显示用户实际设定的折扣（如 5.4折→54%）而非默认值 60%。
-- **1 天备货 SKU — 修复后 Wizard 三阶段 (v1.8.7):** `runOneDaySkuAndEnable` 完成后不再直接结束，而是进入 `editing_params` 阶段：展示修复成功的商品卡片（可点击编辑 SKU/全局参数），用户确认后进入 `selecting_flash_sale` 阶段：可选择已有闪购（调用 `addToExistingFlashSale`）或创建新场次（`createNewFlashSaleAndAdd`，先通过 `fetchTimeSlots` 获取可用时段）。`publishStatus` 移除 `skipped`，已有 1 天 SKU 的商品也标记为 `success` 并直接进入 Wizard 流程。
+- **1 天备货 SKU — 修复后 Wizard 三阶段 (v1.8.7):** `runOneDaySkuAndEnable` 完成后不再直接结束，而是进入 `editing_params` 阶段：展示修复成功的商品卡片（可点击编辑 SKU/全局参数），用户确认后进入 `selecting_flash_sale` 阶段：可选择已有限时特卖（调用 `addToExistingFlashSale`）或创建新场次（`createNewFlashSaleAndAdd`，先通过 `fetchTimeSlots` 获取可用时段）。`publishStatus` 移除 `skipped`，已有 1 天 SKU 的商品也标记为 `success` 并直接进入 Wizard 流程。
 - **1 天备货 SKU — FirstUse 场景支持 (v1.8.7):** `getHighestModelPrice` 新增可选 `productInfoModels` 参数，`ShopeeProduct.modelList` 为空时（FirstUse 流程仅构造壳对象）从 `product_info.model_list` 取价格。`extractSellerDiscounts` 新增过滤逻辑：`timeStatus === 3` 或 `endTime < now` 的已结束折扣不再返回。
 - **FirstUseModal — 第一次使用流程 (v1.8.7):** 新用户无需手动输入商品 ID。点击「第一次使用」按钮打开模态窗口，通过 `search_product_list` API (`fetchShopProductsPage`) 分页获取店铺全部商品（每页 12，按销量排序），支持关键词搜索。勾选最多 20 个商品后「开始修复」，`runFirstUseFlow` 构造骨架 `ShopeeProduct[]`（仅含 itemid/name/images/price），设置 `oneDaySkuSelectedIds` 后自动调用 `runOneDaySkuAndEnable`。每个商品处理时从 API 获取完整 `product_info` 后构建 1 天备货 SKU。
 - **addToExistingFlashSale / createNewFlashSaleAndAdd / scheduleEnableForFlashSale (v1.9.0):** Wizard `selecting_flash_sale` 阶段的三个提交路径。`addToExistingFlashSale` 已重构：构建 enable items（含 `item_display_image` 从 `p.images?.[0]`、`stock` 上限 `Math.min`、零库存过滤、未打折 SKU 检测、活动结束检查）→ 保存 `_enableParams` → 发送 `START_ENABLE` → Background `runEnableLoop` 多轮重试+错误处理，与手动模式 `enableFlashSaleItems` 路径一致。`createNewFlashSaleAndAdd` 支持两阶段：`advanceMin > 0` 时发送 `SCHEDULE_WIZARD_FLOW` 给 background 定时创建空活动（`wizard_create` alarm），`delayMin` 控制活动开始后多久提交；`advanceMin=0` 时立即创建；空活动创建后设置 `_pendingFlashSaleData` / `_copiedSaleData` 确保 `loadFlashSaleProducts` 能找到商品数据。`scheduleEnableForFlashSale` 新增：定时加入已有活动，发送 `SCHEDULE_ENABLE` 给 background → `scheduled_enable` alarm。UI: `selecting_flash_sale` 阶段顶部显示两个时间输入框 (`wizardAdvanceMin`/`wizardDelayMin`)，slot 列表使用 radio 选中模式 + 统一「开始」按钮 + 调试按钮（传入 `now` 作为 slotStartTime 强制立即执行）。
@@ -584,6 +654,17 @@ The API returns two possible formats (check both):
 - **tsconfig 修复 (v1.11.0):** `tsconfig.json` 排除列表中移除 `.wxt`，修复 VSCode 中 `browser` 全局类型找不到的问题（WXT 在 `.wxt/wxt.d.ts` 中生成类型声明）。
 - **部署初始化脚本 (v1.11.1):** `backend/src/seed.ts` 解决首次部署无管理员死锁问题。从环境变量 `INIT_ADMIN_EMAIL`/`INIT_ADMIN_PASSWORD` 创建管理员账号，`INIT_INVITE_CODES` 控制初始邀请码数量。`npm run seed` 幂等执行，管理员已存在或邀请码已有时自动跳过。`.env.example` 新增相关配置项。
 - **ESLint 全量修复 (v1.11.1):** 22 个问题清零。排除 `.agents/` 非项目目录；补充 `confirm`/`Response`/`URLSearchParams` 浏览器全局变量；修复 `preserve-caught-error`（`backend-api.ts`、`store.ts` 的 catch 块传入 `{ cause: e }`）；移除 `AutoModePanel.tsx` 未使用的 `flashSaleStock`/`purchaseLimit` 解构；`ScheduledTaskCard.tsx` 的 `now` 重命名为 `_now`；补全 `FirstUseModal.tsx` 两处 useEffect 依赖数组；`UndiscountedSkuModal.tsx` interval 模式的 useEffect 加 eslint-disable 注释（添加 `countdown` 依赖会每秒重建 interval 破坏倒计时）。
+- **Background 后端地址 env 变量 (v1.13.1):** `background.ts:8` `DEFAULT_BACKEND_URL` 从硬编码 `'http://localhost:5724'` 改为 `import.meta.env.VITE_BACKEND_URL || 'http://localhost:5724'`。构建时 Vite 替换 env 变量为 `.env` 中的生产地址，避免 background 在无 storage 缓存时回退到 localhost。同项目 `backend-api.ts:10` 和 `store.ts:343` 已使用相同模式，无需修改。
+- **Wizard 修复完成引导提示 (v1.13.1):** `App.tsx` `editing_params` 阶段，修复成功后（有 `publishStatus === 'success'` 的商品）在商品卡片列表下方、全局参数上方显示绿色提示："修复完成，请点击上方商品列表修改限时特卖商品价格，库存，限购等信息(默认参数是你的折扣信息。)，然后点击下一步：选择限时特卖。"。引导用户先编辑参数再进入下一阶段。
+- **后端端口占用自动处理 (v1.13.1):** `backend/src/index.ts` server 监听 `error` 事件，`EADDRINUSE` 时自动执行 `npx kill-port <PORT>` 释放端口并重新监听，避免手动杀进程。
+- **401 错误信息透传 (v1.13.2):** `backend-api.ts` `request()` 在 401 时先 `response.json()` 读取后端返回的 `error` 字段（如"邮箱或密码错误"），有则用后端消息，无则 fallback 到"认证已过期，请重新登录"。`clearAuth()` 在所有 401 路径均保留。
+- **IP 回退 (v1.13.2):** `backend-api.ts` `tryFetch()` 包装主请求，网络错误时自动用 `_fallbackUrl`（来自 `VITE_BACKEND_FALLBACK_URL` env 变量，如 `http://43.99.86.228:5724`）重试。解决 VPN 用户 DNS 劫持导致域名不可达的问题。双地址均在 `.env.example` 中配置。
+- **FirstUseModal 居中修复 (v1.13.2):** `FirstUseModal.tsx` 的 `items-end sm:items-center` → `items-center`，`rounded-t-xl sm:rounded-xl` + `sm:max-w-md` → `rounded-xl` + `max-w-md`，确保弹窗在 popup 中垂直居中而非底部对齐。
+- **Wizard 试用校验补充 (v1.13.2):** `store.ts` `createNewFlashSaleAndAdd` 中「立即创建并提交（跳过等待）」调试按钮路径新增 `validateShopAccess(spcCds, 'wizard_flow')` 调用，在创建闪购前拦截试用到期用户，错误就地显示在 wizard 界面。
+- **悬浮面板 — 自动模式实时倒计时 (v1.13.3):** `content.ts` `renderAutoSection()` 渲染 `#__auto_countdown__` 倒计时元素，`updateAutoCountdown()` 每秒更新，显示距离 `nextActionTime`（操作触发时间）或 `nextTargetTime`（场次开始时间）的剩余分钟秒数。自动模式停止时自动清除计时器。
+- **悬浮面板 — 最小化/恢复按钮 (v1.13.3):** 统一面板和复制 UI 均增加 `−` 最小化按钮（右上角）。`toggleMinimize()` / `toggleCopyMinimize()` 将面板收缩为右侧窄条，仅显示 `◀` 箭头 + 一行倒计时/状态摘要，实时更新。点击箭头还原完整面板。`panelMinimized` / `copyMinimized` 标志跟踪状态，`updateMinimizedContent()` / `updateCopyMinimizedContent()` 刷新收缩内容。
+- **showComplete 初始化修复 (v1.13.3):** `showComplete()` 现在先调用 `createPanel()` + `buildProgressSection()` 再检查 `headerEl`，修复 `ENABLE_COMPLETE` 在 `ENABLE_PROGRESS` 之前到达（零项目或即时错误）时静默返回不显示面板的问题。
+- **Wizard 重复点击防护 (v1.13.3):** `selecting_flash_sale` 阶段「立即加入」「定时」「开始」「调试」按钮增加 `disabled={isEnabling || oneDaySkuFlow.running || !!oneDaySkuFlow.message}`。Store 层 `addToExistingFlashSale`、`scheduleEnableForFlashSale`、`createNewFlashSaleAndAdd` 入口增加防重入守卫 `if (state.isEnabling || oneDaySkuFlow.running || oneDaySkuFlow.message) return`。`goToFlashSaleSelection` 清除 `message` 和 `error`，防止引导文案「请选择目标限时特卖场次」误触发按钮禁用。
 
 ## Known Issues / 待验证
 
@@ -639,3 +720,51 @@ The API returns two possible formats (check both):
 - Dynamically returns the exact `chrome-extension://<id>` origin
 - Also allows `https://seller.shopee.tw`
 - Static patterns like `chrome-extension://*` are NOT supported by Hono
+
+<!-- gitnexus:start -->
+# GitNexus — Code Intelligence
+
+This project is indexed by GitNexus as **limited-time-sale** (1779 symbols, 2799 relationships, 112 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+
+> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
+
+## Always Do
+
+- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
+- **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
+- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
+- When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
+- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
+
+## Never Do
+
+- NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
+- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
+- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
+- NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
+
+## Resources
+
+| Resource | Use for |
+|----------|---------|
+| `gitnexus://repo/limited-time-sale/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/limited-time-sale/clusters` | All functional areas |
+| `gitnexus://repo/limited-time-sale/processes` | All execution flows |
+| `gitnexus://repo/limited-time-sale/process/{name}` | Step-by-step execution trace |
+
+## CLI
+
+| Task | Read this skill file |
+|------|---------------------|
+| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
+| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
+| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
+| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
+| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
+| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
+| Work in the Popup area (98 symbols) | `.claude/skills/generated/popup/SKILL.md` |
+| Work in the Product area (76 symbols) | `.claude/skills/generated/product/SKILL.md` |
+| Work in the Entrypoints area (55 symbols) | `.claude/skills/generated/entrypoints/SKILL.md` |
+| Work in the Ui area (16 symbols) | `.claude/skills/generated/ui/SKILL.md` |
+
+<!-- gitnexus:end -->
