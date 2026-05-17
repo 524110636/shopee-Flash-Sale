@@ -17,7 +17,7 @@ function tryFetch(url: string, init?: RequestInit): Promise<Response> {
   return fetch(url, init).catch((primaryErr) => {
     if (!_fallbackUrl) throw primaryErr;
     const fallbackUrl = url.replace(_baseUrl, _fallbackUrl);
-    console.warn('[backend-api] 主域名请求失败，尝试 IP 直连:', fallbackUrl);
+    if (import.meta.env.VITE_DEBUG_LOGS === 'true') console.warn('[backend-api] 主域名请求失败，尝试 IP 直连:', fallbackUrl);
     // IP 直连兜底
     return fetch(fallbackUrl, init).catch(() => {
       // 兜底也失败了，抛原始错误（主域名的错误信息对用户更有意义）

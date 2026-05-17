@@ -13,7 +13,7 @@ function tryBackendFetch(url: string, init?: RequestInit, baseUrl?: string): Pro
     if (!FALLBACK_BACKEND_URL) throw primaryErr;
     const fromUrl = baseUrl || DEFAULT_BACKEND_URL;
     const fallbackUrl = url.replace(fromUrl, FALLBACK_BACKEND_URL);
-    console.warn('[bg] 主域名请求失败，尝试 IP 直连:', fallbackUrl);
+    if (import.meta.env.VITE_DEBUG_LOGS === 'true') console.warn('[bg] 主域名请求失败，尝试 IP 直连:', fallbackUrl);
     return fetch(fallbackUrl, init).catch(() => {
       throw primaryErr;
     });

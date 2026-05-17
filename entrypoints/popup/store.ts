@@ -495,7 +495,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       });
     } catch (e: any) {
       // 获取店铺信息失败不应阻止扩展使用
-      console.warn('[fetchShopInfo] 获取店铺信息失败:', e?.message);
+      if (import.meta.env.VITE_DEBUG_LOGS === 'true') console.warn('[fetchShopInfo] 获取店铺信息失败:', e?.message);
     }
   },
 
