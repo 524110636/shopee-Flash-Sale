@@ -28,7 +28,7 @@ stores.get('/', async (c) => {
 /** 校验店铺访问权限（防破解：关键操作前调用） */
 stores.post('/validate', async (c) => {
   const user = c.get('user');
-  const { spcCds, action } = await c.req.json<{ spcCds: string; action: string }>();
+  const { spcCds, action, shopId } = await c.req.json<{ spcCds: string; action: string; shopId?: number }>();
 
   if (!spcCds) {
     return c.json({ error: 'SPC_CDS 不能为空' }, 400);
@@ -56,7 +56,7 @@ stores.post('/validate', async (c) => {
   }
 
   // 3. 检查该店铺是否仍绑定在当前用户下且绑定有效
-  const binding = await db.select()
+  let binding = await db.select()
     .from(storeBindings)
     .where(
       and(
@@ -66,6 +66,27 @@ stores.post('/validate', async (c) => {
       )
     )
     .limit(1);
+
+  // spcCds 不匹配时，尝试用 shopId 回退（SPC_CDS 可能在指纹浏览器中发生变化）
+  if (binding.length === 0 && shopId) {
+    binding = await db.select()
+      .from(storeBindings)
+      .where(
+        and(
+          eq(storeBindings.userId, user.userId),
+          eq(storeBindings.shopId, shopId),
+          eq(storeBindings.isActive, 1),
+        )
+      )
+      .limit(1);
+
+    // 找到同店铺绑定 → 自动更新 SPC_CDS，后续请求不再失败
+    if (binding.length > 0) {
+      await db.update(storeBindings)
+        .set({ spcCds })
+        .where(eq(storeBindings.id, binding[0].id));
+    }
+  }
 
   if (binding.length === 0) {
     return c.json({ error: '店铺未绑定或绑定已失效，请重新绑定店铺' }, 403);

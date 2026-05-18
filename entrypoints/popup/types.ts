@@ -274,6 +274,7 @@ export interface AutoModeStatus {
     flashSaleStock: number;
     purchaseLimit: number;
     skipSkuKeys?: string[];
+    shopId?: number | null;
   };
 }
 

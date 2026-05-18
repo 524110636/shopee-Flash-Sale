@@ -215,8 +215,10 @@ export async function unbindStore(id: number) {
   return request<{ message: string }>('DELETE', `/api/stores/${id}`);
 }
 
-export async function validateShopAccess(spcCds: string, action: string) {
-  return request<{ allowed: boolean }>('POST', '/api/stores/validate', { spcCds, action });
+export async function validateShopAccess(spcCds: string, action: string, shopId?: number | null) {
+  const body: { spcCds: string; action: string; shopId?: number } = { spcCds, action };
+  if (shopId != null) body.shopId = shopId;
+  return request<{ allowed: boolean }>('POST', '/api/stores/validate', body);
 }
 
 // ===== Analytics API =====

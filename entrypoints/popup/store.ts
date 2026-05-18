@@ -139,6 +139,7 @@ interface AppState {
   backendUnreachable: boolean;
   authError: string | null;
   storeBindingsError: string | null;
+  isAutoRefreshingBinding: boolean;
 
   // 当前店铺信息（从 login API 获取）
   shopId: number | null;
@@ -348,6 +349,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   backendUnreachable: false,
   authError: null,
   storeBindingsError: null,
+  isAutoRefreshingBinding: false,
 
   // 当前店铺信息初始值
   shopId: null,
@@ -487,22 +489,55 @@ export const useAppStore = create<AppState>((set, get) => ({
         `https://seller.shopee.tw/api/v2/login/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`,
         'GET',
       );
-      console.log('[fetchShopInfo] 获取到店铺信息:', { id: data.id, shopid: data.shopid, username: data.username });
+      if (import.meta.env.VITE_DEBUG_LOGS === 'true') console.log('[diagnostic] fetchShopInfo 获取到店铺信息:', { id: data.id, shopid: data.shopid, username: data.username, rawData: JSON.stringify(data) });
       set({
         shopId: data.shopid ?? null,
         accountId: data.id ?? null,
         shopUsername: data.username ?? '',
       });
+
+      // 自动刷新绑定：SPC_CDS 变化但 shopId 仍匹配时，静默更新 SPC_CDS
+      try {
+        const state = get();
+        if (state.shopId && state.storeBindingsLoaded && state.spcCds && backendApi.isLoggedIn()) {
+          const matchedBySpc = state.storeBindings.some(b => b.isActive && b.spcCds === state.spcCds);
+          const matchedByShop = state.storeBindings.some(b => b.isActive && b.shopId === state.shopId);
+          if (!matchedBySpc && matchedByShop) {
+            console.log('[auto-refresh] fetchShopInfo 检测到 SPC_CDS 变更但 shopId 匹配，静默刷新绑定...');
+            set({ isAutoRefreshingBinding: true });
+            get().bindCurrentStore().finally(() => {
+              set({ isAutoRefreshingBinding: false });
+            });
+          }
+        }
+      } catch {} // 静默失败不影响主流程
     } catch (e: any) {
       // 获取店铺信息失败不应阻止扩展使用
-      if (import.meta.env.VITE_DEBUG_LOGS === 'true') console.warn('[fetchShopInfo] 获取店铺信息失败:', e?.message);
+      if (import.meta.env.VITE_DEBUG_LOGS === 'true') {
+        console.warn('[diagnostic] fetchShopInfo 获取店铺信息失败:', e?.message || e);
+        const cur = get();
+        console.warn('[diagnostic] fetchShopInfo spcCds=%s...', cur.spcCds?.slice(0, 16));
+      }
     }
   },
 
   extractSpcCds: async () => {
-    console.log('[extractSpcCds] 开始获取 SPC_CDS...');
+    const debug = import.meta.env.VITE_DEBUG_LOGS === 'true';
+    if (debug) console.log('[diagnostic] extractSpcCds 开始获取 SPC_CDS...');
     set({ isExtracting: true, error: null });
     try {
+      if (debug) {
+        // 先dump当前所有shopee相关cookie用于诊断
+        try {
+          const allCookies = await browser.cookies.getAll({ domain: 'shopee.tw' });
+          console.log('[diagnostic] domain=shopee.tw 的 cookies:', allCookies.map(c => ({ name: c.name, domain: c.domain, valuePreview: c.value?.slice(0, 20) + '...' })));
+        } catch {}
+        try {
+          const sellerCookies = await browser.cookies.getAll({ domain: 'seller.shopee.tw' });
+          console.log('[diagnostic] domain=seller.shopee.tw 的 cookies:', sellerCookies.map(c => ({ name: c.name, domain: c.domain, valuePreview: c.value?.slice(0, 20) + '...' })));
+        } catch {}
+      }
+
       const urls = ['https://seller.shopee.tw', 'https://shopee.tw', 'https://www.shopee.tw'];
       let spcCds = '';
       let spcCdsVer = '2';
@@ -514,39 +549,43 @@ export const useAppStore = create<AppState>((set, get) => ({
             const verCookie = await browser.cookies.get({ url, name: 'SPC_CDS_VER' });
             spcCds = cookie.value;
             spcCdsVer = verCookie?.value || '2';
-            console.log('[extractSpcCds] 从', url, '获取到 SPC_CDS');
+            if (debug) console.log('[diagnostic] extractSpcCds 从 %s 获取到 SPC_CDS (%s...), domain=%s', url, spcCds.slice(0, 16), cookie.domain);
             break;
           }
-        } catch { /* next */ }
+          if (debug) console.log('[diagnostic] extractSpcCds %s 未找到 SPC_CDS cookie', url);
+        } catch (e: any) {
+          if (debug) console.log('[diagnostic] extractSpcCds %s 读取异常: %s', url, e?.message);
+        }
       }
 
       if (!spcCds) {
-        console.log('[extractSpcCds] 尝试 cookies.getAll 回退...');
+        if (debug) console.log('[diagnostic] extractSpcCds 逐URL获取失败，尝试 cookies.getAll 回退...');
         const allCookies = await browser.cookies.getAll({ domain: '.shopee.tw' });
+        if (debug) console.log('[diagnostic] extractSpcCds getAll(.shopee.tw) 返回 %d 个cookie', allCookies.length);
         const spc = allCookies.find(c => c.name === 'SPC_CDS');
         const ver = allCookies.find(c => c.name === 'SPC_CDS_VER');
         if (spc?.value) {
           spcCds = spc.value;
           spcCdsVer = ver?.value || '2';
-          console.log('[extractSpcCds] 通过 getAll 获取到 SPC_CDS');
+          if (debug) console.log('[diagnostic] extractSpcCds 通过 getAll 获取到 SPC_CDS (%s...), domain=%s', spcCds.slice(0, 16), spc.domain);
         }
       }
 
       if (spcCds) {
-        console.log('[extractSpcCds] 成功, isConnected = true');
+        if (debug) console.log('[diagnostic] extractSpcCds 成功, isConnected=true, spcCds=%s...', spcCds.slice(0, 16));
         set({ spcCds, spcCdsVer, isConnected: true, isExtracting: false, error: null });
 
         // 获取店铺信息（shopId / accountId / username）
         get().fetchShopInfo();
       } else {
-        console.log('[extractSpcCds] 未找到 SPC_CDS');
+        if (debug) console.log('[diagnostic] extractSpcCds 未找到 SPC_CDS！所有Shopee标签页可能未登录或不在seller.shopee.tw');
         set({
           error: 'SPC_CDS 不存在，请确认：\n1. 已登录虾皮卖家中心 (seller.shopee.tw)\n2. 刷新页面后再试',
           isExtracting: false, isConnected: false,
         });
       }
     } catch (e: any) {
-      console.log('[extractSpcCds] 异常:', e);
+      if (debug) console.log('[diagnostic] extractSpcCds 异常:', e?.message || e, e?.stack || '');
       set({
         error: `读取 Cookie 失败: ${e?.message || '未知错误'}`,
         isExtracting: false, isConnected: false,
@@ -1286,9 +1325,15 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     // 保存参数到 storage，background 会读取
     try {
+      if (import.meta.env.VITE_DEBUG_LOGS === 'true') {
+        console.log('[diagnostic] enableFlashSaleItems 保存 _enableParams: flashSaleId=%s, spcCds=%s..., products=%d, skuOverrides=%d',
+          flashSaleId, spcCds.slice(0, 16), products.length, Object.keys(skuOverrides).length);
+      }
       await browser.storage.local.set({
         _enableParams: {
-          products, flashSaleId, spcCds, spcCdsVer, maxRetries, infiniteRetry,
+          products, flashSaleId, spcCds, spcCdsVer,
+          shopId: state.shopId,
+          maxRetries, infiniteRetry,
           discountRate, flashSaleStock, purchaseLimit, skuOverrides,
           skipSkuKeys: _enableSkipSkuKeys,
         },
@@ -1354,6 +1399,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         await new Promise(r => setTimeout(r, 1500));
         const stored = await browser.storage.local.get('_enableProgress').catch(() => ({}));
         const data = stored._enableProgress as { progress?: EnableProgress; error?: string; running?: boolean } | undefined;
+        if (import.meta.env.VITE_DEBUG_LOGS === 'true') {
+          console.log('[diagnostic] enableFlashSaleItems waitForBoot 失败, _enableProgress=', JSON.stringify(data || null));
+        }
         if (!data?.progress || !data.running) {
           set({ error: data?.error || '后台启动失败，请重试' });
         }
@@ -1938,6 +1986,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         selectedSlotId,
         selectedSlotTime,
         skipSkuKeys: skipSkuKeys || [],
+        shopId: state.shopId,
       });
 
       console.log('[startAutoMode] sendMessage 响应:', JSON.stringify(response));
@@ -2667,6 +2716,22 @@ export const useAppStore = create<AppState>((set, get) => ({
       console.log('[init] getStores() 成功, 返回', result.stores.length, '条绑定:', result.stores.map((s: any) => ({ id: s.id, shopId: s.shopId, isActive: s.isActive })));
       set({ storeBindings: result.stores, storeBindingsError: null, storeBindingsLoaded: true });
       console.log('[init] storeBindings 已设置, storeBindingsLoaded=true');
+
+      // 自动刷新绑定：SPC_CDS 变化但 shopId 仍匹配时，静默更新 SPC_CDS
+      try {
+        const state = get();
+        if (state.shopId && state.spcCds && backendApi.isLoggedIn()) {
+          const matchedBySpc = state.storeBindings.some(b => b.isActive && b.spcCds === state.spcCds);
+          const matchedByShop = state.storeBindings.some(b => b.isActive && b.shopId === state.shopId);
+          if (!matchedBySpc && matchedByShop) {
+            console.log('[auto-refresh] refreshStoreBindings 检测到 SPC_CDS 变更但 shopId 匹配，静默刷新绑定...');
+            set({ isAutoRefreshingBinding: true });
+            get().bindCurrentStore().finally(() => {
+              set({ isAutoRefreshingBinding: false });
+            });
+          }
+        }
+      } catch {} // 静默失败不影响主流程
     } catch (e: any) {
       console.error('[init] getStores() 失败:', e?.message || e);
       if (!backendApi.isLoggedIn()) {
@@ -2681,12 +2746,22 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   bindCurrentStore: async () => {
     const state = get();
-    if (!state.spcCds || !backendApi.isLoggedIn()) return null;
+    if (!state.spcCds || !backendApi.isLoggedIn()) {
+      if (import.meta.env.VITE_DEBUG_LOGS === 'true') console.log('[diagnostic] bindCurrentStore 跳过: hasSpcCds=%s, isLoggedIn=%s', !!state.spcCds, backendApi.isLoggedIn());
+      return null;
+    }
+    if (import.meta.env.VITE_DEBUG_LOGS === 'true') {
+      console.log('[diagnostic] bindCurrentStore 开始绑定: spcCds=%s..., shopId=%s, accountId=%s, username=%s',
+        state.spcCds.slice(0, 16), state.shopId ?? '(none)', state.accountId ?? '(none)', state.shopUsername || '(none)');
+    }
     try {
-      await backendApi.bindStore(state.spcCds, state.shopId ?? undefined, state.accountId ?? undefined, state.shopUsername || undefined);
+      const result = await backendApi.bindStore(state.spcCds, state.shopId ?? undefined, state.accountId ?? undefined, state.shopUsername || undefined);
+      if (import.meta.env.VITE_DEBUG_LOGS === 'true') console.log('[diagnostic] bindCurrentStore bindStore 响应:', JSON.stringify(result));
       await get().refreshStoreBindings();
+      if (import.meta.env.VITE_DEBUG_LOGS === 'true') console.log('[diagnostic] bindCurrentStore 刷新绑定完成, 当前绑定数=%d', get().storeBindings.length);
       return null;
     } catch (_e: any) {
+      if (import.meta.env.VITE_DEBUG_LOGS === 'true') console.log('[diagnostic] bindCurrentStore 失败:', _e?.message || _e);
       if (!backendApi.isLoggedIn()) {
         return '认证已过期，请重新登录';
       }
@@ -3188,7 +3263,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     try {
       // 校验店铺访问权限（含试用限制），在创建限时特卖前拦截
-      await backendApi.validateShopAccess(spcCds, 'wizard_flow');
+      await backendApi.validateShopAccess(spcCds, 'wizard_flow', state.shopId);
       const now = Math.floor(Date.now() / 1000);
       const createTime = advanceMin > 0 ? slotStartTime - advanceMin * 60 : now;
 

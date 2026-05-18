@@ -42,6 +42,7 @@ interface EnableParams {
   flashSaleId: number;
   spcCds: string;
   spcCdsVer: string;
+  shopId?: number | null;
   maxRetries: number;
   infiniteRetry: boolean;
   discountRate: number;
@@ -192,37 +193,39 @@ async function reportAnalyticsEvent(eventType: string, eventData: Record<string,
 }
 
 // ===== Shop access validation (backend check) =====
-async function validateShopAccess(spcCds: string, action: string): Promise<{ allowed: boolean; error?: string }> {
-  console.log(`[bg:validate] 开始校验: action=${action}, spcCds=${spcCds.slice(0, 16)}...`);
+async function validateShopAccess(spcCds: string, action: string, shopId?: number | null): Promise<{ allowed: boolean; error?: string }> {
+  const debug = import.meta.env.VITE_DEBUG_LOGS === 'true';
+  if (debug) console.log(`[bg:validate] 开始校验: action=${action}, spcCds=${spcCds.slice(0, 16)}..., shopId=${shopId ?? '(none)'}`);
   try {
     const result = await browser.storage.local.get(['backendAuth', 'backendUrl']);
     const auth = result.backendAuth as { token?: string } | undefined;
     const backendUrl = result.backendUrl as string | undefined;
     if (!auth?.token) {
-      console.warn('[bg:validate] ❌ 未登录后端系统');
+      if (debug) console.warn('[bg:validate] ❌ 未登录后端系统');
       return { allowed: false, error: '未登录后端系统，请先登录' };
     }
     // fallback to default URL (store.ts 仅持久化非默认值)
     const baseUrl = backendUrl || DEFAULT_BACKEND_URL;
-    console.log(`[bg:validate] 请求 POST ${baseUrl}/api/stores/validate`);
+    const body = shopId != null ? { spcCds, action, shopId } : { spcCds, action };
+    if (debug) console.log(`[bg:validate] 请求 POST ${baseUrl}/api/stores/validate, body=`, JSON.stringify({ ...body, spcCds: spcCds.slice(0, 16) + '...' }));
     const response = await tryBackendFetch(`${baseUrl}/api/stores/validate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${auth.token}`,
       },
-      body: JSON.stringify({ spcCds, action }),
+      body: JSON.stringify(body),
     }, baseUrl);
     const data = await response.json();
-    console.log(`[bg:validate] 后端响应: status=${response.status}, data=`, JSON.stringify(data));
+    if (debug) console.log(`[bg:validate] 后端响应: status=${response.status}, data=`, JSON.stringify(data));
     if (!response.ok) {
-      console.error(`[bg:validate] ❌ 验证失败: ${data.error || `HTTP ${response.status}`}`);
+      if (debug) console.error(`[bg:validate] ❌ 验证失败: ${data.error || `HTTP ${response.status}`}`);
       return { allowed: false, error: data.error || `验证失败 (${response.status})` };
     }
-    console.log('[bg:validate] ✅ 验证通过');
+    if (debug) console.log('[bg:validate] ✅ 验证通过');
     return { allowed: true };
   } catch (e: any) {
-    console.error(`[bg:validate] ❌ 网络错误: ${e.message}`);
+    if (debug) console.error(`[bg:validate] ❌ 网络错误: ${e.message}`);
     return { allowed: false, error: `无法连接后端服务: ${e.message}` };
   }
 }
@@ -1002,7 +1005,7 @@ async function handleAutoModeCreate() {
     const { spcCds, spcCdsVer } = await getSpcCdsFromCookies();
     if (!spcCds) throw new Error('SPC_CDS 不存在，请确认已登录 seller.shopee.tw');
 
-    const autoValidation = await validateShopAccess(spcCds, 'auto_mode_create');
+    const autoValidation = await validateShopAccess(spcCds, 'auto_mode_create', status.enableParams?.shopId);
     if (!autoValidation.allowed) {
       status.lastError = `店铺验证失败: ${autoValidation.error}`;
       status.isRunning = false;
@@ -1177,6 +1180,7 @@ async function handleAutoModeEnable() {
       flashSaleId,
       spcCds,
       spcCdsVer,
+      shopId: ep.shopId,
       maxRetries: COPY_MAX_RETRIES,
       infiniteRetry: true,
       discountRate: ep.discountRate,
@@ -1187,7 +1191,7 @@ async function handleAutoModeEnable() {
     };
 
     // 校验店铺访问权限
-    const validation = await validateShopAccess(spcCds, 'auto_mode_enable');
+    const validation = await validateShopAccess(spcCds, 'auto_mode_enable', enableParams.shopId);
     if (!validation.allowed) {
       await logAutoMode('error', `店铺验证失败，自动模式已停止: ${validation.error}`);
       status.lastError = `店铺验证失败: ${validation.error}`;
@@ -1317,12 +1321,13 @@ export default defineBackground({
             console.log('[START_ENABLE] ❌ 未找到启动参数');
             return { success: false, error: '未找到启动参数' };
           }
-          console.log('[START_ENABLE] ✅ 参数已找到，启动循环');
+          const debug = import.meta.env.VITE_DEBUG_LOGS === 'true';
+          if (debug) console.log(`[START_ENABLE] ✅ 参数已找到: flashSaleId=${params.flashSaleId}, spcCds=${params.spcCds?.slice(0, 16)}..., products=${params.products?.length || 0}`);
 
           // 校验店铺访问权限
-          const validation = await validateShopAccess(params.spcCds, 'enable');
+          const validation = await validateShopAccess(params.spcCds, 'enable', params.shopId);
           if (!validation.allowed) {
-            console.log('[START_ENABLE] ❌ 店铺验证失败:', validation.error);
+            if (debug) console.log('[START_ENABLE] ❌ 店铺验证失败:', validation.error);
             // 写入 _enableProgress 让 popup 能读取错误信息
             await browser.storage.local.set({
               _enableProgress: { progress: null, error: validation.error, running: false }
@@ -1935,6 +1940,7 @@ export default defineBackground({
               flashSaleStock: sourceData.flashSaleStock,
               purchaseLimit: sourceData.purchaseLimit,
               skipSkuKeys: msg.skipSkuKeys || [],
+              shopId: msg.shopId,
             },
           };
 
@@ -2069,7 +2075,7 @@ export default defineBackground({
             finalCds = cookies.spcCds;
           }
           if (finalCds) {
-            const swValidation = await validateShopAccess(finalCds, 'wizard_flow');
+            const swValidation = await validateShopAccess(finalCds, 'wizard_flow', enableParams?.shopId);
             if (!swValidation.allowed) {
               console.log('[bg:SCHEDULE_WIZARD_FLOW] ❌ 店铺验证失败:', swValidation.error);
               return { success: false, error: swValidation.error };
@@ -2170,7 +2176,7 @@ export default defineBackground({
           await browser.storage.local.set({ _enableParams: params });
 
           // 校验店铺访问权限
-          const validation = await validateShopAccess(params.spcCds, 'scheduled_copy_enable');
+          const validation = await validateShopAccess(params.spcCds, 'scheduled_copy_enable', params.shopId);
           if (!validation.allowed) {
             console.log('[scheduled_copy_enable] ❌ 店铺验证失败:', validation.error);
             await browser.storage.local.remove('_enableParams');
@@ -2210,7 +2216,7 @@ export default defineBackground({
           params.spcCdsVer = cdsVer;
 
           // 校验店铺访问权限
-          const validation = await validateShopAccess(params.spcCds, 'scheduled_enable');
+          const validation = await validateShopAccess(params.spcCds, 'scheduled_enable', params.shopId);
           if (!validation.allowed) {
             console.log('[bg:scheduled_enable] ❌ 店铺验证失败:', validation.error);
             await browser.storage.local.remove(['_enableParams', '_scheduledEnable']).catch(() => {});
@@ -2236,7 +2242,7 @@ export default defineBackground({
           const params = stored._wizardFlowParams as { timeSlotId: number; enableFireTime: number; enableParams: any; cds: string; cdsVer: string } | undefined;
           if (!params) return;
 
-          const wizValidation = await validateShopAccess(params.cds, 'wizard_create');
+          const wizValidation = await validateShopAccess(params.cds, 'wizard_create', params.enableParams?.shopId);
           if (!wizValidation.allowed) {
             console.error('[bg:wizard_create] 店铺验证失败:', wizValidation.error);
             await browser.storage.local.remove('_wizardFlowParams').catch(() => {});

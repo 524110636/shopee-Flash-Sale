@@ -72,18 +72,39 @@ export default function App() {
   const [wizardAdvanceMin, setWizardAdvanceMin] = useState('5');
   const [wizardDelayMin, setWizardDelayMin] = useState('5');
   const [selectedWizardSlotId, setSelectedWizardSlotId] = useState<number | null>(null);
-  const { checkAuthOnStartup, isLoggedIn, isCheckingAuth, storeBindings, storeBindingsLoaded, storeBindingsError, shopId, pendingUndiscountedSkus, showUndiscountedModal } = useAppStore();
+  const { checkAuthOnStartup, isLoggedIn, isCheckingAuth, storeBindings, storeBindingsLoaded, storeBindingsError, shopId, pendingUndiscountedSkus, showUndiscountedModal, isAutoRefreshingBinding } = useAppStore();
 
   // 检测当前店铺 SPC_CDS 是否在用户绑定列表中
   const isCurrentStoreBound = useMemo(() => {
-    if (!isConnected || !spcCds) return null;
+    if (!isConnected || !spcCds) {
+      if (import.meta.env.VITE_DEBUG_LOGS === 'true') console.log('[diagnostic] isCurrentStoreBound=null, isConnected=%s, hasSpcCds=%s', isConnected, !!spcCds);
+      return null;
+    }
     // 优先用 shopId 匹配（稳定标识）
     if (shopId) {
       const matchByShopId = storeBindings.some(b => b.isActive && b.shopId === shopId);
-      if (matchByShopId) return true;
+      if (matchByShopId) {
+        if (import.meta.env.VITE_DEBUG_LOGS === 'true') console.log('[diagnostic] isCurrentStoreBound=true (shopId match), shopId=%s', shopId);
+        return true;
+      }
     }
     // 无 shopId 或未匹配到，回退到 spcCds 匹配（兼容旧数据）
-    return storeBindings.some(b => b.isActive && b.spcCds === spcCds);
+    const matchBySpc = storeBindings.some(b => b.isActive && b.spcCds === spcCds);
+    if (import.meta.env.VITE_DEBUG_LOGS === 'true') {
+      console.log('[diagnostic] isCurrentStoreBound=%s (spcCds match), shopId=%s, spcCds=%s, bindings=%d',
+        matchBySpc, shopId || '(none)', spcCds.slice(0, 16) + '...', storeBindings.length);
+      const activeBindings = storeBindings.filter(b => b.isActive);
+      if (activeBindings.length > 0) {
+        console.log('[diagnostic] 活跃绑定列表:', JSON.stringify(activeBindings.map(b => ({
+          shopId: b.shopId || '(none)',
+          spcCds: b.spcCds?.slice(0, 16) + '...',
+          username: b.shopUsername || '(none)',
+        }))));
+      } else {
+        console.log('[diagnostic] 当前没有活跃绑定！');
+      }
+    }
+    return matchBySpc;
   }, [isConnected, spcCds, shopId, storeBindings]);
 
   const fmtTime = (ts: number) => {
@@ -431,6 +452,20 @@ export default function App() {
                     <div className="text-xs text-muted-foreground max-w-[280px] mx-auto">使用扩展功能前需要先绑定一个 Shopee 店铺</div>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          ) : isLoggedIn && isAutoRefreshingBinding ? (
+            <Card className="mx-4 mt-3 border-blue-200">
+              <CardContent className="py-8">
+                <div className="text-center space-y-3">
+                  <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto">
+                    <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                    </svg>
+                  </div>
+                  <div className="text-sm font-medium text-blue-700">正在同步店铺信息...</div>
+                  <div className="text-xs text-muted-foreground max-w-[280px] mx-auto">检测到浏览器环境变更，正在自动刷新店铺绑定</div>
+                </div>
               </CardContent>
             </Card>
           ) : isLoggedIn && isCurrentStoreBound === false && !showAdminPanel ? (
