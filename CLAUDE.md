@@ -141,6 +141,9 @@ backend/                      # Standalone backend service
 - Each user has `max_stores` limit on the `users` table (default 1)
 - Admin can adjust per-user limits and **force-unbind** any user's store
 - `StoreStatus` component: when current shop is not bound and capacity remains, shows inline "绑定当前店铺" button
+- **Auto-refresh binding**: When `fetchShopInfo` or `refreshStoreBindings` detects SPC_CDS changed but shopId still matches a binding, silently calls `bindCurrentStore()` to update SPC_CDS on the backend. `isAutoRefreshingBinding` flag shows a blue syncing card ("正在同步店铺信息...") in place of the amber "当前店铺未绑定" warning. Handles fingerprint browser (速销易) SPC_CDS rotation on every restart
+- Backend `/validate` endpoint: matches by `spcCds` first, falls back to `shopId` match with automatic SPC_CDS update when found
+- All validation call sites in background.ts pass `shopId` through: `enable`, `auto_mode_create`, `auto_mode_enable`, `scheduled_copy_enable`, `scheduled_enable`, `wizard_flow`, `wizard_create`
 
 ### Analytics
 - Background SW reports events after enable loop, copy flow, and auto mode rounds
