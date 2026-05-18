@@ -92,13 +92,6 @@ stores.post('/validate', async (c) => {
     return c.json({ error: '店铺未绑定或绑定已失效，请重新绑定店铺' }, 403);
   }
 
-  // 4. 标记试用已使用（admin 不受限，trialEnabled=0 也不标记，首次使用才写入）
-  if (userRecord[0].role !== 'admin' && userRecord[0].trialEnabled !== 0 && userRecord[0].trialUsed === 0) {
-    await db.update(users)
-      .set({ trialUsed: 1 })
-      .where(eq(users.id, user.userId));
-  }
-
   // 记录验证事件（fire-and-forget）
   await db.insert(analyticsEvents).values({
     userId: user.userId,
@@ -107,6 +100,36 @@ stores.post('/validate', async (c) => {
   }).catch(() => {});
 
   return c.json({ allowed: true });
+});
+
+/** 消耗试用次数 — 在操作实际成功后调用 */
+stores.post('/consume-trial', async (c) => {
+  const user = c.get('user');
+  const db = getDb();
+
+  const userRecord = await db.select()
+    .from(users)
+    .where(eq(users.id, user.userId))
+    .limit(1);
+
+  if (userRecord.length === 0) {
+    return c.json({ error: '用户不存在' }, 404);
+  }
+
+  // admin 不受试用限制，trialEnabled=0 的用户永久关闭试用检查
+  if (userRecord[0].role === 'admin' || userRecord[0].trialEnabled === 0) {
+    return c.json({ consumed: false, reason: 'admin_or_trial_disabled' });
+  }
+
+  // 首次消耗才写入，后续调用幂等
+  if (userRecord[0].trialUsed === 0) {
+    await db.update(users)
+      .set({ trialUsed: 1 })
+      .where(eq(users.id, user.userId));
+    return c.json({ consumed: true });
+  }
+
+  return c.json({ consumed: false, reason: 'already_consumed' });
 });
 
 /** 绑定店铺 */

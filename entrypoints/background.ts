@@ -230,6 +230,46 @@ async function validateShopAccess(spcCds: string, action: string, shopId?: numbe
   }
 }
 
+// 消耗试用次数 — 操作成功后调用，fire-and-forget
+async function consumeTrial() {
+  const debug = import.meta.env.VITE_DEBUG_LOGS === 'true';
+  const logResult = (result: Record<string, unknown>) => {
+    browser.storage.local.set({ _consumeTrialLog: { ...result, ts: Date.now() } }).catch(() => {});
+  };
+  try {
+    const storageData = await browser.storage.local.get(['backendAuth', 'backendUrl']);
+    const auth = storageData.backendAuth as { token?: string } | undefined;
+    const backendUrl = storageData.backendUrl as string | undefined;
+    if (!auth?.token) {
+      if (debug) console.warn('[bg:consume-trial] 跳过：未找到 token');
+      logResult({ status: 'skipped', reason: 'no_token' });
+      return;
+    }
+    const baseUrl = backendUrl || DEFAULT_BACKEND_URL;
+    const requestUrl = `${baseUrl}/api/stores/consume-trial`;
+    logResult({ status: 'requesting', url: requestUrl, hasToken: true });
+    const response = await tryBackendFetch(requestUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${auth.token}` },
+    }, baseUrl);
+    if (!response.ok) {
+      let errorMsg = `HTTP ${response.status}`;
+      try { const data = await response.json(); if (data.error) errorMsg = data.error; } catch {}
+      console.warn('[bg:consume-trial] 消耗试用失败:', errorMsg);
+      logResult({ status: 'failed', error: errorMsg, httpStatus: response.status });
+      return;
+    }
+    const data = await response.json();
+    if (debug) console.log('[bg:consume-trial] 响应:', JSON.stringify(data));
+    console.log('[bg:consume-trial] 试用次数已消耗');
+    logResult({ status: 'success', consumed: data.consumed, reason: data.reason || null });
+  } catch (e: any) {
+    // fire-and-forget: 失败不阻塞操作
+    console.warn('[bg:consume-trial] 消耗试用失败（不影响操作）:', e.message);
+    logResult({ status: 'network_error', error: e.message });
+  }
+}
+
 // ===== Session Keepalive（参考 shopee-plugin 的自动刷新机制）=====
 const HEARTBEAT_ALARM = 'session-heartbeat';
 const HEARTBEAT_INTERVAL_MINUTES = 4;
@@ -682,6 +722,7 @@ async function runEnableLoop(params: EnableParams) {
     failedSkus: failedResults.length,
     rounds: round,
   });
+  consumeTrial();
   console.log(`[bg:enable] 完成: ${round} 轮, 成功 ${successCount}, 失败 ${failedResults.length}${skippedCount > 0 ? `, 跳过 ${skippedCount}` : ''}`);
   } finally {
     _enableRunning = false;
@@ -1222,6 +1263,7 @@ async function handleAutoModeEnable() {
       totalRounds: status.totalRounds,
       flashSaleId: flashSaleId,
     });
+    consumeTrial();
   } catch (e: any) {
     const errMsg = e?.message || String(e);
     await logAutoMode('error', `传递商品参数失败: ${errMsg}`);
@@ -1693,6 +1735,7 @@ export default defineBackground({
             flashSaleId: newFlashSaleId,
             hasSkuOverrides: Object.keys(skuOverrides || {}).length > 0,
           });
+          consumeTrial();
           return { success: true, flashSaleId: newFlashSaleId };
         } catch (e: any) {
           console.error('[bg:executeCopy] ❌ 失败:', e);
@@ -2135,6 +2178,7 @@ export default defineBackground({
             flashSaleId: flowResult.newFlashSaleId,
             source: 'scheduled_copy',
           });
+          consumeTrial();
 
           await browser.storage.local.set({ _enableParams: flowResult.enableParams });
           await browser.storage.local.remove(['_scheduledCopy', '_copyCountdown', 'flashSaleCache']);

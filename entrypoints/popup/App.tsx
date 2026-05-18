@@ -290,13 +290,22 @@ export default function App() {
     );
   }
 
-  // 已登录但店铺绑定尚未加载完成 — 防止网络慢时闪现"请先绑定店铺"
-  if (!storeBindingsLoaded) {
+  // 已登录但店铺绑定尚未加载完成，或正在自动刷新 — 防止网络慢时闪现"请先绑定店铺"
+  if (!storeBindingsLoaded || isAutoRefreshingBinding) {
     return (
       <div className="w-[500px] min-h-[500px] p-4 bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin w-6 h-6 border-2 border-shopee-brand border-t-transparent rounded-full mx-auto"></div>
-          <p className="mt-2 text-xs text-muted-foreground">正在加载店铺信息...</p>
+        <div className="text-center space-y-3">
+          <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mx-auto">
+            <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+            </svg>
+          </div>
+          <div className="text-sm font-medium text-blue-700">正在同步店铺信息...</div>
+          <div className="text-xs text-muted-foreground max-w-[280px] mx-auto">
+            {!storeBindingsLoaded
+              ? '正在加载店铺绑定信息，请稍候...'
+              : '检测到浏览器环境变更，正在自动刷新店铺绑定'}
+          </div>
         </div>
       </div>
     );

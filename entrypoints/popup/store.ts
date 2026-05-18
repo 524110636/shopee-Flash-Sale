@@ -349,7 +349,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   backendUnreachable: false,
   authError: null,
   storeBindingsError: null,
-  isAutoRefreshingBinding: false,
+  isAutoRefreshingBinding: true, // 从打开扩展起就显示同步中，避免网络慢时闪现"未绑定"让用户误操作
 
   // 当前店铺信息初始值
   shopId: null,
@@ -499,18 +499,24 @@ export const useAppStore = create<AppState>((set, get) => ({
       // 自动刷新绑定：SPC_CDS 变化但 shopId 仍匹配时，静默更新 SPC_CDS
       try {
         const state = get();
+        let needsRefresh = false;
         if (state.shopId && state.storeBindingsLoaded && state.spcCds && backendApi.isLoggedIn()) {
           const matchedBySpc = state.storeBindings.some(b => b.isActive && b.spcCds === state.spcCds);
           const matchedByShop = state.storeBindings.some(b => b.isActive && b.shopId === state.shopId);
           if (!matchedBySpc && matchedByShop) {
             console.log('[auto-refresh] fetchShopInfo 检测到 SPC_CDS 变更但 shopId 匹配，静默刷新绑定...');
-            set({ isAutoRefreshingBinding: true });
+            needsRefresh = true;
             get().bindCurrentStore().finally(() => {
               set({ isAutoRefreshingBinding: false });
             });
           }
         }
-      } catch {} // 静默失败不影响主流程
+        if (!needsRefresh) {
+          set({ isAutoRefreshingBinding: false });
+        }
+      } catch {
+        set({ isAutoRefreshingBinding: false });
+      }
     } catch (e: any) {
       // 获取店铺信息失败不应阻止扩展使用
       if (import.meta.env.VITE_DEBUG_LOGS === 'true') {
@@ -2670,7 +2676,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             set({ isLoggedIn: false, authUser: null });
           } else {
             console.log('[init] 网络错误 - backendUnreachable=true');
-            set({ backendUnreachable: true, storeBindingsLoaded: true });
+            set({ backendUnreachable: true, storeBindingsLoaded: true, isAutoRefreshingBinding: false });
           }
         }
       } else {
@@ -2678,7 +2684,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
     } catch (e: any) {
       console.error('[init] checkAuthOnStartup 外层异常:', e?.message || e);
-      set({ authError: e.message || '认证检查失败', storeBindingsLoaded: true });
+      set({ authError: e.message || '认证检查失败', storeBindingsLoaded: true, isAutoRefreshingBinding: false });
     }
     const finalState = get();
     console.log('[init] checkAuthOnStartup 结束:', {
@@ -2720,26 +2726,32 @@ export const useAppStore = create<AppState>((set, get) => ({
       // 自动刷新绑定：SPC_CDS 变化但 shopId 仍匹配时，静默更新 SPC_CDS
       try {
         const state = get();
+        let needsRefresh = false;
         if (state.shopId && state.spcCds && backendApi.isLoggedIn()) {
           const matchedBySpc = state.storeBindings.some(b => b.isActive && b.spcCds === state.spcCds);
           const matchedByShop = state.storeBindings.some(b => b.isActive && b.shopId === state.shopId);
           if (!matchedBySpc && matchedByShop) {
             console.log('[auto-refresh] refreshStoreBindings 检测到 SPC_CDS 变更但 shopId 匹配，静默刷新绑定...');
-            set({ isAutoRefreshingBinding: true });
+            needsRefresh = true;
             get().bindCurrentStore().finally(() => {
               set({ isAutoRefreshingBinding: false });
             });
           }
         }
-      } catch {} // 静默失败不影响主流程
+        if (!needsRefresh) {
+          set({ isAutoRefreshingBinding: false });
+        }
+      } catch {
+        set({ isAutoRefreshingBinding: false });
+      }
     } catch (e: any) {
       console.error('[init] getStores() 失败:', e?.message || e);
       if (!backendApi.isLoggedIn()) {
         console.log('[init] getStores 401 - 清除 auth');
-        set({ isLoggedIn: false, authUser: null, storeBindings: [], storeBindingsLoaded: true });
+        set({ isLoggedIn: false, authUser: null, storeBindings: [], storeBindingsLoaded: true, isAutoRefreshingBinding: false });
       } else {
         console.log('[init] getStores 网络错误 - 设置 storeBindingsError');
-        set({ storeBindingsError: '无法获取店铺绑定列表', storeBindingsLoaded: true });
+        set({ storeBindingsError: '无法获取店铺绑定列表', storeBindingsLoaded: true, isAutoRefreshingBinding: false });
       }
     }
   },

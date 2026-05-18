@@ -221,6 +221,10 @@ export async function validateShopAccess(spcCds: string, action: string, shopId?
   return request<{ allowed: boolean }>('POST', '/api/stores/validate', body);
 }
 
+export async function consumeTrial() {
+  return request<{ consumed: boolean; reason?: string }>('POST', '/api/stores/consume-trial');
+}
+
 // ===== Analytics API =====
 
 export async function reportEvent(eventType: string, eventData?: Record<string, unknown>) {
