@@ -50,9 +50,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # 限时特卖助手 (Limited Time Sale Helper)
 
-**版本:** 1.14.0
-**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 2 + 一次性邀请码 + 试用限制(trialEnabled 永久关闭, validate/consume 分离) + 使用条款系统 + UI 文案脱敏 + ESLint 零错误 + 部署优化 + 401透传 + IP回退 + 悬浮面板增强 + storeBindingsLoaded门控 + 使用说明按钮 + 二维码联系弹窗 + consumeTrial 响应检查 + _consumeTrialLog 调试存储
-**最近更新:** 2026-05-18 — 试用消耗修复: consumeTrial() 添加 response.ok 检查 + _consumeTrialLog storage 调试日志; /validate 与 /consume-trial 读写分离
+**版本:** 1.14.2
+**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 2 + 一次性邀请码 + 试用限制(trialEnabled 永久关闭, validate/consume 分离) + 使用条款系统 + UI 文案脱敏 + ESLint 零错误 + 部署优化 + 401透传 + IP回退 + 悬浮面板增强 + storeBindingsLoaded门控 + 使用说明按钮 + 二维码联系弹窗 + consumeTrial 响应检查 + _consumeTrialLog 调试存储 + 自动模式 alarm 可靠性增强 + 持久化日志系统 + 心跳监控
+**最近更新:** 2026-05-21 — 自动模式可靠性增强: 修复3个alarm残留/丢失根因(SW重启后阶段不匹配) + 持久化日志系统(500条/iso时间戳/导出下载) + 心跳监控(alarm丢失检测/阶段感知轻量自检) + popup监听器去重 + START_AUTO_MODE防重入
 
 ## 相关文档
 - `USER_MANUAL.md` — 用户使用手册 (飞书风格, 面向用户, 含常见问题排查)
