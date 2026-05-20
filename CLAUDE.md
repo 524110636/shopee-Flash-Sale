@@ -96,7 +96,7 @@ backend/                      # Standalone backend service
 │   │   └── index.ts          # SQLite init + migration (ALTER TABLE for schema upgrades)
 │   ├── routes/
 │   │   ├── auth.ts           # POST /register (invite code), /verify, /login, /check-admin (returns trialEnabled), /check-auto-mode
-│   │   ├── stores.ts         # GET /, POST /bind, POST /validate (trialEnabled-aware), DELETE /:id (JWT-protected)
+│   │   ├── stores.ts         # GET /, POST /bind, POST /validate (trialEnabled-aware, read-only), POST /consume-trial, DELETE /:id (JWT-protected)
 │   │   ├── analytics.ts      # POST /events, GET /summary (JWT-protected)
 │   │   └── admin.ts          # GET /users, PATCH /:id/store-limit, PATCH /:id/auto-mode, PATCH /:id/trial, PATCH /:id/trial-enabled, DELETE /:id, GET /analytics, GET /analytics/events, GET /bindings, DELETE /bindings/:id, GET/POST/DELETE /invite-codes (admin-only)
 │   ├── seed.ts                # First-deployment bootstrap: creates admin user + initial invite codes from env vars
@@ -130,6 +130,8 @@ backend/                      # Standalone backend service
 - **`trialEnabled` 永久关闭试用**: 管理员在 AdminPanel 用户列表点击「关闭试用」→ `trialEnabled = 0`，该用户后续所有操作跳过试用检查（适用于已升级套餐的用户）。`trialEnabled=0` 时也不会自动标记 `trialUsed`
 - 管理员可「重置试用」（`trialUsed=0`）或「标记已用」（`trialUsed=1`）
 - 覆盖 9 个操作点：`enable` / `copy` / `auto_mode_enable` / `scheduled_copy` / `scheduled_enable` / `wizard_flow` / `scheduled_copy`(alarm) / `scheduled_copy_enable` / `scheduled_enable`(alarm)
+- **试用校验与消耗分离 (v1.14.0)**: `/validate` 仅做只读检查（`trialUsed` 状态），不再标记试用。`POST /api/stores/consume-trial` 在操作成功后由 `background.ts` `consumeTrial()` 调用，独立标记 `trialUsed=1`。所有操作路径（手动 enable、向导加入、定时开售、自动模式、复制流程）最终走 `runEnableLoop` → `consumeTrial()`，fire-and-forget 不阻塞操作
+- **`consumeTrial()` 调试**: 结果写入 `_consumeTrialLog` storage key（含 `status`/`consumed`/`error`/`ts`），popup 控制台可读取排查指纹浏览器等无法看 SW 日志的场景
 - **试用到期通知**: 任何操作触发 403 试用错误时，`trialExpiredBanner` 状态设值，App.tsx 顶部渲染醒目红底横幅（含图标 + 升级引导文案 + 关闭按钮）。5 个检测点：`checkBackgroundStatus`、`executeCopy` instant/scheduled 路径、`runOneDaySkuAndEnable` 异常、`scheduleEnableForFlashSale` 异常
 - **Wizard 试用错误就地显示**: `checkBackgroundStatus` 检测到试用错误且 `oneDaySkuFlow.phase === 'starting_flash_sale'` 时，同步更新 `oneDaySkuFlow` 为 failed 状态，错误直接显示在 wizard 界面中，无需用户向上滚动
 
@@ -164,6 +166,7 @@ backend/                      # Standalone backend service
 - **Background backend URL**: `background.ts` `DEFAULT_BACKEND_URL` uses `import.meta.env.VITE_BACKEND_URL` (build-time replacement), so production builds automatically point to the correct server. Fallback is `http://localhost:5724` for dev.
 - **Backend port conflict**: `index.ts` server catches `EADDRINUSE` and auto-runs `npx kill-port` to free the port before re-listening.
 - **401 error passthrough**: `backend-api.ts` `request()` on 401 now reads `response.json()` first to extract the backend's `error` field (e.g. `"邮箱或密码错误"`). Falls back to `'认证已过期，请重新登录'` only when the response body is empty or unparseable. `clearAuth()` still called on all 401s.
+- **Trial consume hardening**: `background.ts` `consumeTrial()` checks `response.ok` (fetch doesn't throw on non-2xx), extracts error from response body on failure, writes all outcomes to `_consumeTrialLog` storage key for debugging in fingerprint browsers where SW console is inaccessible
 - **IP fallback for VPN users**: `backend-api.ts` `tryFetch()` wraps the primary `request()` call. On network error, retries with `_fallbackUrl` (from `VITE_BACKEND_FALLBACK_URL` env var, e.g. `http://43.99.86.228:5724`). Both URLs configured in `.env.example`.
 
 ## Login Gate (Extension)
@@ -182,7 +185,8 @@ backend/                      # Standalone backend service
 - **`injectedFetch()`**: Uses `scripting.executeScript({ world: 'MAIN' })` to bypass CSP
 - **Storage-based communication**: `storage.onChanged` for critical flows when `sendMessage` is unreliable
 - **Fire-and-forget analytics**: Background SW reports events without awaiting or error handling
-- **Pre-operation validation (anti-cracking)**: Background SW calls `POST /api/stores/validate` before every critical operation (enable, copy, auto-mode, scheduled copy) via `validateShopAccess()` inline function — reads auth from storage, validates binding+user status+trial limit on backend, cannot be bypassed by modifying frontend code. Now includes detailed `[bg:validate]` console logging at each step (request → response → pass/fail)
+- **Pre-operation validation (anti-cracking)**: Background SW calls `POST /api/stores/validate` before every critical operation (enable, copy, auto-mode, scheduled copy) via `validateShopAccess()` inline function — reads auth from storage, validates binding+user status+trial limit on backend, cannot be bypassed by modifying frontend code. Now includes detailed `[bg:validate]` console logging at each step (request → response → pass/fail). **Trial check is read-only** — actual trial consumption happens separately via `POST /api/stores/consume-trial` after operation success
+- **Trial consumption (`consumeTrial()`)**: `background.ts` `consumeTrial()` called fire-and-forget after `runEnableLoop` success. Checks `response.ok`, reads response body for error details, writes result to `_consumeTrialLog` storage for debugging. All 4 call sites (enable loop, auto mode, direct copy, scheduled copy) follow `reportAnalyticsEvent` → `consumeTrial()` pattern
 - **SPC_CDS source in background**: Background handlers that run without popup context (alarms, scheduled tasks) MUST use `getSpcCdsFromCookies()` to read SPC_CDS from browser cookies. Do NOT read from `browser.storage.local` — popup store only holds SPC_CDS in Zustand memory state, never persists it
 - **Settings security**: AuthPanel settings view shows backend URL only for admin users (`authUser.role === 'admin'`); non-admin users see only a "测试连接" button that calls `healthCheck()`
 - **checkAuthOnStartup sync**: `setTimeout(() => refreshStoreBindings(), 500)` removed in favor of `await refreshStoreBindings()` to eliminate 500ms race window where `isLoggedIn=true` but `storeBindings=[]`
@@ -227,7 +231,8 @@ backend/                      # Standalone backend service
 | POST | `/api/auth/check-auto-mode` | JWT | Check if user can use auto mode |
 | GET | `/api/stores` | JWT | List user's store bindings |
 | POST | `/api/stores/bind` | JWT | Bind a store (SPC_CDS + shop_id) |
-| POST | `/api/stores/validate` | JWT | Validate store binding + user is active (anti-cracking) |
+| POST | `/api/stores/validate` | JWT | Validate store binding + user is active + trial limit (read-only, anti-cracking) |
+| POST | `/api/stores/consume-trial` | JWT | Mark trial used after operation success |
 | DELETE | `/api/stores/:id` | JWT | Unbind store |
 | POST | `/api/analytics/events` | JWT | Report usage event |
 | GET | `/api/analytics/summary` | JWT | Personal usage summary |

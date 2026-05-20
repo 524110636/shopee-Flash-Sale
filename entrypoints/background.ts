@@ -35,6 +35,7 @@ const PRODUCTS_QUERY = `query Products($productIds: [String], $statusType: Int) 
 let _enableStopRequested = false;
 let _enableRunning = false;
 let _autoModeStopRequested = false;
+let _autoModeStarting = false;
 
 // ===== Params type for enable loop =====
 interface EnableParams {
@@ -513,9 +514,17 @@ async function runEnableLoop(params: EnableParams) {
   let zeroProgressCount = 0; // 连续零进展轮数（所有 SKU 全部失败）
 
   for (round = 1; ; round++) {
+    if (round === 1) {
+      logAutoMode('info', `runEnableLoop 开始提交商品`, {
+        totalSkus: allItems.length,
+        maxRetries,
+        infiniteRetry,
+      });
+    }
     if (!infiniteRetry && round > maxRetries) break;
     if (_enableStopRequested) {
       console.log('[bg:enable] ⏹ 用户取消');
+      logAutoMode('info', 'runEnableLoop 用户手动取消');
       break;
     }
 
@@ -569,6 +578,7 @@ async function runEnableLoop(params: EnableParams) {
         if (zeroProgressCount >= 10) {
           const stallMsg = `连续 ${zeroProgressCount} 轮无进展，疑似持久性 API 错误`;
           console.log(`[bg:enable] ⏹ ${stallMsg}`);
+          logAutoMode('warning', `runEnableLoop: ${stallMsg}`, { zeroProgressCount });
           lastRawResponse = stallMsg;
           break;
         }
@@ -627,6 +637,7 @@ async function runEnableLoop(params: EnableParams) {
         if (lowFailureStallCount >= 10) {
           const stallMsg = `僵局检测：${currentItems.length} 个 SKU 连续 10 轮无法开启`;
           console.log(`[bg:enable] ⏹ ${stallMsg}`);
+          logAutoMode('warning', `runEnableLoop: ${stallMsg}`, { remainingItemCount: currentItems.length });
           lastRawResponse = stallMsg;
           break;
         }
@@ -681,6 +692,7 @@ async function runEnableLoop(params: EnableParams) {
       }
     } catch (e: any) {
       console.log(`[bg:enable] 第 ${round} 轮异常:`, e.message);
+      logAutoMode('warning', `runEnableLoop 第 ${round} 轮异常: ${e.message}`);
       const progress: EnableProgress = {
         totalSkus: allItems.length, successSkus: successCount,
         failedSkus: currentItems.length, currentRound: round, maxRetries,
@@ -691,6 +703,7 @@ async function runEnableLoop(params: EnableParams) {
 
       // 致命错误（找不到 seller 标签页）— 停止循环
       if (e.message?.includes('seller.shopee.tw 标签页')) {
+        logAutoMode('error', `runEnableLoop 致命错误: ${e.message}`, { round });
         progress.isComplete = true;
         const errDetails = buildFailedItemDetails(currentItems.map(i => ({ item_id: i.item_id, model_id: i.model_id, err_msg: e.message } as EnableResult)), currentItems);
         await saveProgress(progress, false, e.message);
@@ -857,20 +870,47 @@ function generateLogId(): number {
   return Date.now() * 1000 + Math.floor(Math.random() * 1000);
 }
 
-async function logAutoMode(type: AutoModeLog['type'], message: string) {
+const LOG_RETENTION = 500;
+
+function fmtAutoLogTime(ts: number): string {
+  const d = new Date(ts * 1000);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${mm}-${dd} ${hh}:${mi}:${ss}`;
+}
+
+// 串行化 _autoModeLogs 的读写操作，避免并发写入导致的乱序和重复
+let _logLock: Promise<void> = Promise.resolve();
+
+async function logAutoMode(type: AutoModeLog['type'], message: string, data?: Record<string, unknown>) {
+  const ts = Math.floor(Date.now() / 1000);
   const log: AutoModeLog = {
     id: generateLogId(),
-    timestamp: Math.floor(Date.now() / 1000),
+    timestamp: ts,
+    iso: fmtAutoLogTime(ts),
     type,
     message,
+    ...(data ? { data } : {}),
   };
-  console.log(`[bg:auto] [${type}] ${message}`);
+  console.log(`[bg:auto] [${type}] ${message}`, data || '');
   await sendAutoModeLog(log);
 
-  const result = await browser.storage.local.get('_autoModeLogs');
-  const logs = (result._autoModeLogs as AutoModeLog[]) || [];
-  const updated = [log, ...logs].slice(0, 50);
-  await browser.storage.local.set({ _autoModeLogs: updated }).catch(() => {});
+  // 串行化：等上一个写入完成再执行自己的读-改-写，消除竞态
+  const prev = _logLock;
+  let release: () => void;
+  _logLock = new Promise<void>(r => { release = r; });
+  await prev;
+  try {
+    const result = await browser.storage.local.get('_autoModeLogs').catch(() => ({ _autoModeLogs: [] }));
+    const logs = (result._autoModeLogs as AutoModeLog[]) || [];
+    const updated = [log, ...logs].slice(0, LOG_RETENTION);
+    await browser.storage.local.set({ _autoModeLogs: updated }).catch(() => {});
+  } finally {
+    release();
+  }
 }
 
 function countSlotsInDays(slots: TimeSlot[], days: number): number {
@@ -907,7 +947,17 @@ async function pickNextTargetTime(cds: string, cdsVer: string): Promise<{ target
 async function scheduleNextRound() {
   const result = await browser.storage.local.get('_autoModeStatus');
   const status = result._autoModeStatus as AutoModeStatus | undefined;
-  if (!status?.isRunning) return;
+  if (!status?.isRunning) {
+    await logAutoMode('warning', 'scheduleNextRound: 状态非运行中，跳过');
+    return;
+  }
+
+  await logAutoMode('info', '开始调度下一轮', {
+    round: status.currentRound,
+    totalRounds: status.totalRounds,
+    phase: status.phase,
+    nextTargetTime: status.nextTargetTime,
+  });
 
   if (_autoModeStopRequested) {
     await logAutoMode('info', '收到停止请求，不再调度下一场');
@@ -941,6 +991,36 @@ async function scheduleNextRound() {
     return;
   }
 
+  // SW 在 waiting_enable 阶段终止后恢复：活动已创建，只需重建 auto_mode_enable alarm
+  if (status.phase === 'waiting_enable' && status.currentFlashSaleId) {
+    await logAutoMode('info', '恢复 waiting_enable 阶段: 活动已创建，重建传递 alarm', {
+      flashSaleId: status.currentFlashSaleId,
+      nextTargetTime: status.nextTargetTime,
+    });
+    const targetTime = status.nextTargetTime || Math.floor(Date.now() / 1000) + 600;
+    const isDbg = !!status.debugMode;
+    const delaySec = (status.config.delayMinutes || 5) * (isDbg ? 1 : 60);
+    const enableTime = targetTime + delaySec;
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (enableTime <= nowSec) {
+      const delayMin = isDbg ? 1 / 60 : 0.5;
+      status.nextActionTime = nowSec + (isDbg ? 1 : 30);
+      chrome.alarms.create('auto_mode_enable', { delayInMinutes: delayMin });
+      chrome.alarms.create('auto_mode_heartbeat', { periodInMinutes: 5 });
+      await logAutoMode('info', isDbg ? '传递时间已过，1秒后传递' : `传递时间已过，${delayMin}分钟后传递`);
+    } else {
+      const remainSec = enableTime - nowSec;
+      const delayMin = isDbg ? Math.max(remainSec / 60, 1 / 60) : Math.max(1, Math.ceil(remainSec / 60));
+      status.nextActionTime = enableTime;
+      chrome.alarms.create('auto_mode_enable', { delayInMinutes: delayMin });
+      chrome.alarms.create('auto_mode_heartbeat', { periodInMinutes: 5 });
+      await logAutoMode('info', isDbg ? `${remainSec} 秒后传递商品参数` : `${delayMin} 分钟后传递商品参数`);
+    }
+    await saveAutoModeStatus(status);
+    await sendAutoModeUpdate(status);
+    return;
+  }
+
   const isDebug = !!status.debugMode;
 
   if (isDebug) {
@@ -957,6 +1037,9 @@ async function scheduleNextRound() {
     await logAutoMode('info', `[加速] 伪造目标时间: ${fmtBgTime(fakeTargetTime)}，${advanceSec + 3} 秒后创建活动`);
 
     chrome.alarms.create('auto_mode_create', { delayInMinutes: (advanceSec + 3) / 60 });
+    chrome.alarms.create('auto_mode_heartbeat', { periodInMinutes: 5 });
+    // 调试模式也需清除可能的残留 auto_mode_enable
+    await chrome.alarms.clear('auto_mode_enable').catch(() => {});
     return;
   }
 
@@ -997,6 +1080,7 @@ async function scheduleNextRound() {
 
   status.nextTargetTime = next.targetTime;
   status.phase = 'waiting_create';
+  await chrome.alarms.clear('auto_mode_enable').catch(() => {});
 
   const advanceSec = (status.config.advanceMinutes || 5) * 60;
   const creationTime = next.targetTime - advanceSec;
@@ -1008,6 +1092,7 @@ async function scheduleNextRound() {
     await saveAutoModeStatus(status);
     await sendAutoModeUpdate(status);
     chrome.alarms.create('auto_mode_create', { delayInMinutes: 0.5 });
+    chrome.alarms.create('auto_mode_heartbeat', { periodInMinutes: 5 });
   } else {
     const delayMin = Math.ceil((creationTime - now) / 60);
     status.nextActionTime = creationTime;
@@ -1015,6 +1100,7 @@ async function scheduleNextRound() {
     await saveAutoModeStatus(status);
     await sendAutoModeUpdate(status);
     chrome.alarms.create('auto_mode_create', { delayInMinutes: delayMin });
+    chrome.alarms.create('auto_mode_heartbeat', { periodInMinutes: 5 });
   }
 }
 
@@ -1028,6 +1114,7 @@ function fmtBgTime(ts: number): string {
 }
 
 async function clearAutoModeAlarms() {
+  await logAutoMode('info', '清除所有 auto_mode alarm');
   await chrome.alarms.clear('auto_mode_create').catch(() => {});
   await chrome.alarms.clear('auto_mode_enable').catch(() => {});
   await chrome.alarms.clear('auto_mode_heartbeat').catch(() => {});
@@ -1036,7 +1123,21 @@ async function clearAutoModeAlarms() {
 async function handleAutoModeCreate() {
   const result = await browser.storage.local.get('_autoModeStatus');
   const status = result._autoModeStatus as AutoModeStatus | undefined;
-  if (!status?.isRunning || _autoModeStopRequested) return;
+  if (!status?.isRunning || _autoModeStopRequested) {
+    await logAutoMode('warning', 'auto_mode_create alarm 触发但状态非运行中', {
+      isRunning: !!status?.isRunning,
+      stopRequested: _autoModeStopRequested,
+    });
+    return;
+  }
+
+  // 防止重复触发：只有 waiting_create 阶段才能创建活动
+  if (status.phase !== 'waiting_create') {
+    await logAutoMode('warning', `auto_mode_create alarm 触发但阶段不匹配: ${status.phase}`, {
+      phase: status.phase,
+    });
+    return;
+  }
 
   status.phase = 'creating';
   await saveAutoModeStatus(status);
@@ -1061,6 +1162,9 @@ async function handleAutoModeCreate() {
       `${FLASH_SALE_API}/get_shop_flash_sale_list/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}&offset=0&limit=50&type=0`
     );
     const activeSales = (listData?.data?.flash_sale_list || []).filter((s: any) => s.status === 1);
+    if (activeSales.length > 0) {
+      await logAutoMode('info', `关闭 ${activeSales.length} 个进行中的活动`);
+    }
     for (const sale of activeSales) {
       await injectedFetch(
         `${FLASH_SALE_API}/set_shop_flash_sale/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`,
@@ -1159,7 +1263,20 @@ async function handleAutoModeCreate() {
 async function handleAutoModeEnable() {
   const result = await browser.storage.local.get('_autoModeStatus');
   const status = result._autoModeStatus as AutoModeStatus | undefined;
-  if (!status?.isRunning || _autoModeStopRequested) return;
+  if (!status?.isRunning || _autoModeStopRequested) {
+    await logAutoMode('warning', 'auto_mode_enable alarm 触发但状态非运行中', {
+      isRunning: !!status?.isRunning,
+      stopRequested: _autoModeStopRequested,
+    });
+    return;
+  }
+
+  if (status.phase !== 'waiting_enable') {
+    await logAutoMode('warning', `auto_mode_enable alarm 触发但阶段不匹配: ${status.phase}`, {
+      phase: status.phase,
+    });
+    return;
+  }
 
   status.phase = 'enabling';
   await saveAutoModeStatus(status);
@@ -1176,6 +1293,7 @@ async function handleAutoModeEnable() {
     if (!ep?.products?.length) throw new Error('没有固化商品参数');
 
     // 每轮开始前重新拉取商品库存数据
+    await logAutoMode('info', `开始刷新 ${ep.products.length} 个商品库存数据`);
     const productIds = ep.products.map(p => String(p.itemid));
     const graphqlResp = await injectedFetch<any>(
       `${GRAPHQL_URL}?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`,
@@ -1183,6 +1301,7 @@ async function handleAutoModeEnable() {
       { query: PRODUCTS_QUERY, variables: { productIds, statusType: 0 } }
     );
     const freshItems: ShopeeProduct[] = graphqlResp?.data?.products?.items || [];
+    await logAutoMode('info', `商品库存刷新完成: ${freshItems.length}/${ep.products.length} 个商品有数据`);
     if (freshItems.length > 0) {
       // 用最新库存数据更新 products，保留 skuOverrides 不变
       const freshMap = new Map(freshItems.map(p => [String(p.itemid), p]));
@@ -1244,10 +1363,17 @@ async function handleAutoModeEnable() {
       return;
     }
 
-    await logAutoMode('info', `开始传递商品参数到活动 #${flashSaleId}`);
+    await logAutoMode('info', `开始传递商品参数到活动 #${flashSaleId}`, {
+      itemCount: enableParams.products?.length ?? 0,
+      flashSaleId,
+      round: status.currentRound,
+    });
     await runEnableLoop(enableParams);
 
-    await logAutoMode('success', `第 ${status.currentRound}/${status.totalRounds} 轮商品参数传递完成`);
+    await logAutoMode('success', `第 ${status.currentRound}/${status.totalRounds} 轮商品参数传递完成`, {
+      round: status.currentRound,
+      totalRounds: status.totalRounds,
+    });
     status.sourceFlashSaleId = flashSaleId;
     status.sourceFlashSaleName = `自动模式 第${status.currentRound}轮`;
     status.currentRound++;
@@ -1285,15 +1411,65 @@ async function handleAutoModeEnable() {
 async function handleAutoModeHeartbeat() {
   const result = await browser.storage.local.get('_autoModeStatus');
   const status = result._autoModeStatus as AutoModeStatus | undefined;
-  if (!status?.isRunning || _autoModeStopRequested) return;
+  if (!status?.isRunning || _autoModeStopRequested) {
+    await logAutoMode('warning', 'auto_mode_heartbeat 触发但状态非运行中，清除心跳', {
+      isRunning: !!status?.isRunning,
+      stopRequested: _autoModeStopRequested,
+    });
+    await chrome.alarms.clear('auto_mode_heartbeat').catch(() => {});
+    return;
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const nextAction = status.nextActionTime || 0;
+  const remainMin = nextAction > now ? Math.ceil((nextAction - now) / 60) : 0;
+
+  // 等待阶段：确认主 alarm 还在，只记日志不重复调度
+  if (status.phase === 'waiting_create' || status.phase === 'waiting_enable') {
+    const alarmName = status.phase === 'waiting_create' ? 'auto_mode_create' : 'auto_mode_enable';
+    const existing = await chrome.alarms.get(alarmName);
+    if (existing) {
+      await logAutoMode('info', `心跳: ${status.phase === 'waiting_create' ? '等待创建活动' : '等待传递商品'}，约 ${remainMin} 分钟后执行，第 ${status.currentRound}/${status.totalRounds} 轮`, {
+        phase: status.phase,
+        round: status.currentRound,
+        nextActionTime: status.nextActionTime,
+        alarmScheduled: existing.scheduledTime,
+      });
+      return;
+    }
+    await logAutoMode('warning', `心跳: ${alarmName} alarm 丢失，触发恢复调度`);
+  }
 
   await logAutoMode('info', '心跳检测，重新尝试调度');
-  await scheduleNextRound();
+  try {
+    await scheduleNextRound();
+  } catch (e: any) {
+    await logAutoMode('error', `心跳调度失败: ${e.message}`, { stack: e.stack });
+  }
 }
 
 export default defineBackground({
   main() {
     console.log('[限时特卖助手] Background 已启动');
+
+    // 检查自动模式持久状态（SW 重启后恢复 alarm）
+    browser.storage.local.get('_autoModeStatus').then(async (result) => {
+      const status = result._autoModeStatus as AutoModeStatus | undefined;
+      if (status?.isRunning) {
+        await logAutoMode('warning', 'SW 启动: 检测到自动模式仍在运行', {
+          round: status.currentRound,
+          totalRounds: status.totalRounds,
+          phase: status.phase,
+        });
+        // 长时间休眠后 chrome.alarms 可能丢失，重新评估并恢复调度
+        try {
+          await clearAutoModeAlarms();
+          await scheduleNextRound();
+        } catch (e: any) {
+          await logAutoMode('error', `SW 启动恢复调度失败: ${e.message}`);
+        }
+      }
+    }).catch(() => {});
 
     browser.runtime.onInstalled.addListener((details) => {
       console.log('[限时特卖助手] 已安装/更新:', details.reason);
@@ -1799,8 +1975,23 @@ export default defineBackground({
 
       // ===== START_AUTO_MODE: 启动自动模式 =====
       if (type === 'START_AUTO_MODE') {
+        // 防重入：如果正在启动中或自动模式已在运行，拒绝后续请求
+        if (_autoModeStarting) {
+          console.warn('[bg:START_AUTO_MODE] 拒绝重复启动请求: 正在启动中');
+          return { success: false, error: '正在启动中，请稍候' };
+        }
+        const statusCheck = await browser.storage.local.get('_autoModeStatus');
+        if ((statusCheck._autoModeStatus as AutoModeStatus)?.isRunning) {
+          console.warn('[bg:START_AUTO_MODE] 拒绝重复启动请求: 自动模式已在运行');
+          return { success: false, error: '自动模式已在运行中' };
+        }
+        _autoModeStarting = true;
         const startTs = Date.now();
         console.log('[bg:START_AUTO_MODE] ===== 收到启动请求 =====');
+
+        // 启动前清除上一次运行的日志，确保本次日志从零开始
+        await browser.storage.local.set({ _autoModeLogs: [] });
+
         try {
           const { config, sourceFlashSaleId, sourceFlashSaleName, skuOverrides: msgOverrides, products: msgProducts, discountRate: msgDiscountRate, flashSaleStock: msgFlashSaleStock, purchaseLimit: msgPurchaseLimit, debugMode, selectedSlotId, selectedSlotTime } = msg;
           console.log('[bg:START_AUTO_MODE] 参数:', JSON.stringify({
@@ -1836,8 +2027,10 @@ export default defineBackground({
               return { success: false, error: '该功能仅限高级用户，请联络管理员开通。' };
             }
             console.log('[bg:START_AUTO_MODE] Step0 通过');
+            await logAutoMode('info', 'START_AUTO_MODE Step0: 权限验证通过');
           } catch (e: any) {
             console.error('[bg:START_AUTO_MODE] Step0 异常:', e?.message);
+            await logAutoMode('error', `START_AUTO_MODE Step0 异常: ${e.message}`);
             return { success: false, error: `权限验证失败: ${e.message}` };
           }
 
@@ -1851,6 +2044,7 @@ export default defineBackground({
             console.log('[bg:START_AUTO_MODE] Step1 结果:', sourceData
               ? `productCount=${sourceData.products?.length}, skuOverrideCount=${Object.keys(sourceData.skuOverrides || {}).length}`
               : 'null — 未找到源活动商品数据');
+            await logAutoMode(sourceData ? 'success' : 'warning', `START_AUTO_MODE Step1: ${sourceData ? `找到 ${sourceData.products?.length} 个商品` : '未找到源活动商品数据'}`);
           } catch (e: any) {
             console.error('[bg:START_AUTO_MODE] Step1 失败:', e?.message, e?.stack);
             return { success: false, error: `读取源活动数据失败: ${e?.message || '未知错误'}` };
@@ -1990,8 +2184,14 @@ export default defineBackground({
           try {
             await saveAutoModeStatus(status);
             console.log('[bg:START_AUTO_MODE] Step6 _autoModeStatus 已保存');
+            await logAutoMode('success', `START_AUTO_MODE Step6: 状态已保存`, {
+              totalRounds: status.totalRounds,
+              advanceMinutes: status.config.advanceMinutes,
+              delayMinutes: status.config.delayMinutes,
+            });
           } catch (e: any) {
             console.error('[bg:START_AUTO_MODE] Step6 保存失败:', e?.message);
+            await logAutoMode('error', `START_AUTO_MODE Step6 保存失败: ${e.message}`);
             await browser.storage.local.remove('_autoModeStatus');
             return { success: false, error: `保存自动模式状态失败: ${e?.message || '未知错误'}` };
           }
@@ -2000,9 +2200,6 @@ export default defineBackground({
           console.log('[bg:START_AUTO_MODE] Step7: 通知前端...');
           await sendAutoModeUpdate(status);
 
-          // 清除旧日志
-          await browser.storage.local.set({ _autoModeLogs: [] });
-
           // Step 8: 记录日志并调度
           console.log('[bg:START_AUTO_MODE] Step8: 记录日志并调度首轮...');
           await logAutoMode('info', `自动模式启动: 源活动 "${sourceFlashSaleName}", ${config.mode === 'rounds' ? `共 ${totalRounds} 轮` : `${config.value} 天共 ${totalRounds} 场`}`);
@@ -2010,9 +2207,10 @@ export default defineBackground({
           try {
             await scheduleNextRound();
             console.log(`[bg:START_AUTO_MODE] Step8 scheduleNextRound 完成`);
+            await logAutoMode('success', 'START_AUTO_MODE Step8: 首轮调度完成');
           } catch (e: any) {
             console.error('[bg:START_AUTO_MODE] Step8 scheduleNextRound 失败:', e?.message, e?.stack);
-            status.isRunning = false;
+            await logAutoMode('error', `START_AUTO_MODE Step8 调度失败: ${e.message}`, { stack: e.stack });
             status.phase = 'stopped';
             status.lastError = `调度首轮失败: ${e?.message}`;
             await saveAutoModeStatus(status);
@@ -2027,6 +2225,8 @@ export default defineBackground({
           const elapsed = Date.now() - startTs;
           console.error(`[bg:START_AUTO_MODE] ===== 启动异常，耗时 ${elapsed}ms =====`, e?.message, e?.stack);
           return { success: false, error: `启动自动模式失败: ${e?.message || '未知错误'}` };
+        } finally {
+          _autoModeStarting = false;
         }
       }
 
@@ -2050,7 +2250,9 @@ export default defineBackground({
             totalRounds: status?.totalRounds || 0,
           });
           await browser.storage.local.remove('_autoModeStatus');
-        } catch {}
+        } catch (e: any) {
+          await logAutoMode('error', `停止自动模式时出错: ${e.message}`, { stack: e.stack });
+        }
         return { success: true };
       }
 
@@ -2061,6 +2263,92 @@ export default defineBackground({
           return { status: result._autoModeStatus || null };
         } catch {
           return { status: null };
+        }
+      }
+
+      // ===== EXPORT_AUTO_MODE_LOGS: 导出自动模式日志为文件 =====
+      if (type === 'EXPORT_AUTO_MODE_LOGS') {
+        // 哨兵：第一时间写入 storage，证明 handler 被调用了
+        const exportLogs: string[] = [];
+        const handlerEntryTime = Date.now();
+        exportLogs.push(`handler_entered_at=${handlerEntryTime}`);
+        await browser.storage.local.set({ _exportLogResult: { _handlerEntered: true, _time: handlerEntryTime, _debug: exportLogs } }).catch(() => {});
+
+        const saveAndReturn = async (result: Record<string, unknown>) => {
+          await browser.storage.local.set({ _exportLogResult: result }).catch(() => {});
+          return result;
+        };
+
+        try {
+          // Step 1: 读取 storage
+          exportLogs.push('step1: 开始读取storage');
+          let logs: AutoModeLog[] = [];
+          try {
+            const result = await browser.storage.local.get('_autoModeLogs');
+            logs = (result._autoModeLogs as AutoModeLog[]) || [];
+            exportLogs.push(`step1: 读取成功, 共${logs.length}条日志`);
+          } catch (e: any) {
+            exportLogs.push(`step1: 读取失败 — ${e?.message || String(e)}`);
+            throw new Error(`[step1-storage] ${e?.message || String(e)}`);
+          }
+
+          // Step 2: 格式化为文本
+          exportLogs.push('step2: 开始格式化');
+          let text = '';
+          try {
+            const lines = logs.map(l => {
+              const label = `[${l.iso || '?'}] [${(l.type || 'info').toUpperCase()}]`;
+              const dataStr = l.data ? ` ${JSON.stringify(l.data)}` : '';
+              return `${label} ${l.message || ''}${dataStr}`;
+            });
+            text = lines.join('\n');
+            exportLogs.push(`step2: 格式化成功, 文本长度${text.length}`);
+          } catch (e: any) {
+            exportLogs.push(`step2: 格式化失败 — ${e?.message || String(e)}`);
+            throw new Error(`[step2-format] ${e?.message || String(e)}`);
+          }
+
+          // Step 3: 创建 Blob
+          exportLogs.push('step3: 开始创建Blob');
+          let dataUrl = '';
+          try {
+            const blob = new Blob([text], { type: 'text/plain' });
+            dataUrl = URL.createObjectURL(blob);
+            exportLogs.push(`step3: Blob创建成功, url=${dataUrl.substring(0, 50)}...`);
+          } catch (e: any) {
+            exportLogs.push(`step3: Blob创建失败 — ${e?.message || String(e)}`);
+            throw new Error(`[step3-blob] ${e?.message || String(e)}`);
+          }
+
+          // Step 4: 生成文件名
+          const ts = new Date();
+          const pad = (n: number) => String(n).padStart(2, '0');
+          const fname = `auto-mode-logs-${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.txt`;
+          exportLogs.push(`step4: 文件名=${fname}`);
+
+          // Step 5: 检查 chrome.downloads API 是否可用
+          exportLogs.push(`step5: chrome.downloads=${typeof chrome?.downloads}, .download=${typeof chrome?.downloads?.download}`);
+
+          // Step 6: 触发下载
+          exportLogs.push('step6: 开始调用chrome.downloads.download');
+          try {
+            const downloadId = await chrome.downloads.download({ url: dataUrl, filename: fname, saveAs: true });
+            exportLogs.push(`step6: 下载调用成功, downloadId=${downloadId}`);
+          } catch (e: any) {
+            exportLogs.push(`step6: 下载调用失败 — ${e?.message || String(e)} — name=${e?.name || '?'} — constructor=${e?.constructor?.name || '?'}`);
+            throw new Error(`[step6-download] ${e?.message || String(e)}`);
+          }
+
+          // Step 7: 延迟 revoke
+          setTimeout(() => {
+            try { URL.revokeObjectURL(dataUrl); } catch {}
+          }, 5000);
+          exportLogs.push('step7: 完成');
+
+          return await saveAndReturn({ success: true, count: logs.length, filename: fname, _debug: exportLogs });
+        } catch (e: any) {
+          console.error('[bg:EXPORT] 导出失败:', e?.message || String(e), exportLogs);
+          return await saveAndReturn({ success: false, error: e?.message || String(e), _debug: exportLogs });
         }
       }
 
@@ -2340,18 +2628,30 @@ export default defineBackground({
       }
 
       if (alarm.name === 'auto_mode_create') {
-        console.log('[bg:auto] auto_mode_create 触发');
-        handleAutoModeCreate();
+        await logAutoMode('info', 'auto_mode_create alarm 触发');
+        try {
+          await handleAutoModeCreate();
+        } catch (e: any) {
+          await logAutoMode('error', `handleAutoModeCreate 异常: ${e.message}`, { stack: e.stack });
+        }
       }
 
       if (alarm.name === 'auto_mode_enable') {
-        console.log('[bg:auto] auto_mode_enable 触发');
-        handleAutoModeEnable();
+        await logAutoMode('info', 'auto_mode_enable alarm 触发');
+        try {
+          await handleAutoModeEnable();
+        } catch (e: any) {
+          await logAutoMode('error', `handleAutoModeEnable 异常: ${e.message}`, { stack: e.stack });
+        }
       }
 
       if (alarm.name === 'auto_mode_heartbeat') {
-        console.log('[bg:auto] auto_mode_heartbeat 触发');
-        handleAutoModeHeartbeat();
+        await logAutoMode('info', 'auto_mode_heartbeat alarm 触发');
+        try {
+          await handleAutoModeHeartbeat();
+        } catch (e: any) {
+          await logAutoMode('error', `handleAutoModeHeartbeat 异常: ${e.message}`, { stack: e.stack });
+        }
       }
     });
   },

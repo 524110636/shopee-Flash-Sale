@@ -220,6 +220,7 @@ interface AppState {
   stopAutoMode: () => Promise<void>;
   setFirstSelectedActivity: (sale: FlashSale) => void;
   loadAutoModeStatus: () => Promise<void>;
+  exportAutoModeLogs: () => Promise<void>;
 
   // 后端管理 Actions
   setBackendUrl: (url: string) => Promise<void>;
@@ -2079,9 +2080,81 @@ export const useAppStore = create<AppState>((set, get) => ({
       const logsResult = await browser.storage.local.get('_autoModeLogs');
       const logs = logsResult._autoModeLogs as AutoModeLog[] | undefined;
       if (logs?.length) {
-        set({ autoModeLogs: logs.slice(0, 50) });
+        set({ autoModeLogs: logs });
       }
     } catch {}
+  },
+
+  exportAutoModeLogs: async () => {
+    const steps: string[] = [];
+    try {
+      // Step 1: 直接从 storage 读取日志（不经过 background）
+      steps.push('popup-step1: 读取storage');
+      let logs: any[] = [];
+      try {
+        const result = await browser.storage.local.get('_autoModeLogs');
+        logs = (result._autoModeLogs as any[]) || [];
+        steps.push(`popup-step1: 读取成功, ${logs.length}条`);
+      } catch (e: any) {
+        steps.push(`popup-step1: 读取失败 — ${e?.message || String(e)}`);
+        throw new Error(`[step1] ${e?.message || String(e)}`);
+      }
+
+      // Step 2: 格式化
+      steps.push('popup-step2: 格式化');
+      let text = '';
+      try {
+        const lines = logs.map((l: any) => {
+          const label = `[${l.iso || '?'}] [${(l.type || 'info').toUpperCase()}]`;
+          const dataStr = l.data ? ` ${JSON.stringify(l.data)}` : '';
+          return `${label} ${l.message || ''}${dataStr}`;
+        });
+        text = lines.join('\n');
+        steps.push(`popup-step2: 格式化成功, ${text.length}字符`);
+      } catch (e: any) {
+        steps.push(`popup-step2: 格式化失败 — ${e?.message || String(e)}`);
+        throw new Error(`[step2] ${e?.message || String(e)}`);
+      }
+
+      // Step 3: Blob
+      steps.push('popup-step3: 创建Blob');
+      let dataUrl = '';
+      try {
+        const blob = new Blob([text], { type: 'text/plain' });
+        dataUrl = URL.createObjectURL(blob);
+        steps.push(`popup-step3: Blob创建成功, url=${dataUrl.substring(0, 50)}...`);
+      } catch (e: any) {
+        steps.push(`popup-step3: Blob创建失败 — ${e?.message || String(e)}`);
+        throw new Error(`[step3] ${e?.message || String(e)}`);
+      }
+
+      // Step 4: 文件名
+      const ts = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const fname = `auto-mode-logs-${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.txt`;
+      steps.push(`popup-step4: 文件名=${fname}`);
+
+      // Step 5: 检查 chrome.downloads
+      steps.push(`popup-step5: chrome.downloads=${typeof (globalThis as any).chrome?.downloads}, .download=${typeof (globalThis as any).chrome?.downloads?.download}`);
+
+      // Step 6: 下载
+      steps.push('popup-step6: 调用chrome.downloads.download');
+      try {
+        const downloadId = await (globalThis as any).chrome.downloads.download({ url: dataUrl, filename: fname, saveAs: true });
+        steps.push(`popup-step6: 下载成功, downloadId=${downloadId}`);
+        console.log(`[store] 日志已导出: ${logs.length} 条, 文件名: ${fname}`);
+      } catch (e: any) {
+        steps.push(`popup-step6: 下载失败 — ${e?.message || String(e)} — name=${e?.name || '?'} — constructor=${e?.constructor?.name || '?'}`);
+        throw new Error(`[step6] ${e?.message || String(e)}`);
+      }
+
+      // Step 7: revoke
+      setTimeout(() => { try { URL.revokeObjectURL(dataUrl); } catch {} }, 5000);
+      steps.push('popup-step7: 完成');
+      console.log('[store] 导出成功, 步骤:', JSON.stringify(steps));
+    } catch (e: any) {
+      console.error('[store] 导出失败, 步骤:', JSON.stringify(steps), '错误:', e?.message || String(e));
+    }
   },
 
   toggleOneDaySkuSelection: (itemId) => {
@@ -3463,7 +3536,10 @@ export const useAppStore = create<AppState>((set, get) => ({
 }));
 
 // ===== Background 消息监听（接收进度更新）=====
+let _listenerSetup = false;
 export function setupBackgroundListener() {
+  if (_listenerSetup) return;
+  _listenerSetup = true;
   browser.runtime.onMessage.addListener(async (msg: any) => {
     const type = msg?.type;
 
@@ -3538,7 +3614,7 @@ export function setupBackgroundListener() {
       console.log('[store] 收到自动模式日志:', msg.log);
       const currentLogs = useAppStore.getState().autoModeLogs;
       useAppStore.setState({
-        autoModeLogs: [msg.log, ...currentLogs].slice(0, 50),
+        autoModeLogs: [msg.log, ...currentLogs].slice(0, 500),
       });
     }
 

@@ -25,7 +25,7 @@ const PHASE_LABELS: Record<string, string> = {
 
 export function AutoModePanel({ onBack }: AutoModePanelProps) {
   const {
-    autoModeStatus, autoModeLogs,
+    autoModeStatus, autoModeLogs, exportAutoModeLogs,
     startAutoMode, stopAutoMode,
     flashSaleList, fetchFlashSaleList, isLoadingFlashSaleList,
     loadFlashSaleProducts, products, isLoadingFlashSales,
@@ -644,13 +644,36 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
             </div>
           )}
 
-          <h3 className="text-sm font-medium">运行日志 (最近 {autoModeLogs.length} 条)</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium">运行日志 (最近 {autoModeLogs.length} 条)</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-7 px-2"
+              disabled={autoModeLogs.length === 0}
+              onClick={async () => {
+                try {
+                  console.log('[AutoModePanel] 点击导出日志按钮');
+                  await exportAutoModeLogs();
+                } catch (e: any) {
+                  console.error('[AutoModePanel] 导出日志按钮异常:', e?.message, e);
+                  alert('导出日志失败: ' + (e?.message || '未知错误，请查看控制台'));
+                }
+              }}
+            >
+              导出日志
+            </Button>
+          </div>
           {autoModeLogs.length > 0 ? (
             <div className="max-h-48 overflow-y-auto space-y-1 text-xs font-mono">
               {autoModeLogs.map(log => (
                 <div key={log.id} className="flex gap-2">
-                  <span className="text-gray-400 shrink-0">[{fmtTime(log.timestamp)}]</span>
-                  <span className={logColorClass(log.type)}>{log.message}</span>
+                  <span className="text-gray-400 shrink-0">[{log.iso}]</span>
+                  <span className="text-gray-400 shrink-0 font-normal">[{log.type?.toUpperCase() || 'INFO'}]</span>
+                  <span className={logColorClass(log.type)}>
+                    {log.message}
+                    {log.data ? <span className="text-gray-400 ml-1">{JSON.stringify(log.data)}</span> : null}
+                  </span>
                 </div>
               ))}
             </div>

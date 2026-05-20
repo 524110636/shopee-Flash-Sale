@@ -281,8 +281,10 @@ export interface AutoModeStatus {
 export interface AutoModeLog {
   id: number;
   timestamp: number;
+  iso: string;
   type: 'info' | 'success' | 'error' | 'warning';
   message: string;
+  data?: Record<string, unknown>;
 }
 
 // ===== 复制活动后内存预置商品数据 =====

@@ -50,9 +50,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # 限时特卖助手 (Limited Time Sale Helper)
 
-**版本:** 1.13.3
-**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 2 + 一次性邀请码 + 试用限制(trialEnabled 永久关闭) + 使用条款系统 + UI 文案脱敏 + ESLint 零错误 + 部署优化 + 401透传 + IP回退 + 悬浮面板增强 + storeBindingsLoaded门控 + 使用说明按钮 + 二维码联系弹窗
-**最近更新:** 2026-05-16 — 用户体验完善: storeBindingsLoaded加载门控 + 诊断日志 + 使用说明按钮(飞书文档) + 定制开发二维码弹窗 + copySectionEl可见性修复 + USER_MANUAL.md用户手册
+**版本:** 1.14.0
+**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 2 + 一次性邀请码 + 试用限制(trialEnabled 永久关闭, validate/consume 分离) + 使用条款系统 + UI 文案脱敏 + ESLint 零错误 + 部署优化 + 401透传 + IP回退 + 悬浮面板增强 + storeBindingsLoaded门控 + 使用说明按钮 + 二维码联系弹窗 + consumeTrial 响应检查 + _consumeTrialLog 调试存储
+**最近更新:** 2026-05-18 — 试用消耗修复: consumeTrial() 添加 response.ok 检查 + _consumeTrialLog storage 调试日志; /validate 与 /consume-trial 读写分离
 
 ## 相关文档
 - `USER_MANUAL.md` — 用户使用手册 (飞书风格, 面向用户, 含常见问题排查)
@@ -198,7 +198,7 @@ Built with WXT + React 19 + TypeScript + Tailwind CSS + shadcn/ui + Zustand (ext
 - **`entrypoints/content.ts`** — Content script: unified floating panel (`#__flash_sale_panel__`) merging enable progress, copy progress, and auto mode status. Listens for `ENABLE_PROGRESS`/`ENABLE_COMPLETE`/`COPY_SCHEDULED`/`COPY_PROGRESS`/`COPY_COMPLETE`/`AUTO_MODE_UPDATE` messages. Also watches `storage.onChanged` as backup path for `_enableProgress`, `_copyCountdown`, and `_autoModeStatus` when messages fail.
 
 ### Anti-Cracking Phase 1 — 后端验证 (v1.8.2)
-- 所有关键操作（开限时特卖、复制活动、自动模式、定时复制）执行前，调用 `POST /api/stores/validate` 校验店铺绑定是否仍有效 + 用户账号是否激活 + **试用限制**
+- 所有关键操作（开限时特卖、复制活动、自动模式、定时复制）执行前，调用 `POST /api/stores/validate` 校验店铺绑定是否仍有效 + 用户账号是否激活 + **试用限制（只读检查）**。试用消耗通过 `POST /api/stores/consume-trial` 在操作成功后独立调用
 - `validateShopAccess()` inline 函数在 background.ts 中，从 storage 读取 `backendAuth` + `backendUrl`，URL 不存在时自动回退默认值 `http://localhost:5724`
 - 9 个注入点全覆盖: START_ENABLE, EXECUTE_COPY, executeScheduledCopyFlow, handleAutoModeEnable, SCHEDULE_COPY, SCHEDULE_ENABLE, SCHEDULE_WIZARD_FLOW, scheduled_copy_enable, scheduled_enable
 - 验证失败时根据注入点分别处理: return error / throw / stop auto mode / log + return
@@ -213,8 +213,9 @@ Built with WXT + React 19 + TypeScript + Tailwind CSS + shadcn/ui + Zustand (ext
 - 管理员可查看所有邀请码及其使用状态（使用者邮箱、使用时间）
 - 前端注册表单「注册密钥」→「邀请码」，placeholder 文字同步更新
 
-### 试用限制 (v1.10.0 → v1.12.0)
-- `users` 表 `trial_used` 字段（默认 0），首次执行操作时 `/validate` 自动标记为 1
+### 试用限制 (v1.10.0 → v1.12.0 → v1.14.0)
+- `users` 表 `trial_used` 字段（默认 0）
+- **v1.14.0 读写分离**: `/validate` 仅做只读检查（trialUsed 状态），不再标记试用。`POST /api/stores/consume-trial` 由 `background.ts` `consumeTrial()` 在操作成功后独立调用 fire-and-forget，标记 `trialUsed=1`
 - **`trialEnabled` 永久关闭试用 (v1.12.0)**: `users` 表新增 `trial_enabled` 字段（默认 1）。管理员在 AdminPanel 用户列表点击「关闭试用」→ `trialEnabled = 0`，该用户后续所有操作跳过试用检查，也不会自动标记 `trialUsed`。适用于已升级套餐的用户
 - `trial_used >= 1` 且 `trialEnabled = 1` 的非管理员用户再次操作 → 403 `"试用已结束，请联系管理员升级套餐"`
 - 管理员（role=admin）不受试用限制，`trial_used` 也不自动递增
@@ -222,6 +223,7 @@ Built with WXT + React 19 + TypeScript + Tailwind CSS + shadcn/ui + Zustand (ext
 - JWT payload 包含 `trialUsed` + `trialEnabled`，`checkAdmin()` 返回时自动同步到 storage
 - **试用到期通知 (v1.12.0)**: 任何操作触发 403 试用错误时，`trialExpiredBanner` Zustand 状态设值，App.tsx 顶部渲染醒目红底横幅（图标 + 升级引导文案 + 关闭按钮）。5 个检测点：`checkBackgroundStatus`、`executeCopy` instant/scheduled 路径、`runOneDaySkuAndEnable` 异常、`scheduleEnableForFlashSale` 异常
 - **Wizard 试用错误就地显示 (v1.12.0)**: `checkBackgroundStatus` 检测到试用错误且 `oneDaySkuFlow.phase === 'starting_flash_sale'` 时，同步更新 `oneDaySkuFlow` 为 failed 状态，错误直接显示在 wizard 界面中。`addToExistingFlashSale` 的 `waitForBoot` 失败后优先读取 `_enableProgress.error` 而非显示通用「Background Service Worker 未响应」
+- **`consumeTrial()` 响应检查 (v1.14.0)**: 添加 `response.ok` 检查（fetch 不抛非 2xx 异常），失败时从 body 提取错误。所有结果写入 `_consumeTrialLog` storage key（status/consumed/error/ts），popup 控制台可读，解决指纹浏览器无法看 SW 日志的问题。4 个调用点均在 `runEnableLoop` 成功后：手动 enable、自动模式、即时复制、定时复制
 
 ### 安全加固 Phase 2 (v1.13.0)
 - **P0 — 客户端宽容降级移除**: `backend-api.ts` `request()` 重构 — `!response.ok` 检查移到 `response.json()` 之前，Content-Type 守卫防止非 JSON 响应被误 parse，网络错误不再暴露 `_baseUrl`。所有错误路径均 `throw`，绝不返回假成功数据。
@@ -409,7 +411,8 @@ Auto mode (background):
 - **POST `/api/auth/check-admin`** — Check admin role (JWT)
 - **GET `/api/stores`** — List store bindings (JWT)
 - **POST `/api/stores/bind`** — Bind store by SPC_CDS + shop_id/account_id/username (JWT)
-- **POST `/api/stores/validate`** — Validate store binding + user is active (JWT, anti-cracking)
+- **POST `/api/stores/validate`** — Validate store binding + user is active + trial limit (JWT, anti-cracking, trial check is read-only)
+- **POST `/api/stores/consume-trial`** — Mark trial used after first successful operation (JWT, v1.14.0)
 - **DELETE `/api/stores/:id`** — Unbind store (JWT)
 - **POST `/api/analytics/events`** — Report usage event (JWT)
 - **GET `/api/analytics/summary`** — Personal usage summary (JWT)
@@ -661,6 +664,7 @@ The API returns two possible formats (check both):
 - **IP 回退 (v1.13.2):** `backend-api.ts` `tryFetch()` 包装主请求，网络错误时自动用 `_fallbackUrl`（来自 `VITE_BACKEND_FALLBACK_URL` env 变量，如 `http://43.99.86.228:5724`）重试。解决 VPN 用户 DNS 劫持导致域名不可达的问题。双地址均在 `.env.example` 中配置。
 - **FirstUseModal 居中修复 (v1.13.2):** `FirstUseModal.tsx` 的 `items-end sm:items-center` → `items-center`，`rounded-t-xl sm:rounded-xl` + `sm:max-w-md` → `rounded-xl` + `max-w-md`，确保弹窗在 popup 中垂直居中而非底部对齐。
 - **Wizard 试用校验补充 (v1.13.2):** `store.ts` `createNewFlashSaleAndAdd` 中「立即创建并提交（跳过等待）」调试按钮路径新增 `validateShopAccess(spcCds, 'wizard_flow')` 调用，在创建闪购前拦截试用到期用户，错误就地显示在 wizard 界面。
+- **试用消耗修复 (v1.14.0):** `background.ts` `consumeTrial()` 原实现不检查 `response.ok`，fetch 在 4xx/5xx 不抛异常导致静默失败（log "已消耗"但后端未标记）。修复：添加 `response.ok` 检查 + 响应体错误提取 + 所有结果写入 `_consumeTrialLog` storage key 供 popup 调试。backend 新增 `POST /api/stores/consume-trial` 端点独立于 `/validate`（读写分离），`consumeTrial()` 在 `runEnableLoop` 成功后 fire-and-forget 调用。
 - **悬浮面板 — 自动模式实时倒计时 (v1.13.3):** `content.ts` `renderAutoSection()` 渲染 `#__auto_countdown__` 倒计时元素，`updateAutoCountdown()` 每秒更新，显示距离 `nextActionTime`（操作触发时间）或 `nextTargetTime`（场次开始时间）的剩余分钟秒数。自动模式停止时自动清除计时器。
 - **悬浮面板 — 最小化/恢复按钮 (v1.13.3):** 统一面板和复制 UI 均增加 `−` 最小化按钮（右上角）。`toggleMinimize()` / `toggleCopyMinimize()` 将面板收缩为右侧窄条，仅显示 `◀` 箭头 + 一行倒计时/状态摘要，实时更新。点击箭头还原完整面板。`panelMinimized` / `copyMinimized` 标志跟踪状态，`updateMinimizedContent()` / `updateCopyMinimizedContent()` 刷新收缩内容。
 - **showComplete 初始化修复 (v1.13.3):** `showComplete()` 现在先调用 `createPanel()` + `buildProgressSection()` 再检查 `headerEl`，修复 `ENABLE_COMPLETE` 在 `ENABLE_PROGRESS` 之前到达（零项目或即时错误）时静默返回不显示面板的问题。

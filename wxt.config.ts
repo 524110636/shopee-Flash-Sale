@@ -10,7 +10,7 @@ export default defineConfig({
     name: '限时特卖助手',
     description: '虾皮卖家后台限时特卖自动化工具',
     version: '1.6.1',
-    permissions: ['storage', 'cookies', 'scripting', 'alarms', 'unlimitedStorage'],
+    permissions: ['storage', 'cookies', 'scripting', 'alarms', 'unlimitedStorage', 'downloads'],
     host_permissions: ['https://*.shopee.tw/*'],
   },
   vite: () => ({
