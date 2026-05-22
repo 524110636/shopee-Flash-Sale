@@ -162,12 +162,19 @@ async function filterActiveProducts(
     const activeProducts = products.filter(p => activeIds.has(String(p.itemid)));
     const filteredCount = products.length - activeProducts.length;
     if (filteredCount > 0) {
+      if (activeProducts.length === 0) {
+        console.warn(`[filterActiveProducts] 所有 ${products.length} 个商品均未通过活跃检查 (API 返回 ${freshItems.length} 个)，保留原商品列表`);
+        await logAutoMode('warning', `filterActiveProducts: 所有 ${products.length} 个商品均被判定为非活跃 (API 返回 ${freshItems.length} 个)，保留原商品以防误判`);
+        return { activeProducts: products, activeIds: new Set(products.map(p => String(p.itemid))) };
+      }
       console.log(`[filterActiveProducts] 已过滤 ${filteredCount} 个已下架/删除的商品 (共 ${products.length} → ${activeProducts.length})`);
+      await logAutoMode('info', `filterActiveProducts: 已过滤 ${filteredCount} 个已下架/删除的商品 (${products.length} → ${activeProducts.length})`);
     }
     return { activeProducts, activeIds };
   } catch (e: any) {
     // GraphQL 调用失败时保留所有商品，避免阻塞复制流程
     console.warn('[filterActiveProducts] GraphQL API 调用失败，保留所有商品:', e?.message);
+    await logAutoMode('warning', `filterActiveProducts: API 调用失败，保留所有 ${products.length} 个商品: ${e.message}`);
     return { activeProducts: products, activeIds: new Set(products.map(p => String(p.itemid))) };
   }
 }
