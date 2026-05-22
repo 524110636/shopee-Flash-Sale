@@ -51,8 +51,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # 限时特卖助手 (Limited Time Sale Helper)
 
 **版本:** 1.14.3
-**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 2 + 一次性邀请码 + 试用限制(trialEnabled 永久关闭, validate/consume 分离) + 使用条款系统 + UI 文案脱敏 + ESLint 零错误 + 部署优化 + 401透传 + IP回退 + 悬浮面板增强 + storeBindingsLoaded门控 + 使用说明按钮 + 二维码联系弹窗 + consumeTrial 响应检查 + _consumeTrialLog 调试存储 + 自动模式 alarm 可靠性增强 + 持久化日志系统 + 心跳监控 + SW恢复nextTargetTime复用 + filterActiveProducts安全底线
-**最近更新:** 2026-05-22 — SW恢复路径优化: scheduleNextRound()恢复时复用已有nextTargetTime跳过injectedFetch(修复无标签页时Chrome拒绝scripting.executeScript) + filterActiveProducts全部过滤时保留原商品防enableParams清空崩溃(加logAutoMode可追踪)
+**状态:** 功能完善阶段 + 后端管理系统 + 防破解 Phase 2 + 一次性邀请码 + 试用限制(trialEnabled 永久关闭, validate/consume 分离) + 使用条款系统 + UI 文案脱敏 + ESLint 零错误 + 部署优化 + 401透传 + IP回退 + 悬浮面板增强 + storeBindingsLoaded门控 + 使用说明按钮 + 二维码联系弹窗 + consumeTrial 响应检查 + _consumeTrialLog 调试存储 + 自动模式 alarm 可靠性增强 + 持久化日志系统 + 心跳监控 + SW恢复nextTargetTime复用 + filterActiveProducts安全底线 + handleAutoModeEnable过滤Number类型转换
+**最近更新:** 2026-05-23 — handleAutoModeEnable商品过滤修复: Number()类型转换兼容API返回字符串status + 安全底线防全部过滤清空 + 诊断日志(status原始值样本/try-catch/最终防线) + 域名DNS丢失故障排查(xp.aluvi.cc A记录缺失→198.18.1.123→改为IP直连)
 
 ## 相关文档
 - `USER_MANUAL.md` — 用户使用手册 (飞书风格, 面向用户, 含常见问题排查)
