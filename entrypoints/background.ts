@@ -1408,32 +1408,54 @@ async function handleAutoModeEnable() {
     }
 
     // 过滤已下架/删除的商品：freshItems 中缺失或 Number(status) !== 0 的商品自动剔除
-    if (freshItems.length < ep.products.length || freshItems.some(p => Number(p.status) !== 0)) {
-      const activeIds = new Set(
-        freshItems.filter(p => Number(p.status) === 0).map(p => String(p.itemid)),
-      );
-      const filteredProducts = ep.products.filter(p => activeIds.has(String(p.itemid)));
-      // 安全底线: 全部被过滤时保留原商品，防止 enableParams 清空
-      if (filteredProducts.length === 0) {
-        const rawStatuses = freshItems.slice(0, 5).map(p => `${p.itemid}:status=${p.status}(${typeof p.status})`).join(', ');
-        await logAutoMode('warning', `商品过滤检测到全部 ${ep.products.length} 个商品 status 异常 (样本: ${rawStatuses})，保留原商品以防误判`);
-      } else {
-        const filteredOverrides: Record<string, SkuOverride> = {};
-        for (const [key, override] of Object.entries(ep.skuOverrides || {})) {
-          const itemId = key.split('-')[0];
-          if (activeIds.has(itemId)) {
-            filteredOverrides[key] = override;
+    // 诊断日志：记录 freshItems 的 status 原始值，便于追踪过滤误判
+    if (freshItems.length > 0) {
+      const statusSample = freshItems.slice(0, 3).map(p => `${p.itemid}:${p.status}(${typeof p.status})`).join(', ');
+      await logAutoMode('info', `商品状态样本 (前3个): ${statusSample}`);
+    }
+    try {
+      if (freshItems.length < ep.products.length || freshItems.some(p => Number(p.status) !== 0)) {
+        const activeIds = new Set(
+          freshItems.filter(p => Number(p.status) === 0).map(p => String(p.itemid)),
+        );
+        const filteredProducts = ep.products.filter(p => activeIds.has(String(p.itemid)));
+        // 安全底线: 全部被过滤时保留原商品，防止 enableParams 清空
+        if (filteredProducts.length === 0) {
+          const rawStatuses = freshItems.slice(0, 5).map(p => `${p.itemid}:status=${p.status}(${typeof p.status})`).join(', ');
+          await logAutoMode('warning', `商品过滤检测到全部 ${ep.products.length} 个商品 status 异常 (样本: ${rawStatuses})，保留原商品以防误判`);
+        } else {
+          const filteredOverrides: Record<string, SkuOverride> = {};
+          for (const [key, override] of Object.entries(ep.skuOverrides || {})) {
+            const itemId = key.split('-')[0];
+            if (activeIds.has(itemId)) {
+              filteredOverrides[key] = override;
+            }
+          }
+          const removedCount = ep.products.length - filteredProducts.length;
+          if (removedCount > 0) {
+            await logAutoMode('warning', `已自动过滤 ${removedCount} 个已下架/删除的商品`);
+            ep.products = filteredProducts;
+            ep.skuOverrides = filteredOverrides;
+            status.enableParams = { ...ep, products: filteredProducts, skuOverrides: filteredOverrides };
+            await saveAutoModeStatus(status);
           }
         }
-        const removedCount = ep.products.length - filteredProducts.length;
-        if (removedCount > 0) {
-          await logAutoMode('warning', `已自动过滤 ${removedCount} 个已下架/删除的商品`);
-          ep.products = filteredProducts;
-          ep.skuOverrides = filteredOverrides;
-          status.enableParams = { ...ep, products: filteredProducts, skuOverrides: filteredOverrides };
-          await saveAutoModeStatus(status);
-        }
       }
+    } catch (filterErr: any) {
+      await logAutoMode('error', `商品过滤异常，保留原商品继续: ${filterErr?.message || filterErr}`, {
+        stack: filterErr?.stack?.slice(0, 300),
+      });
+    }
+
+    // 最终防线：如果 products 意外为空，记录诊断信息并中止
+    if (!ep.products?.length) {
+      const diagInfo = {
+        freshItemCount: freshItems.length,
+        freshStatusSample: freshItems.slice(0, 5).map(p => `${p.itemid}:${p.status}(${typeof p.status})`),
+        epProductIds: ep.products?.map(p => p.itemid) || [],
+      };
+      await logAutoMode('error', `最终防线触发: enableParams.products 为空`, diagInfo);
+      throw new Error('商品参数为空，无法继续自动模式');
     }
 
     const enableParams: EnableParams = {
