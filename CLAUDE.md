@@ -44,7 +44,17 @@ This creates the admin user (from `INIT_ADMIN_EMAIL`/`INIT_ADMIN_PASSWORD`) and 
 | `cd backend && npm run dev` | Start backend server on port 5724 |
 | `cd backend && npx kill-port 5724` | Kill backend if port in use |
 | `cd backend && npm run seed` | Initialize first admin + invite codes (first deployment only) |
-| `git config core.hooksPath .githooks` | Enable pre-commit build check hook |
+| `npm run test` | Run unit tests (vitest) + e2e tests (playwright) |
+| `npm run test:unit` | Run vitest unit tests only |
+| `npm run test:e2e` | Run Playwright e2e tests |
+| `npm run test:ci` | Full CI: build + harness + unit + e2e |
+| `npm run harness` | Browser automation test harness |
+| `npx pm2 status` | Check PM2 backend process |
+| `npx pm2 logs limited-time-sale --lines 20` | View backend logs |
+| `npx pm2 restart limited-time-sale` | Restart backend |
+| `npx pm2 stop limited-time-sale` | Stop backend |
+| `curl http://localhost:5724/api/health` | Health check (local) |
+| `git config core.hooksPath .githooks` | Enable pre-commit hook (runs `npm run build`) |
 
 ## Project Structure
 
@@ -199,7 +209,7 @@ backend/                      # Standalone backend service
 - **Guide banner**: When the activity list is shown with no scheduled/active copy, a brand-color info banner guides users to click the "复制" button
 - **`skipSkuKeys` in auto-mode**: `AutoModePanel` can detect undiscounted SKUs and let user skip them before starting. The `runEnableLoop` in background.ts filters out skipped SKUs via a `skipSet`
 - **Copy button visibility**: The "复制" button in the activity list uses filled brand color (`bg-shopee-brand text-white`) instead of outline, with a "新/待开启" badge for newly created activities
-- **No test files**: Testing is manual via Chrome extension reload
+- **Testing**: Vitest unit tests (`tests/unit/`), Playwright e2e tests (`tests/e2e/`), and browser harness (`harness/`). Harness requires extension build first (`npm run build`). e2e tests load the built extension in Chromium
 - **One-day SKU feature**: `one-day-sku.ts` provides SKU builder functions for adding/updating a dedicated "批發客戶下訂-請勿下單" SKU with 1-day shipping. Full flow: `get_product_info` → `buildOneDaySkuProductInfo()` → search discounts → remove from discounts → `update_product_info` → re-fetch product info (with retry) → restore discounts. **All user-facing progress messages are obfuscated** to generic "正在优化商品 (X/N)..." — phase labels (检查SKU/发布商品/查询折扣/移除折扣/恢复折扣) are all shown as "优化中". Technical details only appear in `[一键修复]` console logs for developer debugging. Runs in popup (not background) via `runOneDaySkuAndEnable()` in store.ts. Discount restore now applies to ALL products including the newly created SKUs. After fix, enters 3-phase wizard: `editing_params` (edit SKU params + global defaults, **green hint guides user to click product cards to edit prices/stock/limit**) → `selecting_flash_sale` (pick existing flash sale or create new) → `starting_flash_sale` (submit via `addToExistingFlashSale` or `createNewFlashSaleAndAdd`). Discount rate is auto-detected from actual product discounts during the fix flow and synced to global `discountRate`.
 - **Discount rate auto-detection**: During `runOneDaySkuAndEnable`, `collectedRatios: number[]` captures `getDiscountRatio()` from each product (both newly fixed and already-has-SKU). After the loop, if all ratios match, sets `discountRate` to that value; if different, uses the average. This ensures the post-fix wizard shows the actual product discount (e.g., 5.4折 → 54%) instead of the default 60%.
 - **Wizard post-fix phases**: `editing_params` shows fix results with editable global params (折扣率/库存/限购) and per-product SkuTable. `selecting_flash_sale` lists existing active/upcoming sales with "定时" button (calls `scheduleEnableForFlashSale`) and "加入" button (calls `addToExistingFlashSale`), plus time slot selection (via `fetchTimeSlots`) for creating new sales. Top of phase shows two timing inputs: `wizardAdvanceMin` (提前N分钟创建空活动) and `wizardDelayMin` (活动开始后N分钟提交商品). Slot list uses radio-style selection with a unified "开始" button. Debug button "立即创建 Demo" forces immediate creation+enable by passing `now` as slotStartTime with advanceMin=delayMin=0. `addToExistingFlashSale` now goes through Background SW `runEnableLoop` (not direct popup API call) with full retry/error handling. `createNewFlashSaleAndAdd` supports two-phase: when advanceMin>0, sends `SCHEDULE_WIZARD_FLOW` to background for deferred creation via `wizard_create` alarm, then `scheduled_enable` alarm for timed enable. Empty activity product display is handled by `_pendingFlashSaleData` (in-memory) and `_copiedSaleData` (storage) pre-population.
@@ -254,6 +264,14 @@ backend/                      # Standalone backend service
 | POST | `/api/admin/invite-codes` | Admin | Generate invite codes (`{ count }`, default 1, max 20) |
 | DELETE | `/api/admin/invite-codes/:id` | Admin | Delete unused invite code |
 | GET | `/api/health` | Public | Health check |
+
+## Key Documents
+
+- `USER_MANUAL.md` — User manual (Feishu-style, Chinese, with FAQ)
+- `SSH_CONNECT.md` — SSH server connection guide
+- `docs/shopee-flash-sale-api.md` — Shopee API endpoints and response formats
+- `docs/superpowers/` — Design specs and implementation plans
+- `AGENTS.md` — Detailed version history (775 lines), loaded alongside CLAUDE.md
 
 ## Config Files
 

@@ -137,6 +137,41 @@ async function saveCopiedSaleData(data: CopiedSaleData) {
   console.log('[bg:copiedSaleData] 已保存:', data.newFlashSaleId, data.sourceFlashSaleName);
 }
 
+// ===== 商品状态过滤：通过 GraphQL 检查商品是否仍处于正常上架状态 =====
+// 已下架/删除的商品在 Shopee API 中不会返回或 status !== 0，自动剔除
+async function filterActiveProducts(
+  products: ShopeeProduct[],
+  spcCds: string,
+  spcCdsVer: string,
+): Promise<{ activeProducts: ShopeeProduct[]; activeIds: Set<string> }> {
+  if (!products.length) return { activeProducts: [], activeIds: new Set() };
+
+  const productIds = products.map(p => String(p.itemid));
+  try {
+    const graphqlResp = await injectedFetch<any>(
+      `${GRAPHQL_URL}?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`,
+      'POST',
+      { query: PRODUCTS_QUERY, variables: { productIds, statusType: 0 } },
+    );
+    const freshItems: ShopeeProduct[] = graphqlResp?.data?.products?.items || [];
+    // status === 0 表示正常上架，非 0 表示已下架/删除/违规
+    const activeIds = new Set(
+      freshItems.filter(p => p.status === 0).map(p => String(p.itemid)),
+    );
+
+    const activeProducts = products.filter(p => activeIds.has(String(p.itemid)));
+    const filteredCount = products.length - activeProducts.length;
+    if (filteredCount > 0) {
+      console.log(`[filterActiveProducts] 已过滤 ${filteredCount} 个已下架/删除的商品 (共 ${products.length} → ${activeProducts.length})`);
+    }
+    return { activeProducts, activeIds };
+  } catch (e: any) {
+    // GraphQL 调用失败时保留所有商品，避免阻塞复制流程
+    console.warn('[filterActiveProducts] GraphQL API 调用失败，保留所有商品:', e?.message);
+    return { activeProducts: products, activeIds: new Set(products.map(p => String(p.itemid))) };
+  }
+}
+
 // ===== Utility: timeout race =====
 async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return Promise.race([
@@ -798,15 +833,34 @@ async function executeScheduledCopyFlow(
 
   // Step 4: 保存源活动商品数据
   sendCopyMessage('COPY_PROGRESS', { currentStep: 4, totalSteps: 4, description: '保存商品数据...' });
-  if (params.products?.length) {
+
+  // 过滤已下架/删除的商品，避免后续开售时反复请求无效商品
+  let activeProducts = params.products || [];
+  let activeSkuOverrides = params.skuOverrides || {};
+  if (activeProducts.length > 0) {
+    const { activeProducts: filtered, activeIds } = await filterActiveProducts(activeProducts, cds, cdsVer);
+    if (filtered.length < activeProducts.length) {
+      const filteredOverrides: Record<string, SkuOverride> = {};
+      for (const [key, override] of Object.entries(activeSkuOverrides)) {
+        const itemId = key.split('-')[0];
+        if (activeIds.has(itemId)) {
+          filteredOverrides[key] = override;
+        }
+      }
+      activeSkuOverrides = filteredOverrides;
+    }
+    activeProducts = filtered;
+  }
+
+  if (activeProducts.length) {
     try {
       await saveCopiedSaleData({
         sourceFlashSaleId: params.sourceFlashSaleId,
         sourceFlashSaleName: params.sourceFlashSaleName || '',
         newFlashSaleId: newId,
         copiedAt: Date.now(),
-        products: params.products,
-        skuOverrides: params.skuOverrides || {},
+        products: activeProducts,
+        skuOverrides: activeSkuOverrides,
         discountRate: params.discountRate ?? 60,
         flashSaleStock: params.flashSaleStock ?? 200,
         purchaseLimit: params.purchaseLimit ?? 5,
@@ -818,7 +872,7 @@ async function executeScheduledCopyFlow(
 
   // 返回 enableParams，由调用方通过 runEnableLoop 异步提交商品（复用正常的开启限时特卖逻辑）
   const enableParams: EnableParams = {
-    products: params.products,
+    products: activeProducts,
     flashSaleId: newId,
     spcCds: cds,
     spcCdsVer: cdsVer,
@@ -827,7 +881,7 @@ async function executeScheduledCopyFlow(
     discountRate: params.discountRate ?? 60,
     flashSaleStock: params.flashSaleStock ?? 200,
     purchaseLimit: params.purchaseLimit ?? 5,
-    skuOverrides: params.skuOverrides ?? {},
+    skuOverrides: activeSkuOverrides,
   };
 
   return { newFlashSaleId: newId, enableParams };
@@ -1061,6 +1115,15 @@ async function scheduleNextRound() {
     } else {
       targetTime = foundSlot.start_time;
       await logAutoMode('info', `使用选定场次 #${status.selectedSlotId}: ${fmtBgTime(targetTime)}`);
+    }
+  }
+
+  // SW 恢复路径: 如果已有有效的 nextTargetTime，直接复用，避免 injectedFetch 在无标签页时失败
+  if (!targetTime && status.phase === 'waiting_create' && status.nextTargetTime) {
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (status.nextTargetTime > nowSec) {
+      targetTime = status.nextTargetTime;
+      await logAutoMode('info', `复用已有目标时间: ${fmtBgTime(targetTime)}`);
     }
   }
 
@@ -1333,6 +1396,29 @@ async function handleAutoModeEnable() {
           await browser.storage.local.set({ _copiedSaleData: allSaleData });
         }
       } catch {}
+    }
+
+    // 过滤已下架/删除的商品：freshItems 中缺失或 status !== 0 的商品自动剔除
+    if (freshItems.length < ep.products.length || freshItems.some(p => p.status !== 0)) {
+      const activeIds = new Set(
+        freshItems.filter(p => p.status === 0).map(p => String(p.itemid)),
+      );
+      const filteredProducts = ep.products.filter(p => activeIds.has(String(p.itemid)));
+      const filteredOverrides: Record<string, SkuOverride> = {};
+      for (const [key, override] of Object.entries(ep.skuOverrides || {})) {
+        const itemId = key.split('-')[0];
+        if (activeIds.has(itemId)) {
+          filteredOverrides[key] = override;
+        }
+      }
+      const removedCount = ep.products.length - filteredProducts.length;
+      if (removedCount > 0) {
+        await logAutoMode('warning', `已自动过滤 ${removedCount} 个已下架/删除的商品`);
+        ep.products = filteredProducts;
+        ep.skuOverrides = filteredOverrides;
+        status.enableParams = { ...ep, products: filteredProducts, skuOverrides: filteredOverrides };
+        await saveAutoModeStatus(status);
+      }
     }
 
     const enableParams: EnableParams = {
@@ -1873,7 +1959,26 @@ export default defineBackground({
 
           // 保存商品数据到 storage，供后续在 popup 中展示和开启限时特卖使用
           const savedProducts: ShopeeProduct[] = products || [];
-          const savedSkuOverrides = skuOverrides || {};
+          let savedSkuOverrides = skuOverrides || {};
+
+          // 过滤已下架/删除的商品，避免后续开售时反复请求无效商品
+          if (savedProducts.length > 0) {
+            const { activeProducts, activeIds } = await filterActiveProducts(savedProducts, finalCds, finalVer);
+            if (activeProducts.length < savedProducts.length) {
+              // 同步过滤 skuOverrides，移除已删除商品对应的覆盖参数
+              const filteredOverrides: Record<string, SkuOverride> = {};
+              for (const [key, override] of Object.entries(savedSkuOverrides)) {
+                const itemId = key.split('-')[0];
+                if (activeIds.has(itemId)) {
+                  filteredOverrides[key] = override;
+                }
+              }
+              savedSkuOverrides = filteredOverrides;
+            }
+            // 使用过滤后的商品列表
+            (savedProducts as ShopeeProduct[]).length = 0;
+            savedProducts.push(...activeProducts);
+          }
 
           try {
             await saveCopiedSaleData({
@@ -2156,6 +2261,25 @@ export default defineBackground({
 
           _autoModeStopRequested = false;
 
+          // 启动前过滤已下架/删除的商品
+          let autoProducts = sourceData.products || [];
+          let autoOverrides = msgOverrides || sourceData.skuOverrides || {};
+          if (autoProducts.length > 0) {
+            const { activeProducts, activeIds } = await filterActiveProducts(autoProducts, spcCds, spcCdsVer);
+            if (activeProducts.length < autoProducts.length) {
+              const filteredOverrides: Record<string, SkuOverride> = {};
+              for (const [key, override] of Object.entries(autoOverrides)) {
+                const itemId = key.split('-')[0];
+                if (activeIds.has(itemId)) {
+                  filteredOverrides[key] = override;
+                }
+              }
+              autoOverrides = filteredOverrides;
+              await logAutoMode('warning', `启动时已过滤 ${autoProducts.length - activeProducts.length} 个已下架/删除的商品`);
+            }
+            autoProducts = activeProducts;
+          }
+
           // Step 6: 构建并保存状态
           console.log('[bg:START_AUTO_MODE] Step6: 构建并保存状态...');
           const status: AutoModeStatus = {
@@ -2171,8 +2295,8 @@ export default defineBackground({
             selectedSlotId,
             selectedSlotTime,
             enableParams: {
-              products: sourceData.products,
-              skuOverrides: msgOverrides || sourceData.skuOverrides || {},
+              products: autoProducts,
+              skuOverrides: autoOverrides,
               discountRate: sourceData.discountRate,
               flashSaleStock: sourceData.flashSaleStock,
               purchaseLimit: sourceData.purchaseLimit,
@@ -2556,6 +2680,20 @@ export default defineBackground({
           }
 
           try {
+            // 过滤已下架/删除的商品（可能在定时等待期间被用户手动删除）
+            if (params.products?.length) {
+              const { activeProducts, activeIds } = await filterActiveProducts(params.products, params.spcCds, params.spcCdsVer);
+              if (activeProducts.length < params.products.length) {
+                const filteredOverrides: Record<string, SkuOverride> = {};
+                for (const [key, override] of Object.entries(params.skuOverrides || {})) {
+                  if (activeIds.has(key.split('-')[0])) {
+                    filteredOverrides[key] = override;
+                  }
+                }
+                params.skuOverrides = filteredOverrides;
+              }
+              params.products = activeProducts;
+            }
             await runEnableLoop(params);
             console.log('[bg:scheduled_enable] 启用循环已启动');
           } catch (err: any) {
