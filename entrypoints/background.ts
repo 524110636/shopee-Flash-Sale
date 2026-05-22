@@ -155,15 +155,17 @@ async function filterActiveProducts(
     );
     const freshItems: ShopeeProduct[] = graphqlResp?.data?.products?.items || [];
     // status === 0 表示正常上架，非 0 表示已下架/删除/违规
+    // Number() 兼容 API 返回字符串 "0" 而非数字 0 的情况
     const activeIds = new Set(
-      freshItems.filter(p => p.status === 0).map(p => String(p.itemid)),
+      freshItems.filter(p => Number(p.status) === 0).map(p => String(p.itemid)),
     );
 
     const activeProducts = products.filter(p => activeIds.has(String(p.itemid)));
     const filteredCount = products.length - activeProducts.length;
     if (filteredCount > 0) {
       if (activeProducts.length === 0) {
-        console.warn(`[filterActiveProducts] 所有 ${products.length} 个商品均未通过活跃检查 (API 返回 ${freshItems.length} 个)，保留原商品列表`);
+        const rawStatuses = freshItems.slice(0, 5).map(p => `${p.itemid}:status=${p.status}(${typeof p.status})`).join(', ');
+        console.warn(`[filterActiveProducts] 所有 ${products.length} 个商品均未通过活跃检查 (API 返回 ${freshItems.length} 个, 样本: ${rawStatuses})，保留原商品列表`);
         await logAutoMode('warning', `filterActiveProducts: 所有 ${products.length} 个商品均被判定为非活跃 (API 返回 ${freshItems.length} 个)，保留原商品以防误判`);
         return { activeProducts: products, activeIds: new Set(products.map(p => String(p.itemid))) };
       }
@@ -1405,26 +1407,32 @@ async function handleAutoModeEnable() {
       } catch {}
     }
 
-    // 过滤已下架/删除的商品：freshItems 中缺失或 status !== 0 的商品自动剔除
-    if (freshItems.length < ep.products.length || freshItems.some(p => p.status !== 0)) {
+    // 过滤已下架/删除的商品：freshItems 中缺失或 Number(status) !== 0 的商品自动剔除
+    if (freshItems.length < ep.products.length || freshItems.some(p => Number(p.status) !== 0)) {
       const activeIds = new Set(
-        freshItems.filter(p => p.status === 0).map(p => String(p.itemid)),
+        freshItems.filter(p => Number(p.status) === 0).map(p => String(p.itemid)),
       );
       const filteredProducts = ep.products.filter(p => activeIds.has(String(p.itemid)));
-      const filteredOverrides: Record<string, SkuOverride> = {};
-      for (const [key, override] of Object.entries(ep.skuOverrides || {})) {
-        const itemId = key.split('-')[0];
-        if (activeIds.has(itemId)) {
-          filteredOverrides[key] = override;
+      // 安全底线: 全部被过滤时保留原商品，防止 enableParams 清空
+      if (filteredProducts.length === 0) {
+        const rawStatuses = freshItems.slice(0, 5).map(p => `${p.itemid}:status=${p.status}(${typeof p.status})`).join(', ');
+        await logAutoMode('warning', `商品过滤检测到全部 ${ep.products.length} 个商品 status 异常 (样本: ${rawStatuses})，保留原商品以防误判`);
+      } else {
+        const filteredOverrides: Record<string, SkuOverride> = {};
+        for (const [key, override] of Object.entries(ep.skuOverrides || {})) {
+          const itemId = key.split('-')[0];
+          if (activeIds.has(itemId)) {
+            filteredOverrides[key] = override;
+          }
         }
-      }
-      const removedCount = ep.products.length - filteredProducts.length;
-      if (removedCount > 0) {
-        await logAutoMode('warning', `已自动过滤 ${removedCount} 个已下架/删除的商品`);
-        ep.products = filteredProducts;
-        ep.skuOverrides = filteredOverrides;
-        status.enableParams = { ...ep, products: filteredProducts, skuOverrides: filteredOverrides };
-        await saveAutoModeStatus(status);
+        const removedCount = ep.products.length - filteredProducts.length;
+        if (removedCount > 0) {
+          await logAutoMode('warning', `已自动过滤 ${removedCount} 个已下架/删除的商品`);
+          ep.products = filteredProducts;
+          ep.skuOverrides = filteredOverrides;
+          status.enableParams = { ...ep, products: filteredProducts, skuOverrides: filteredOverrides };
+          await saveAutoModeStatus(status);
+        }
       }
     }
 
