@@ -1,5 +1,12 @@
 # CLAUDE.md
 
+## 用户长期协作规则（2026-10-12 起必读）
+
+开始规划、开发、验收、交接或恢复上下文时，先读根目录 [OWNER_WORKING_RULES.md](OWNER_WORKING_RULES.md) 和 [PROJECT_STATUS.md](PROJECT_STATUS.md)。前者是现行协作/交付/沟通/产物管理规则，后者是唯一当前进度表；同一会话已读且未变化可复用。
+先复用已有能力，接通用户能实际操作的完整基本流程；可体验时主动安排用户手测。正常回复说清已能用、还不能用、下一步及责任人。授权用大白话说明实际影响。自己的临时测试产物由自己限量、隔离、清理并报告。
+派给子代理时同时传递上述两份文件及当前任务边界。下文较早版本和状态描述属于历史线索，需核实后才能当作当前进度；技术正文保留，协作口径冲突以用户长期规则为准。
+
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
