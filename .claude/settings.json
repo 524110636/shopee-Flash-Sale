@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "f=\"${CLAUDE_PROJECT_DIR:-.}/.claude/CLAUDE.md\"; [ -f \"$f\" ] && cat \"$f\" || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

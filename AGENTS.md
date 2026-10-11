@@ -2,9 +2,15 @@
 
 ## 用户长期协作规则（2026-10-12 起必读）
 
-开始规划、开发、验收、交接或恢复上下文时，先读根目录 [OWNER_WORKING_RULES.md](OWNER_WORKING_RULES.md) 和 [PROJECT_STATUS.md](PROJECT_STATUS.md)。前者是现行协作/交付/沟通/产物管理规则，后者是唯一当前进度表；同一会话已读且未变化可复用。
+**工作目录**：`D:\shopee_xm\虾皮限时特卖-更新迭代`（磁盘上另有一份内容相同的副本 `D:\shopee_xm\limited-time-sale`，不要在那里作业；旧文档写的正是那个路径）。
+
+开工前（规划、开发、验收、交接、恢复上下文）必读这三份，同一会话已读且文件未变可复用：
+- [OWNER_WORKING_RULES.md](OWNER_WORKING_RULES.md) — 现行协作／交付／沟通／产物管理规则，口径冲突以它为准
+- [PROJECT_STATUS.md](PROJECT_STATUS.md) — 用户能看到的唯一当前进度表
+- [SESSION_CONTEXT.md](SESSION_CONTEXT.md) — 2026-05 历史快照，仅作排查线索，引用前必须核实
+
 先复用已有能力，接通用户能实际操作的完整基本流程；可体验时主动安排用户手测。正常回复说清已能用、还不能用、下一步及责任人。授权用大白话说明实际影响。自己的临时测试产物由自己限量、隔离、清理并报告。
-派给子代理时同时传递上述两份文件及当前任务边界。下文较早版本和状态描述属于历史线索，需核实后才能当作当前进度；技术正文保留，协作口径冲突以用户长期规则为准。
+派给子代理时同时传递上述三份文件及当前任务边界。下文较早版本和状态描述属于历史线索，需核实后才能当作当前进度；技术正文保留，协作口径冲突以用户长期规则为准。
 
 # 用户写入的文件
 ## 常用命令
@@ -143,7 +149,7 @@ limited-time-sale/
 └── .gitignore
 ```
 
-n```
+```
 backend/                      # 独立后端服务
 ├── src/
 │   ├── index.ts              # 入口: Hono HTTP 服务 + CORS + 路由挂载
@@ -586,7 +592,7 @@ The API returns two possible formats (check both):
 - **`tsconfig.json`**: `target=ESNext`, `moduleResolution=Bundler`, `jsx=react-jsx`, `strict=true`, `baseUrl=.`, path alias `@/* → ./*`, includes `wxt.config.ts`
 - **`tailwind.config.ts`**: Content paths: `entrypoints/**/*.{ts,tsx}`, `components/**/*.{ts,tsx}`; theme extends empty; no plugins
 - **`postcss.config.js`**: Standard PostCSS with tailwindcss + autoprefixer plugins
-- **`package.json`**: name=`limited-time-sale`, version=`1.7.0` (main), node scripts for dev/build/zip/postinstall
+- **`package.json`**: name=`limited-time-sale`, version=`1.6.1` (main), node scripts for dev/build/zip/postinstall
 
 ## Important Patterns & Gotchas
 - **injectedFetch timeout:** 30s default (vs 10s for sc-fe-session, 15s in background)
