@@ -1,0 +1,13 @@
+{
+  "results": [
+    "未登录无管理入口",
+    "真实管理员登录及无绑定入口正常",
+    "新标签页正确打开独立网站登录页",
+    "无绑定时拦截提示可见=false",
+    "已有绑定信息仍显示",
+    "普通用户真实登录与卖家入口正常"
+  ],
+  "pageErrors": [],
+  "backend": "http://localhost:5726",
+  "realShopOperations": false
+}

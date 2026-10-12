@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { SpcStatus } from '@/components/product/SpcStatus';
 import { Button } from '@/components/ui/button';
@@ -13,12 +13,25 @@ import { FirstUseWarningModal } from '@/components/product/FirstUseWarningModal'
 import { SkuTable } from '@/components/product/SkuTable';
 import { AuthPanel } from '@/components/product/AuthPanel';
 import { StoreStatus } from '@/components/product/StoreStatus';
-import { AdminPanel } from '@/components/product/AdminPanel';
 import { UndiscountedSkuModal } from '@/components/product/UndiscountedSkuModal';
 import { ScheduledTaskCard } from '@/components/product/ScheduledTaskCard';
 import { useAppStore, setupBackgroundListener } from './store';
 import type { ShopeeProduct, TimeSlot } from './types';
 import * as backendApi from './backend-api';
+
+/** 打开独立管理员网站；地址取当前生效的后端地址。返回错误文案，成功时返回空字符串。 */
+function openAdminSite(): string {
+  const baseUrl = backendApi.getBaseUrl();
+  if (!baseUrl) {
+    return '未配置后端地址，无法打开管理网站';
+  }
+  const url = `${baseUrl.replace(/\/+$/, '')}/admin/`;
+  const opened = window.open(url, '_blank');
+  if (!opened) {
+    return `浏览器拦截了新窗口，请手动打开：${url}`;
+  }
+  return '';
+}
 
 export default function App() {
   const {
@@ -63,7 +76,7 @@ export default function App() {
   const [isClearingCache, setIsClearingCache] = useState(false);
   const [isTriggeringScheduled, setIsTriggeringScheduled] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [adminSiteNotice, setAdminSiteNotice] = useState('');
   const [showCustomDev, setShowCustomDev] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
   const [phase3Slots, setPhase3Slots] = useState<TimeSlot[] | null>(null);
@@ -328,7 +341,7 @@ export default function App() {
           {backendApi.isAdmin() && !autoModeActive && (
             <button
               className="text-[10px] px-2 py-1 rounded text-white/80 hover:text-white hover:bg-white/10 transition-colors"
-              onClick={() => setShowAdminPanel(true)}
+              onClick={() => setAdminSiteNotice(openAdminSite())}
             >
               管理
             </button>
@@ -351,6 +364,31 @@ export default function App() {
           )}
         </div>
       </div>
+
+      {/* ===== 管理网站打开失败提示 =====
+          管理按钮在顶栏，此处紧跟顶栏渲染，与下列面板的店铺绑定/复制模式状态无关，
+          保证「请先绑定店铺」「当前店铺未绑定」等状态下提示同样可见。 */}
+      {adminSiteNotice && (
+        <div className="mx-4 mt-3 p-3 rounded-md border-2 border-red-400 bg-gradient-to-r from-red-50 to-amber-50 shadow-md">
+          <div className="flex items-start gap-2.5">
+            <svg className="w-5 h-5 mt-0.5 shrink-0 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-red-700">无法打开管理网站</p>
+              <p className="mt-0.5 text-xs text-red-600 break-all">{adminSiteNotice}</p>
+            </div>
+            <button
+              className="text-muted-foreground hover:text-foreground shrink-0"
+              onClick={() => setAdminSiteNotice('')}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       <div
         className="relative"
@@ -429,7 +467,7 @@ export default function App() {
             </div>
           )}
 
-          {isLoggedIn && storeBindings.filter(b => b.isActive).length === 0 && !showAdminPanel ? (
+          {isLoggedIn && storeBindings.filter(b => b.isActive).length === 0 ? (
             <Card className="mx-4 mt-3">
               <CardContent className="py-8">
                 {storeBindingsError ? (
@@ -477,7 +515,7 @@ export default function App() {
                 </div>
               </CardContent>
             </Card>
-          ) : isLoggedIn && isCurrentStoreBound === false && !showAdminPanel ? (
+          ) : isLoggedIn && isCurrentStoreBound === false ? (
             <Card className="mx-4 mt-3 border-amber-200">
               <CardContent className="py-8">
                 <div className="text-center space-y-3">
@@ -491,22 +529,6 @@ export default function App() {
                 </div>
               </CardContent>
             </Card>
-          ) : showAdminPanel ? (
-            <div className="p-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base font-semibold">管理后台</CardTitle>
-                    <Button variant="outline" size="sm" className="h-7 px-2 text-xs font-normal" onClick={() => setShowAdminPanel(false)}>
-                      返回
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <AdminPanel />
-                </CardContent>
-              </Card>
-            </div>
           ) : copyMode === 'confirm' && copySource ? (
             <div className="p-4">
               <CopyConfirmPanel

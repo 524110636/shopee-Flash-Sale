@@ -396,18 +396,6 @@ export interface FirstUseState {
 
 // ===== 后端管理系统类型 =====
 
-export interface BackendUser {
-  id: number;
-  email: string;
-  role: 'user' | 'admin';
-  isActive: number;
-  autoModeEnabled: number;
-  trialUsed: number;
-  trialEnabled: number;
-  createdAt: string;
-  bindingCount?: number;
-}
-
 export interface BackendStoreBinding {
   id: number;
   userId: number;
@@ -432,8 +420,3 @@ export interface BackendAnalyticsSummary {
   total: number;
 }
 
-export interface BackendAdminAnalytics {
-  totalUsers: number;
-  totalBindings: number;
-  events: Array<{ eventType: string; count: number }>;
-}

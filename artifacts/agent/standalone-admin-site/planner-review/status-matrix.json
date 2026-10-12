@@ -1,0 +1,75 @@
+{
+  "migrationNoticePassed": true,
+  "matrix": [
+    {
+      "name": "绑定缺必要参数",
+      "expected": 400,
+      "actual": 400,
+      "error": "SPC_CDS 不能为空"
+    },
+    {
+      "name": "无令牌",
+      "expected": 401,
+      "actual": 401,
+      "error": "未提供认证令牌"
+    },
+    {
+      "name": "登录密码错误",
+      "expected": 401,
+      "actual": 401,
+      "error": "邮箱或密码错误"
+    },
+    {
+      "name": "已过期令牌",
+      "expected": 401,
+      "actual": 401,
+      "error": "认证令牌无效或已过期"
+    },
+    {
+      "name": "超过绑定上限",
+      "expected": 403,
+      "actual": 403,
+      "error": "已达到最大店铺绑定数量 (1)，如需扩容请联系管理员"
+    },
+    {
+      "name": "试用已使用",
+      "expected": 403,
+      "actual": 403,
+      "error": "如需继续使用，请联系管理员升级套餐。升级后即可畅享无限限时特卖，快速增长店铺业绩。"
+    },
+    {
+      "name": "解绑不存在记录",
+      "expected": 404,
+      "actual": 404,
+      "error": "未找到该绑定记录"
+    },
+    {
+      "name": "其他用户已绑定店铺",
+      "expected": 409,
+      "actual": 409,
+      "error": "该店铺已被其他用户绑定"
+    },
+    {
+      "name": "自身已有绑定但未传shopId",
+      "expected": 200,
+      "actual": 409,
+      "error": "该店铺已被其他用户绑定"
+    },
+    {
+      "name": "JSON无法解析",
+      "expected": 400,
+      "actual": 500,
+      "error": "Internal Server Error"
+    },
+    {
+      "name": "隔离模拟数据库内部异常",
+      "expected": 500,
+      "actual": 500,
+      "error": "Internal Server Error"
+    }
+  ],
+  "extensionActionErrors": {
+    "conflict": "绑定失败，请确认后端服务可用",
+    "quota": "绑定失败，请确认后端服务可用"
+  }
+}

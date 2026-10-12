@@ -1,4 +1,4 @@
-import type { BackendUser, BackendStoreBinding, BackendAnalyticsSummary, BackendAdminAnalytics } from './types';
+import type { BackendStoreBinding, BackendAnalyticsSummary } from './types';
 
 const STORAGE_KEY = 'backendAuth';
 
@@ -235,37 +235,6 @@ export async function getAnalyticsSummary() {
   return request<BackendAnalyticsSummary>('GET', '/api/analytics/summary');
 }
 
-// ===== Admin API =====
-
-export async function getUsers() {
-  return request<{ users: BackendUser[] }>('GET', '/api/admin/users');
-}
-
-export async function updateStoreLimit(userId: number, maxStores: number) {
-  return request<{ message: string }>('PATCH', `/api/admin/users/${userId}/store-limit`, { maxStores });
-}
-
-export async function toggleAutoMode(userId: number, autoModeEnabled: number) {
-  return request<{ message: string; autoModeEnabled: number }>('PATCH', `/api/admin/users/${userId}/auto-mode`, { autoModeEnabled });
-}
-
-export async function resetTrial(userId: number, trialUsed: number) {
-  return request<{ message: string; trialUsed: number }>('PATCH', `/api/admin/users/${userId}/trial`, { trialUsed });
-}
-
-export async function toggleTrialEnabled(userId: number, trialEnabled: number) {
-  return request<{ message: string; trialEnabled: number }>('PATCH', `/api/admin/users/${userId}/trial-enabled`, { trialEnabled });
-}
-
-export async function getAdminAnalytics() {
-  return request<BackendAdminAnalytics>('GET', '/api/admin/analytics');
-}
-
-export async function getAdminAnalyticsEvents(type?: string) {
-  const query = type ? `?type=${encodeURIComponent(type)}` : '';
-  return request<{ events: Array<{ id: number; userId: number; eventType: string; eventData: string | null; createdAt: string; email: string }> }>('GET', `/api/admin/analytics/events${query}`);
-}
-
 // ===== Health Check =====
 
 export async function healthCheck(): Promise<void> {
@@ -273,33 +242,4 @@ export async function healthCheck(): Promise<void> {
   if (!response.ok) {
     throw new Error(`后端返回错误状态 (HTTP ${response.status})`);
   }
-}
-
-// ===== Admin Binding Management API =====
-
-export async function getAdminBindings(userId?: number) {
-  const query = userId ? `?userId=${userId}` : '';
-  return request<{ bindings: BackendStoreBinding[] }>('GET', `/api/admin/bindings${query}`);
-}
-
-export async function adminUnbindStore(bindingId: number) {
-  return request<{ message: string }>('DELETE', `/api/admin/bindings/${bindingId}`);
-}
-
-export async function adminDeleteUser(userId: number) {
-  return request<{ message: string }>('DELETE', `/api/admin/users/${userId}`);
-}
-
-// ===== Invite Code API =====
-
-export async function getInviteCodes() {
-  return request<{ inviteCodes: Array<{ id: number; code: string; isUsed: number; usedBy: number | null; createdAt: string; usedAt: string | null; userEmail: string | null }> }>('GET', '/api/admin/invite-codes');
-}
-
-export async function createInviteCodes(count?: number) {
-  return request<{ codes: string[]; count: number }>('POST', '/api/admin/invite-codes', { count: count || 1 });
-}
-
-export async function deleteInviteCode(id: number) {
-  return request<{ message: string }>('DELETE', `/api/admin/invite-codes/${id}`);
 }

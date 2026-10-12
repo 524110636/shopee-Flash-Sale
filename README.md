@@ -141,7 +141,7 @@ npx pm2 stop limited-time-sale
 │   └── content.ts                # Content Script（悬浮进度面板）
 ├── components/
 │   ├── ui/                       # shadcn/ui 基础组件
-│   └── product/                  # 业务组件（AuthPanel、AdminPanel、AutoModePanel 等）
+│   └── product/                  # 业务组件（AuthPanel、AutoModePanel、SkuTable 等）
 ├── backend/
 │   └── src/
 │       ├── index.ts              # Hono 入口（CORS、路由挂载、健康检查）
@@ -188,7 +188,7 @@ npx pm2 stop limited-time-sale
 - **Popup** — 用户交互界面，启动操作、管理配置
 - **Service Worker** — 后台执行：定时任务、自动模式循环、API 调用、进度广播
 - **Content Script** — 在 `seller.shopee.tw` 注入悬浮进度面板，显示实时状态
-- **Backend** — 用户认证（JWT）、店铺绑定、试用限制、使用统计、管理员面板
+- **Backend** — 用户认证（JWT）、店铺绑定、试用限制、使用统计（管理界面为独立网站 `admin-web/`）
 - **安全** — 每次关键操作前通过后端 `/validate` 验证，防止篡改前端绕过限制
 
 ## API 端点
