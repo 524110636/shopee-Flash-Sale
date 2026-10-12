@@ -5,7 +5,9 @@ dist/
 *.local
 .env
 backup/
-docs/
+docs/**
+!docs/手册/
+!docs/手册/**
 .joycode/
 .codex/
 .trae/
