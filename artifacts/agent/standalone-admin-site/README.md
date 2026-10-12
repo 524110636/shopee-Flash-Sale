@@ -1,6 +1,6 @@
 # 独立管理网站 — 验收证据（脱敏）
 
-**变更**：`openspec/changes/standalone-admin-site/`
+**变更**：`openspec/changes/archive/2026-10-12-standalone-admin-site/`（已归档；正式规范见 `openspec/specs/standalone-admin/spec.md`）
 **日期**：2026-10-12
 **环境**：本地隔离后端 + 隔离 SQLite 库，未连生产、未访问虾皮
 
