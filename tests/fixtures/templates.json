@@ -1,0 +1,43 @@
+{
+  "basicTemplate": {
+    "name": "基础模板",
+    "createdAt": 1714923600,
+    "updatedAt": 1714923600,
+    "discountRate": 60,
+    "flashSaleStock": 100,
+    "purchaseLimit": 5,
+    "skuOverrides": {},
+    "productInfo": [
+      { "itemId": "123456789", "name": "测试商品" }
+    ]
+  },
+  "customSkuTemplate": {
+    "name": "自定义SKU模板",
+    "createdAt": 1714923600,
+    "updatedAt": 1715010000,
+    "discountRate": 50,
+    "flashSaleStock": 200,
+    "purchaseLimit": 10,
+    "skuOverrides": {
+      "123456789-1": { "discountRate": 40, "stock": 50, "purchaseLimit": 3 },
+      "123456789-2": { "promoPrice": 50, "stock": 80, "purchaseLimit": 2 }
+    },
+    "productInfo": [
+      { "itemId": "123456789", "name": "测试商品" }
+    ]
+  },
+  "multiProductTemplate": {
+    "name": "多商品模板",
+    "createdAt": 1714923600,
+    "updatedAt": 1714923600,
+    "discountRate": 70,
+    "flashSaleStock": 150,
+    "purchaseLimit": 0,
+    "skuOverrides": {},
+    "productInfo": [
+      { "itemId": "123456789", "name": "商品A" },
+      { "itemId": "456789012", "name": "商品B" },
+      { "itemId": "987654321", "name": "商品C" }
+    ]
+  }
+}

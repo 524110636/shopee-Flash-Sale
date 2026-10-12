@@ -1,0 +1,31 @@
+{
+  "activeSale": {
+    "flash_sale_id": 99999,
+    "name": "测试活动 - 进行中",
+    "start_time": 1715010000,
+    "end_time": 1715013600,
+    "status": 1
+  },
+  "upcomingSale": {
+    "flash_sale_id": 99998,
+    "name": "测试活动 - 即将开始",
+    "start_time": 1715096400,
+    "end_time": 1715100000,
+    "status": 0
+  },
+  "endedSale": {
+    "flash_sale_id": 99997,
+    "name": "测试活动 - 已结束",
+    "start_time": 1714923600,
+    "end_time": 1714927200,
+    "status": 2
+  },
+  "multiProductSale": {
+    "flash_sale_id": 99996,
+    "name": "测试活动 - 多商品",
+    "start_time": 1715010000,
+    "end_time": 1715013600,
+    "status": 1,
+    "itemIds": [123456789, 456789012]
+  }
+}
