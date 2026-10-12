@@ -1,0 +1,23 @@
+{
+  "results": [
+    "PASS  R1 手动页搜索草稿在切换自动/手动后保留",
+    "PASS  R1 返回首页再进入仍保留搜索草稿与商品列表",
+    "PASS  R1 隐藏的手动区域不接收键盘焦点",
+    "PASS  R1 模板命名草稿在切换模式与返回首页后保留",
+    "PASS  R2 仅 _scheduledEnable 时首页显示定时加入摘要",
+    "PASS  R2 仅 _wizardFlowParams 时首页显示定时加入摘要",
+    "PASS  R2 定时加入的查看入口进入手动工作页",
+    "PASS  R3 手动页详情弹层在返回首页后隐藏且不拦截",
+    "PASS  R4 慢读取期间首页显示加载态而非空闲",
+    "PASS  R4 延迟读取 _autoModeStatus 时先加载后出运行摘要",
+    "PASS  回归 首页→限时特卖→自动→全部功能，全程 0 写请求",
+    "PASS  回归 重开 popup 仍先进入首页且无横向溢出"
+  ],
+  "network": {
+    "intercepted": 36,
+    "realRequestsAllowed": 0,
+    "unexpectedHosts": [],
+    "storeWriteAttempts": []
+  },
+  "consoleErrors": []
+}

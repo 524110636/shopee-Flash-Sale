@@ -10,7 +10,8 @@ import { useAppStore } from '@/entrypoints/popup/store';
 import type { AutoModeConfig, FlashSale, ShopeeProduct, TimeSlot, UndiscountedSku } from '@/entrypoints/popup/types';
 
 interface AutoModePanelProps {
-  onBack: () => void;
+  /** 保留占位：模式切换已由 App 的页签承载，面板内不再自带「返回」按钮 */
+  onBack?: () => void;
 }
 
 const PHASE_LABELS: Record<string, string> = {
@@ -23,7 +24,7 @@ const PHASE_LABELS: Record<string, string> = {
   stopped: '已停止',
 };
 
-export function AutoModePanel({ onBack }: AutoModePanelProps) {
+export function AutoModePanel(_props: AutoModePanelProps) {
   const {
     autoModeStatus, autoModeLogs, exportAutoModeLogs,
     startAutoMode, stopAutoMode,
@@ -233,22 +234,16 @@ export function AutoModePanel({ onBack }: AutoModePanelProps) {
 
   return (
     <div className="space-y-4">
+      {/* 标题「自动模式」不再重复：当前模式已由页签标出，这里只保留运行状态标识 */}
       <div className="flex items-center gap-2 text-sm">
-        <Button variant="outline" size="sm" className="h-7 px-3 text-xs font-normal" onClick={onBack}>
-          <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M19 12H5m7-7-7 7 7 7"/>
-          </svg>
-          返回
-        </Button>
-        <span className="font-medium">自动模式</span>
         {isRunning && (
-          <span className="inline-flex items-center gap-1 text-xs text-shopee-green font-medium ml-1">
+          <span className="inline-flex items-center gap-1 text-xs text-shopee-green font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-shopee-green animate-pulse-dot" />
             运行中
           </span>
         )}
         {autoModeStatus?.debugMode && (
-          <span className="text-[10px] text-shopee-brand bg-shopee-brand-light border border-shopee-brand/20 rounded px-1.5 py-0.5 ml-1">调试</span>
+          <span className="text-[10px] text-shopee-brand bg-shopee-brand-light border border-shopee-brand/20 rounded px-1.5 py-0.5">调试</span>
         )}
       </div>
 

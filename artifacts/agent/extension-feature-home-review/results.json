@@ -1,0 +1,88 @@
+{
+  "results": [
+    {
+      "case": "default-home",
+      "observed": true
+    },
+    {
+      "case": "manual-search-draft-after-mode-switch",
+      "expected": "验收夹具",
+      "observed": "验收夹具"
+    },
+    {
+      "case": "template-draft-after-mode-switch",
+      "expected": "独立验收草稿",
+      "observed": "独立验收草稿"
+    },
+    {
+      "case": "template-and-search-after-home",
+      "template": "独立验收草稿",
+      "search": "验收夹具"
+    },
+    {
+      "case": "scheduled-enable-home-summary",
+      "observedIdle": false,
+      "summaryCount": 1
+    },
+    {
+      "case": "scheduled-clear-live",
+      "observedIdle": true
+    },
+    {
+      "case": "wizard-live-summary",
+      "observed": true
+    },
+    {
+      "case": "both-scheduled-summaries",
+      "observedCount": 2
+    },
+    {
+      "case": "auto-direct",
+      "observed": true
+    },
+    {
+      "case": "override-dialog-on-home",
+      "keyboardReachedHomeButton": true,
+      "expectedVisible": false,
+      "observedVisible": false,
+      "homeVisible": true
+    },
+    {
+      "case": "sku-discount-after-home",
+      "expected": "66",
+      "observed": "66",
+      "promo": "66",
+      "stored": {
+        "discountRate": 66,
+        "stock": 5
+      }
+    },
+    {
+      "case": "sku-forward-tab-blur-representation",
+      "observedDiscount": "",
+      "observedPromo": "67",
+      "stored": {
+        "promoPrice": 67,
+        "stock": 5
+      }
+    },
+    {
+      "case": "delayed-task-restore",
+      "expectedLoading": true,
+      "observedIdle": false
+    },
+    {
+      "case": "delayed-task-eventually-restored",
+      "observed": true
+    },
+    {
+      "case": "failed-read-is-not-idle",
+      "observedLoading": true,
+      "observedIdle": false
+    }
+  ],
+  "network": {
+    "intercepted": 42,
+    "realRequestsAllowed": 0
+  }
+}

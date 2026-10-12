@@ -15,6 +15,9 @@ import { AuthPanel } from '@/components/product/AuthPanel';
 import { StoreStatus } from '@/components/product/StoreStatus';
 import { UndiscountedSkuModal } from '@/components/product/UndiscountedSkuModal';
 import { ScheduledTaskCard } from '@/components/product/ScheduledTaskCard';
+import { FeatureHome } from '@/components/product/FeatureHome';
+import { FLASH_SALE_FEATURE_ID } from '@/components/product/feature-catalog';
+import { buildTaskSummaries, type TaskSummary } from '@/components/product/task-summary';
 import { useAppStore, setupBackgroundListener } from './store';
 import type { ShopeeProduct, TimeSlot } from './types';
 import * as backendApi from './backend-api';
@@ -31,6 +34,19 @@ function openAdminSite(): string {
     return `浏览器拦截了新窗口，请手动打开：${url}`;
   }
   return '';
+}
+
+/** 工作页弹层容器：切到首页时只隐藏、不卸载（保留编辑草稿），且不接收焦点或点击 */
+function WorkPageLayer({ active, children }: { active: boolean; children: React.ReactNode }) {
+  return (
+    <div
+      {...(active ? {} : { inert: true })}
+      aria-hidden={active ? undefined : true}
+      className={active ? 'block' : 'hidden'}
+    >
+      {children}
+    </div>
+  );
 }
 
 export default function App() {
@@ -57,6 +73,8 @@ export default function App() {
     checkBackgroundStatus,
     loadCache, clearCache, reset,
     hasScheduledCopy, checkScheduledCopy, triggerScheduledCopyNow,
+    scheduledEnableStatus, checkScheduledEnable,
+    scheduledTaskStatus,
     _completedCopyInfo, acknowledgeCompletedCopy,
     autoModeActive, autoModeStatus, enterAutoMode, exitAutoMode,
     showAutoModeUpgradeModal, clearAutoModeDeniedMessage,
@@ -68,6 +86,13 @@ export default function App() {
     goToFlashSaleSelection, addToExistingFlashSale, createNewFlashSaleAndAdd, scheduleEnableForFlashSale,
   } = useAppStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // 导航：首页（选工具）↔ 限时特卖工作页。仅展示状态，不持久化、不参与业务动作。
+  const [page, setPage] = useState<'home' | 'flash-sale'>('home');
+  // 首次进入后才挂载工作区；返回首页只隐藏不卸载，以保留选品/草稿等局部状态
+  const [flashSaleMounted, setFlashSaleMounted] = useState(false);
+  const [autoPanelMounted, setAutoPanelMounted] = useState(false);
+  // 任务状态恢复完成后才认为已就绪，此前首页显示加载态而不是谎称空闲
+  const [taskStatusReady, setTaskStatusReady] = useState(false);
   const [flashSaleListOpen, setFlashSaleListOpen] = useState(true);
   const [selectedFailedProduct, setSelectedFailedProduct] = useState<ShopeeProduct | null>(null);
   const [overrideDetailOpen, setOverrideDetailOpen] = useState(false);
@@ -196,18 +221,101 @@ export default function App() {
       extractSpcCds();
     }
     loadCache();
-    checkBackgroundStatus();
-    checkCopyTaskStatus();
-    checkScheduledCopy();
-    loadAutoModeStatus();
+    // 任务状态恢复：全部读取完成后才标记 ready，否则首页先显示加载态而不是"没有任务"
+    let cancelled = false;
+    const restoreTaskStatus = async () => {
+      const results = await Promise.all([
+        loadAutoModeStatus(),
+        checkBackgroundStatus(),
+        checkCopyTaskStatus(),
+        checkScheduledCopy(),
+        checkScheduledEnable(),
+      ]);
+      if (cancelled) return;
+      // 任一关键读取失败即视为状态未知：保持加载态，不伪称空闲
+      if (results.every(ok => ok === true)) setTaskStatusReady(true);
+    };
+    restoreTaskStatus();
     checkAuthOnStartup();
-  }, [isConnected, spcCds, extractSpcCds, loadCache, checkBackgroundStatus, checkCopyTaskStatus, checkScheduledCopy, loadAutoModeStatus, checkAuthOnStartup]);
+    return () => {
+      cancelled = true;
+    };
+  }, [isConnected, spcCds, extractSpcCds, loadCache, checkBackgroundStatus, checkCopyTaskStatus, checkScheduledCopy, checkScheduledEnable, loadAutoModeStatus, checkAuthOnStartup]);
 
   useEffect(() => {
     if (flashSaleList.length > 0) {
       setFlashSaleListOpen(true);
     }
   }, [flashSaleList.length]);
+
+  // 只要进入过自动模式就常驻挂载 AutoModePanel，切页/返回首页不卸载其配置与草稿
+  useEffect(() => {
+    if (autoModeActive) {
+      setAutoPanelMounted(true);
+      setFlashSaleMounted(true);
+    }
+  }, [autoModeActive]);
+
+  // 首页任务摘要：全部来自真实状态；autoModeActive（页签选中）不参与判断
+  const homeTaskSummaries = useMemo(
+    () =>
+      buildTaskSummaries({
+        statusReady: taskStatusReady,
+        autoModeRunning: autoModeStatus?.isRunning === true,
+        autoModeRound: autoModeStatus?.currentRound,
+        autoModePhase: autoModeStatus?.phase,
+        isEnabling,
+        enableRound: enableProgress?.currentRound,
+        enableMaxRounds: enableProgress?.maxRetries,
+        // 定时复制（创建新活动）与定时加入是两条独立链路，各自显示，互不遮蔽
+        scheduledCopyExists: hasScheduledCopy && scheduledTaskStatus?.exists === true,
+        scheduledCopyTargetTime: scheduledTaskStatus?.params?.targetStartTime,
+        scheduledEnableExists: scheduledEnableStatus?.exists === true,
+        scheduledEnableTargetTime: scheduledEnableStatus?.targetTime,
+        copyCompleted: _completedCopyInfo?.isNew === true,
+        copyCompletedName: _completedCopyInfo?.sourceFlashSaleName,
+      }),
+    [
+      taskStatusReady, autoModeStatus?.isRunning, autoModeStatus?.currentRound, autoModeStatus?.phase,
+      isEnabling, enableProgress?.currentRound, enableProgress?.maxRetries,
+      hasScheduledCopy, scheduledTaskStatus,
+      scheduledEnableStatus,
+      _completedCopyInfo?.isNew, _completedCopyInfo?.sourceFlashSaleName,
+    ],
+  );
+
+  /** 首页卡片普通入口：固定进入手动模式（工作页内的绑定/身份门控照旧拦截业务操作） */
+  const enterFeature = (featureId: string) => {
+    if (featureId !== FLASH_SALE_FEATURE_ID) return;
+    setFlashSaleMounted(true);
+    setPage('flash-sale');
+    if (autoModeActive) exitAutoMode();
+  };
+
+  /** 工作页页签切换：自动配置入口沿用现有权限检查，不直接赋值绕过 */
+  const goToAutoTab = () => {
+    enterAutoMode();
+  };
+
+  /** 首页「全部功能」入口 */
+  const goHome = () => {
+    setPage('home');
+  };
+
+  /** 任务摘要查看入口：按真实任务类型直达对应模式，不启动/停止任务 */
+  const viewTask = (summary: TaskSummary) => {
+    setFlashSaleMounted(true);
+    setPage('flash-sale');
+    if (summary.kind === 'auto') {
+      enterAutoMode();
+      return;
+    }
+    if (autoModeActive) exitAutoMode();
+    if (summary.kind === 'copy-completed') {
+      acknowledgeCompletedCopy();
+      fetchFlashSaleList(true);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
@@ -324,11 +432,25 @@ export default function App() {
     );
   }
 
+  // 公共顶栏按钮：首页始终可达；工作页沿用「自动页隐藏公共按钮」的原有展示规则
+  const showCommonHeaderActions = page === 'home' || !autoModeActive;
+  const boundStoreCount = storeBindings.filter(b => b.isActive).length;
+
   return (
-    <div className="w-[500px] min-h-[500px] bg-background" style={{ perspective: '1000px' }}>
+    // 高度：不用 vh（扩展弹窗的视口高度由内容决定，vh 会与自身形成循环导致弹窗塌成一条），
+    // 用固定下限 + 目标上限：内容少时保持稳定高度，内容多时在 600px 内单一区域滚动、顶栏保持可达。
+    <div className="w-[500px] min-h-[500px] max-h-[600px] overflow-y-auto bg-background">
       {/* Brand Header */}
       <div className="sticky top-0 z-30 bg-shopee-brand px-4 py-2.5 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2.5">
+          {page === 'flash-sale' && (
+            <button
+              className="text-[11px] px-2 py-1 rounded border border-white/40 text-white/90 hover:bg-white/10 transition-colors"
+              onClick={goHome}
+            >
+              全部功能
+            </button>
+          )}
           <div className="w-6 h-6 rounded-md bg-white/20 flex items-center justify-center">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
@@ -337,8 +459,8 @@ export default function App() {
           <span className="text-sm font-semibold text-white tracking-wide">限时特卖助手</span>
         </div>
         <div className="flex items-center gap-1.5">
-          {!autoModeActive && <SpcStatus />}
-          {backendApi.isAdmin() && !autoModeActive && (
+          {showCommonHeaderActions && <SpcStatus />}
+          {backendApi.isAdmin() && showCommonHeaderActions && (
             <button
               className="text-[10px] px-2 py-1 rounded text-white/80 hover:text-white hover:bg-white/10 transition-colors"
               onClick={() => setAdminSiteNotice(openAdminSite())}
@@ -346,7 +468,7 @@ export default function App() {
               管理
             </button>
           )}
-          {!backendApi.isAdmin() && !autoModeActive && (
+          {!backendApi.isAdmin() && showCommonHeaderActions && (
             <button
               className="text-[10px] px-2 py-1 rounded border border-white/40 text-white/80 hover:text-white hover:bg-white/10 transition-colors"
               onClick={() => window.open('https://pcn1rb88nrns.feishu.cn/wiki/S4lTwyMX3i1BndkJFdUcwhCvnBg?from=from_copylink', '_blank')}
@@ -354,7 +476,7 @@ export default function App() {
               使用说明
             </button>
           )}
-          {!backendApi.isAdmin() && !autoModeActive && (
+          {!backendApi.isAdmin() && showCommonHeaderActions && (
             <button
               className="text-[10px] px-2 py-1 rounded bg-gradient-to-r from-orange-400 to-amber-500 text-white hover:from-orange-500 hover:to-amber-600 transition-colors shadow-sm"
               onClick={() => setShowCustomDev(true)}
@@ -390,15 +512,39 @@ export default function App() {
         </div>
       )}
 
-      <div
-        className="relative"
-        style={{
-          transformStyle: 'preserve-3d',
-          transition: 'transform 0.6s ease-in-out',
-          transform: autoModeActive ? 'rotateY(180deg)' : 'rotateY(0deg)',
-        }}
-      >
-        <div style={{ backfaceVisibility: 'hidden' }}>
+      <div className="relative">
+        {page === 'home' && (
+          <div className="p-4">
+            <FeatureHome
+              summaries={homeTaskSummaries}
+              bindingNotice={
+                storeBindingsError
+                  ? '店铺绑定信息加载失败，请重试后再进入工具'
+                  : boundStoreCount === 0
+                    ? '还没有绑定店铺。绑定当前店铺后即可进入工具执行操作。'
+                    : isCurrentStoreBound === false
+                      ? '当前店铺未绑定，请先绑定再进入工具。'
+                      : null
+              }
+              bindingNoticeAction={
+                storeBindingsError || isCurrentStoreBound === false
+                  ? { label: '重试 / 绑定', onClick: () => { useAppStore.getState().refreshStoreBindings(); } }
+                  : null
+              }
+              onEnterFeature={enterFeature}
+              onViewTask={viewTask}
+            />
+          </div>
+        )}
+
+        {/* 限时特卖工作页：首次进入后常驻挂载，切回首页只隐藏（inert + hidden，不接收焦点/点击） */}
+        <div
+          {...(page === 'flash-sale' ? {} : { inert: true })}
+          aria-hidden={page === 'flash-sale' ? undefined : true}
+          className={page === 'flash-sale' ? 'block' : 'hidden'}
+        >
+          {flashSaleMounted && (
+            <>
           <AuthPanel />
           {isLoggedIn && <StoreStatus />}
 
@@ -467,6 +613,38 @@ export default function App() {
             </div>
           )}
 
+          {/* 工作页模式页签：取代原来的旋转翻面；也用于在绑定异常时保留模式切换可达 */}
+          <div className="mx-4 mt-3 flex gap-1 rounded-lg bg-muted p-1" role="tablist" aria-label="限时特卖模式">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={!autoModeActive}
+              className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                !autoModeActive ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => { if (autoModeActive) exitAutoMode(); }}
+            >
+              手动模式
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={autoModeActive}
+              className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                autoModeActive ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={goToAutoTab}
+            >
+              自动模式
+              {autoModeStatus?.isRunning && (
+                <span className="ml-1 inline-block h-1.5 w-1.5 animate-pulse-dot rounded-full bg-shopee-green align-middle" />
+              )}
+            </button>
+          </div>
+
+          {/* 手动业务区域：与自动页一致——只隐藏不卸载，切页后搜索/模板/SKU 局部草稿保留 */}
+          <WorkPageLayer active={!autoModeActive}>
+          <>
           {isLoggedIn && storeBindings.filter(b => b.isActive).length === 0 ? (
             <Card className="mx-4 mt-3">
               <CardContent className="py-8">
@@ -561,17 +739,6 @@ export default function App() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-7 px-2.5 text-xs font-normal border-shopee-brand/30 text-shopee-brand hover:bg-shopee-brand-light"
-                    onClick={() => enterAutoMode()}
-                  >
-                    <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="5 3 19 12 5 21 5 3"/>
-                    </svg>
-                    自动模式
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
                     className="h-7 px-2.5 text-xs font-normal border-green-300 text-green-700 hover:bg-green-50"
                     onClick={() => openFirstUse()}
                   >
@@ -581,12 +748,6 @@ export default function App() {
                     </svg>
                     第一次使用
                   </Button>
-                  {autoModeActive && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium rounded-full bg-shopee-green/10 text-shopee-green border border-shopee-green/20">
-                      <span className="w-1.5 h-1.5 rounded-full bg-shopee-green animate-pulse-dot" />
-                      {autoModeStatus?.currentRound ? `第 ${autoModeStatus.currentRound} 轮` : '运行中'}
-                    </span>
-                  )}
                 </div>
               </div>
             </CardHeader>
@@ -1646,34 +1807,47 @@ export default function App() {
       </Card>
       </div>
       )}
+          </>
+          </WorkPageLayer>
+            </>
+          )}
         </div>
 
-        <div style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0 }}>
-          <AutoModePanel onBack={exitAutoMode} />
-        </div>
+        {(autoPanelMounted || autoModeActive) && (
+          <WorkPageLayer active={page === 'flash-sale' && autoModeActive}>
+            <div className="p-4">
+              <AutoModePanel />
+            </div>
+          </WorkPageLayer>
+        )}
       </div>
 
-      {/* 弹窗 */}
+      {/* ===== 工作页弹层：切到首页不卸载以保留草稿，隐藏时不拦截首页交互与焦点 ===== */}
       {selectedFailedProduct && (
-        <SkuTable
-          key={selectedFailedProduct.itemid}
-          product={selectedFailedProduct}
-          onClose={() => setSelectedFailedProduct(null)}
-        />
+        <WorkPageLayer active={page === 'flash-sale'}>
+          <SkuTable
+            key={selectedFailedProduct.itemid}
+            product={selectedFailedProduct}
+            onClose={() => setSelectedFailedProduct(null)}
+          />
+        </WorkPageLayer>
       )}
 
       {showUndiscountedModal && pendingUndiscountedSkus.length > 0 && (
-        <UndiscountedSkuModal
-          skus={pendingUndiscountedSkus}
-          onClose={() => useAppStore.setState({
-            showUndiscountedModal: false,
-            pendingUndiscountedSkus: [],
-            _enableSkipSkuKeys: [],
-          })}
-        />
+        <WorkPageLayer active={page === 'flash-sale'}>
+          <UndiscountedSkuModal
+            skus={pendingUndiscountedSkus}
+            onClose={() => useAppStore.setState({
+              showUndiscountedModal: false,
+              pendingUndiscountedSkus: [],
+              _enableSkipSkuKeys: [],
+            })}
+          />
+        </WorkPageLayer>
       )}
 
       {overrideDetailOpen && (
+        <WorkPageLayer active={page === 'flash-sale'}>
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg shadow-xl w-[460px] max-w-[95vw] max-h-[80vh] flex flex-col">
             <div className="flex items-center justify-between gap-3 p-3 border-b">
@@ -1759,10 +1933,13 @@ export default function App() {
             </div>
           </div>
         </div>
+        </WorkPageLayer>
       )}
 
-      <FirstUseWarningModal />
-      <FirstUseModal />
+      <WorkPageLayer active={page === 'flash-sale'}>
+        <FirstUseWarningModal />
+        <FirstUseModal />
+      </WorkPageLayer>
 
       {showCustomDev && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowCustomDev(false)}>

@@ -1,0 +1,9 @@
+{
+  "results": [
+    "PASS  R2 首页常驻时新增定时加入任务，摘要自动出现（无需刷新）",
+    "PASS  R2 定时加入任务被清除后，摘要自动消失",
+    "PASS  R2 同步过程不产生店铺写请求"
+  ],
+  "storeWriteAttempts": [],
+  "consoleErrors": []
+}

@@ -200,6 +200,21 @@ export interface ScheduledTaskStatus {
   remainingSeconds?: number;
 }
 
+// ===== 定时加入任务（SCHEDULE_ENABLE / WIZARD_FLOW）只读状态 =====
+
+/** 定时加入的来源：`_scheduledEnable`（已有活动）或 `_wizardFlowParams`（向导创建新场次） */
+export type ScheduledEnableSource = 'scheduled-enable' | 'wizard-flow';
+
+/** popup 侧只读快照，仅用于首页摘要与查看入口；调度与校验仍在 background */
+export interface ScheduledEnableStatus {
+  exists: boolean;
+  source: ScheduledEnableSource;
+  /** 目标提交时间（运行时刻，秒）；向导流程在创建活动前取创建时间 */
+  targetTime: number;
+  flashSaleName: string;
+  flashSaleId: number;
+}
+
 // 复制时保存的源活动商品数据，用于新活动展示和开启限时特卖
 export interface CopiedSaleData {
   sourceFlashSaleId: number;

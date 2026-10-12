@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ShopeeProduct, FlashSale, EnableItem, EnableProgress, SkuOverride, CacheData, FlashSaleTemplate, TemplateProductInfo, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, TimeSlot, ScheduledTaskStatus, AutoModeConfig, AutoModeStatus, AutoModeLog, BackendAuthState, BackendStoreBinding, UndiscountedSku, PendingFlashSaleData, CompletedCopyInfo, OneDaySkuFlowState, OneDaySkuItemStatus, ShopProductListItem, FirstUseState } from './types';
+import type { ShopeeProduct, FlashSale, EnableItem, EnableProgress, SkuOverride, CacheData, FlashSaleTemplate, TemplateProductInfo, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, TimeSlot, ScheduledTaskStatus, ScheduledEnableStatus, AutoModeConfig, AutoModeStatus, AutoModeLog, BackendAuthState, BackendStoreBinding, UndiscountedSku, PendingFlashSaleData, CompletedCopyInfo, OneDaySkuFlowState, OneDaySkuItemStatus, ShopProductListItem, FirstUseState } from './types';
 import * as backendApi from './backend-api';
 import { getHighestModelPrice, hasDedicatedOneDaySku, buildOneDaySkuProductInfo, hasAnyOneDayDeliverySku, extractSellerDiscounts, isFiveTimesPriceError, buildDiscountRestoreList, getDiscountRatio } from './one-day-sku';
 
@@ -121,6 +121,8 @@ interface AppState {
   selectedTemplate: string | null;
   hasScheduledCopy: boolean;
   scheduledTaskStatus: ScheduledTaskStatus | null;
+  /** 定时加入任务（SCHEDULE_ENABLE / 向导创建+定时启用）的只读状态，仅用于首页摘要 */
+  scheduledEnableStatus: ScheduledEnableStatus | null;
 
   // 自动模式状态
   autoModeActive: boolean;
@@ -189,7 +191,8 @@ interface AppState {
   setPurchaseLimit: (n: number) => void;
   enableFlashSaleItems: () => Promise<void>;
   stopEnabling: () => void;
-  checkBackgroundStatus: () => Promise<void>;
+  /** 返回本次读取是否成功；失败时调用方（首页就绪判断）必须按未知处理，不能当成空闲 */
+  checkBackgroundStatus: () => Promise<boolean>;
   saveTemplate: (name: string) => Promise<void>;
   deleteTemplate: (name: string) => Promise<void>;
   getTemplateNames: () => Promise<string[]>;
@@ -207,10 +210,12 @@ interface AppState {
   enterCopyMode: (flashSale: FlashSale) => Promise<void>;
   executeCopy: (targetTime: number, templateName: string | null) => Promise<void>;
   exitCopyMode: () => void;
-  checkCopyTaskStatus: () => Promise<void>;
+  checkCopyTaskStatus: () => Promise<boolean>;
   setSelectedTemplate: (templateName: string | null) => void;
-  checkScheduledCopy: () => Promise<void>;
+  checkScheduledCopy: () => Promise<boolean>;
   triggerScheduledCopyNow: () => Promise<void>;
+  /** 只读读取定时加入任务存储，供首页摘要与查看入口使用；不触发、不改写任何调度 */
+  checkScheduledEnable: () => Promise<boolean>;
 
   // 自动模式 Actions
   enterAutoMode: () => void;
@@ -219,7 +224,7 @@ interface AppState {
   startAutoMode: (config: AutoModeConfig, flashSaleId?: number, flashSaleName?: string, debugMode?: boolean, selectedSlotId?: number, selectedSlotTime?: number, skipSkuKeys?: string[]) => Promise<{ success: boolean; error?: string }>;
   stopAutoMode: () => Promise<void>;
   setFirstSelectedActivity: (sale: FlashSale) => void;
-  loadAutoModeStatus: () => Promise<void>;
+  loadAutoModeStatus: () => Promise<boolean>;
   exportAutoModeLogs: () => Promise<void>;
 
   // 后端管理 Actions
@@ -332,6 +337,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectedTemplate: null,
   hasScheduledCopy: false,
   scheduledTaskStatus: null,
+  scheduledEnableStatus: null,
 
   // 自动模式初始值
   autoModeActive: false,
@@ -1454,7 +1460,11 @@ export const useAppStore = create<AppState>((set, get) => ({
           set({ trialExpiredBanner: data.error });
         }
       }
-    } catch { /* storage not accessible */ }
+      return true;
+    } catch { /* storage not accessible */
+      // 读取失败按「未知」返回：首页保持加载态，不能伪称空闲
+      return false;
+    }
   },
 
   // ===== 模板 =====
@@ -1582,7 +1592,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     isLoadingFlashSales: false, flashSaleInfo: '', flashSaleId: null,
     flashSaleList: [], isLoadingFlashSaleList: false,
     maxRetries: 10, discountRate: 60, flashSaleStock: 200, purchaseLimit: 5, isEnabling: false, enableProgress: null, skuOverrides: {},
-    copyMode: null, copySource: null, copyTaskStatus: null, isCopying: false, savedTemplates: [], selectedTemplate: null, hasScheduledCopy: false, scheduledTaskStatus: null,
+    copyMode: null, copySource: null, copyTaskStatus: null, isCopying: false, savedTemplates: [], selectedTemplate: null, hasScheduledCopy: false, scheduledTaskStatus: null, scheduledEnableStatus: null,
     autoModeActive: false, autoModeStatus: null, autoModeLogs: [], firstSelectedActivity: null,
     shopId: null, accountId: null, shopUsername: '',
     pendingUndiscountedSkus: [], showUndiscountedModal: false, _enableSkipSkuKeys: [],
@@ -1897,13 +1907,18 @@ export const useAppStore = create<AppState>((set, get) => ({
       const hasTask = !!scheduledResult._scheduledCopy;
       set({ hasScheduledCopy: hasTask });
       if (hasTask) get().checkScheduledCopy();
+      // 定时加入任务（SCHEDULE_ENABLE / 向导流程）与定时复制是两条独立链路，分别只读读取
+      get().checkScheduledEnable();
 
       // 恢复复制完成通知
       const completedResult = await browser.storage.local.get('_completedCopyInfo');
       if (completedResult._completedCopyInfo) {
         set({ _completedCopyInfo: completedResult._completedCopyInfo as CompletedCopyInfo });
       }
-    } catch {}
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   setSelectedTemplate: (templateName: string | null) => {
@@ -1926,8 +1941,57 @@ export const useAppStore = create<AppState>((set, get) => ({
       } else {
         set({ scheduledTaskStatus: null });
       }
+      return true;
     } catch {
       set({ hasScheduledCopy: false, scheduledTaskStatus: null });
+      return false;
+    }
+  },
+
+  /**
+   * 只读读取定时加入任务（`_scheduledEnable` / `_wizardFlowParams`），供首页摘要与查看入口。
+   * 不读取 `_enableParams`（手动提交进行中也会写它，会误判成定时任务），
+   * 不创建/清除 alarm，不改写任何存储——调度与校验仍在 background。
+   */
+  checkScheduledEnable: async () => {
+    try {
+      const result = await browser.storage.local.get(['_scheduledEnable', '_wizardFlowParams']);
+      const enable = result._scheduledEnable as { fireTime?: number; flashSaleName?: string; flashSaleId?: number } | undefined;
+      const wizard = result._wizardFlowParams as {
+        timeSlotId?: number;
+        createTime?: number;
+        enableFireTime?: number;
+        enableParams?: { flashSaleName?: string; flashSaleId?: number } | null;
+      } | undefined;
+
+      const now = Math.floor(Date.now() / 1000);
+      let status: ScheduledEnableStatus | null = null;
+
+      if (enable?.fireTime) {
+        status = {
+          exists: true,
+          source: 'scheduled-enable',
+          targetTime: enable.fireTime,
+          flashSaleName: enable.flashSaleName || '',
+          flashSaleId: enable.flashSaleId ?? 0,
+        };
+      } else if (wizard?.enableFireTime || wizard?.createTime) {
+        // 向导流程：先到创建时间创建空活动，再到 enableFireTime 提交商品
+        const createTime = wizard.createTime ?? 0;
+        status = {
+          exists: true,
+          source: 'wizard-flow',
+          targetTime: now < createTime ? createTime : wizard.enableFireTime ?? createTime,
+          flashSaleName: wizard.enableParams?.flashSaleName || '一键修复',
+          flashSaleId: wizard.enableParams?.flashSaleId ?? 0,
+        };
+      }
+
+      set({ scheduledEnableStatus: status });
+      return true;
+    } catch {
+      // 读取失败按未知处理：保留上一次结果，不谎报空闲
+      return false;
     }
   },
 
@@ -1949,6 +2013,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ autoModeActive: true, showAutoModeUpgradeModal: false });
   },
 
+  /** 只切换模式展示（自动页 ↔ 手动页），不触发任何业务动作 */
   exitAutoMode: () => set({ autoModeActive: false }),
 
   clearAutoModeDeniedMessage: () => set({ showAutoModeUpgradeModal: false }),
@@ -2072,8 +2137,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       const result = await browser.storage.local.get('_autoModeStatus');
       const status = result._autoModeStatus as AutoModeStatus | undefined;
+      // 只恢复任务数据，不强制切到自动页：初始化时是否展示自动页由导航（首页/页签）决定。
+      // 注意 autoModeActive 是展示状态，不是运行状态；判断运行中必须看 status.isRunning。
       if (status) {
-        set({ autoModeStatus: status, autoModeActive: true });
+        set({ autoModeStatus: status });
       } else {
         set({ autoModeStatus: null });
       }
@@ -2082,7 +2149,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       if (logs?.length) {
         set({ autoModeLogs: logs });
       }
-    } catch {}
+      return true;
+    } catch {
+      // 读取失败按「未知」返回：首页保持加载态，不伪称空闲
+      return false;
+    }
   },
 
   exportAutoModeLogs: async () => {
@@ -3603,6 +3674,8 @@ export function setupBackgroundListener() {
           }
         }
       } catch {}
+      // 定时加入任务可能在本次提交中被 background 清除，刷新一次首页摘要
+      useAppStore.getState().checkScheduledEnable();
     }
 
     if (type === 'AUTO_MODE_UPDATE') {
@@ -3619,5 +3692,29 @@ export function setupBackgroundListener() {
     }
 
     return false;
+  });
+
+  // 定时任务由 background 写入/清除存储（SCHEDULE_ENABLE / SCHEDULE_WIZARD_FLOW / scheduled_copy alarm 触发）。
+  // popup 只监听并刷新首页摘要，不改变当前页面，也不参与调度。
+  //
+  // 为什么必须在这里监听，而不是靠组件：`ScheduledTaskCard` 只在手动工作页挂载，用户一直停在首页时
+  // 它的 30 秒轮询不会执行；所以「定时复制结束、`_scheduledCopy` 被清除」这件事没有人会发现，
+  // 首页会一直显示「定时复制待执行」。定时加入同理。两条链路都要覆盖，否则漏报其中一条。
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local') return;
+    // 定时加入（SCHEDULE_ENABLE / SCHEDULE_WIZARD_FLOW）
+    if (changes._scheduledEnable || changes._wizardFlowParams) {
+      useAppStore.getState().checkScheduledEnable();
+    }
+    // 定时复制：background 触发后会清除 `_scheduledCopy`（成功/失败都清）
+    if (changes._scheduledCopy) {
+      useAppStore.getState().checkScheduledCopy();
+    }
+    // 复制完成通知本身被写入或清除（含用户已读）时，首页摘要随之更新
+    if (changes._completedCopyInfo) {
+      useAppStore.setState({
+        _completedCopyInfo: (changes._completedCopyInfo.newValue as CompletedCopyInfo | undefined) ?? null,
+      });
+    }
   });
 }

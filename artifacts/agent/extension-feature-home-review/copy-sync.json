@@ -1,0 +1,35 @@
+{
+  "checks": [
+    {
+      "case": "home-only-no-manual-card",
+      "pass": true
+    },
+    {
+      "case": "copy-cleared-live",
+      "pass": true
+    },
+    {
+      "case": "completion-notice-live",
+      "pass": true
+    },
+    {
+      "case": "completion-notice-cleared-live",
+      "pass": true
+    },
+    {
+      "case": "both-live",
+      "pass": true
+    },
+    {
+      "case": "copy-cleared-preserves-enable",
+      "pass": true
+    },
+    {
+      "case": "no-navigation-and-no-residual",
+      "pass": true
+    }
+  ],
+  "copyStillPending": false,
+  "realRequestsAllowed": 0,
+  "scenario": "Homepage remains open for R5 storage changes; no manual page mounted"
+}
