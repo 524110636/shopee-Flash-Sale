@@ -11,9 +11,6 @@ docs/
 .trae/
 *.zip
 .harness/
-harness/
-test/
-tests/
 playwright-report/
 vitest-report/
 test-results/
@@ -21,3 +18,12 @@ backend/data/
 .agents/
 .claude/skills/
 skills-lock.json
+.agent-tmp/
+
+# 明文凭据：禁止入库（用户 2026-10-12 指示）
+SSH_CONNECT.md
+harness/账号密码.md
+
+# 2026-10-12：harness/ 与 tests/ 改为一并入库（依据 OWNER_WORKING_RULES.md 第 8 条
+# 「正式源码、必要回归测试」不作垃圾清理）。仅排除其中的明文凭据；
+# 测试运行产物（playwright-report/ test-results/ vitest-report/）仍忽略。

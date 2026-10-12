@@ -12,7 +12,6 @@
 先复用已有能力，接通用户能实际操作的完整基本流程；可体验时主动安排用户手测。正常回复说清已能用、还不能用、下一步及责任人。授权用大白话说明实际影响。自己的临时测试产物由自己限量、隔离、清理并报告。
 派给子代理时同时传递上述三份文件及当前任务边界。下文较早版本和状态描述属于历史线索，需核实后才能当作当前进度；技术正文保留，协作口径冲突以用户长期规则为准。
 
-
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
@@ -67,26 +66,25 @@ This creates the admin user (from `INIT_ADMIN_EMAIL`/`INIT_ADMIN_PASSWORD`) and 
 | `npx pm2 restart limited-time-sale` | Restart backend |
 | `npx pm2 stop limited-time-sale` | Stop backend |
 | `curl http://localhost:5724/api/health` | Health check (local) |
-| `git config core.hooksPath .githooks` | Enable pre-commit hook (runs `npm run build`) |
 
 ## Project Structure
 
 ```
 ├── public/                     # WXT public assets (contact QR code, etc.)
 ├── USER_MANUAL.md              # User manual (Feishu-style, Chinese)
-├── entrypoints/                  # WXT entrypoints
-├── popup/                    # Popup UI (React, viewport=420px)
-│   ├── App.tsx               # Main React component (layout, conditional panels)
-│   ├── main.tsx              # React mount entry
-│   ├── store.ts              # Zustand single store (all business logic + API calls)
-│   ├── api.ts                # GraphQL product query fetcher
-│   ├── backend-api.ts        # Backend REST API client (auth, stores, analytics)
-│   ├── one-day-sku.ts        # 1-day-delivery SKU builder (buildOneDaySkuProductInfo, getDiscountRatio, buildDiscountRestoreList, extractSellableStock, generateTierCombinations, getHighestModelPrice [optional productInfoModels param for FirstUse], hasDedicatedOneDaySku, hasAnyOneDayDeliverySku, extractSellerDiscounts [filters ended/timeStatus=3/expired endTime], isFiveTimesPriceError)
-│   ├── types.ts              # All shared TypeScript interfaces
-│   ├── index.html            # HTML template
-│   └── style.css             # Tailwind directives
-├── background.ts             # Service Worker (enable loop, copy flows, alarm scheduling, message relay, auto mode, analytics events)
-└── content.ts                # Content script (floating progress panel, message relay)
+├── entrypoints/                # WXT entrypoints
+│   ├── popup/                  # Popup UI (React, viewport=420px)
+│   │   ├── App.tsx             # Main React component (layout, conditional panels)
+│   │   ├── main.tsx            # React mount entry
+│   │   ├── store.ts            # Zustand single store (all business logic + API calls)
+│   │   ├── api.ts              # GraphQL product query fetcher
+│   │   ├── backend-api.ts      # Backend REST API client (auth, stores, analytics)
+│   │   ├── one-day-sku.ts      # 1-day-delivery SKU builder (buildOneDaySkuProductInfo, getDiscountRatio, buildDiscountRestoreList, extractSellableStock, generateTierCombinations, getHighestModelPrice [optional productInfoModels param for FirstUse], hasDedicatedOneDaySku, hasAnyOneDayDeliverySku, extractSellerDiscounts [filters ended/timeStatus=3/expired endTime], isFiveTimesPriceError)
+│   │   ├── types.ts            # All shared TypeScript interfaces
+│   │   ├── index.html          # HTML template
+│   │   └── style.css           # Tailwind directives
+│   ├── background.ts           # Service Worker (enable loop, copy flows, alarm scheduling, message relay, auto mode, analytics events)
+│   └── content.ts              # Content script (floating progress panel, message relay)
 
 components/
 ├── ui/                       # shadcn/ui primitives
@@ -237,16 +235,16 @@ backend/                      # Standalone backend service
 - **Content script unified floating panel**: `content.ts` uses a single `createPanel()` that builds three sections: `autoSectionEl` (auto mode status), `progressSectionEl` (enable progress, built lazily by `buildProgressSection()`), `copySectionEl` (copy countdown/progress). The old competing `createProgressUI()` that destroyed other sections was removed. `showComplete()` auto-hides the progress section after 3s and removes the full panel only when no other sections are visible. All three flows (manual enable, wizard enable, auto mode) now share the same floating panel.
 - **Auto mode real-time countdown**: `renderAutoSection()` renders a `#__auto_countdown__` element that ticks every second via `updateAutoCountdown()`, showing minutes:seconds remaining until `nextActionTime` (operation time) or `nextTargetTime` (flash sale start). Timer clears automatically when auto mode stops.
 - **Auto mode alarm lifecycle (v1.14.2)**: Phase state machine `idle → waiting_create → creating → waiting_enable → enabling → idle`. `scheduleNextRound()` creates `auto_mode_create` alarm + repeating `auto_mode_heartbeat` (every 5 min). `handleAutoModeCreate()` creates empty flash sale → creates `auto_mode_enable` alarm. `handleAutoModeEnable()` calls `runEnableLoop()` → increments round → `scheduleNextRound()`. All alarm exits also create heartbeat for monitoring. `clearAutoModeAlarms()` clears all 3 auto_mode alarms on stop/complete/error.
-- **Auto mode SW recovery (v1.14.2)**: SW startup clears stale alarms before recovery via `clearAutoModeAlarms()` then `scheduleNextRound()`. `scheduleNextRound()` recognizes `waiting_enable` phase (SW died after create but before enable) and directly rebuilds `auto_mode_enable` alarm without re-creating the flash sale. `handleAutoModeHeartbeat()` detects lost alarms (via `chrome.alarms.get()`) and triggers re-scheduling. Stale `auto_mode_enable` cleared when entering `waiting_create` phase. Debug mode also clears stale enable alarm.
-- **Auto mode re-entry protection (v1.14.2)**: `_autoModeStarting` module-level mutex prevents concurrent START_AUTO_MODE handling (double-click or message re-delivery). `_autoModeStopRequested` flag signals running loops to abort.
-- **Auto mode persistent logging (v1.14.2)**: `logAutoMode()` writes structured entries to `_autoModeLogs` storage key (max 500, prepend). Each entry has `iso` readable timestamp, `type` (info/warning/success/error), `message`, optional `data` record. Serialized via `_logLock` promise chain to prevent write races. `sendAutoModeLog()` broadcasts to popup + content script for real-time display. `EXPORT_AUTO_MODE_LOGS` message handler formats all logs as text and triggers browser download. Popup `AutoModePanel` has "导出日志" button. Log points cover: alarm triggers, SW startup, heartbeat, schedule/recovery, create/enable phases, stop events.
-- **Auto mode SW recovery — nextTargetTime 复用 (v1.14.3)**: `scheduleNextRound()` 恢复路径中，当 `phase === 'waiting_create'` 且 `nextTargetTime` 仍然有效（未过期）时，直接复用已有目标时间创建 alarm，跳过 `pickNextTargetTime()` → `injectedFetch()` → `executeScriptSafe()` 链。修复了 SW 被 alarm 唤醒时无 `seller.shopee.tw` 标签页导致 `scripting.executeScript()` 被 Chrome 拒绝（"Cannot access contents of the page"）的问题。此恢复检查在「第一轮选中场次检查」之前执行，确保后者不会因同样的 `injectedFetch` 调用失败。
-- **filterActiveProducts 安全底线 (v1.14.3)**: `filterActiveProducts()` 通过 GraphQL API 检查商品是否仍处于上架状态（`status === 0`）。如果 API 返回异常（无匹配商品或全部 status ≠ 0）导致所有商品被判定为已下架，现在保留原商品列表并记录 warning，防止 `enableParams.products` 变为空数组 → `handleAutoModeEnable()` 报「没有固化商品参数」→ 整个自动模式流程崩溃。同时在全部过滤/部分过滤/API 异常三个路径都加入 `logAutoMode()` 记录，确保问题可追踪。
-- **handleAutoModeEnable 商品过滤 Number() 类型转换 (v1.14.3)**: `handleAutoModeEnable()` 中独立的商品活跃检查（line ~1411）与 `filterActiveProducts()` 使用相同的 `status === 0` 比较。Shopee GraphQL API 可能返回字符串 `"0"` 而非数字 `0`，导致严格相等失败 → 所有商品误判为已下架 → `itemCount: 0`。修复：两处过滤点统一使用 `Number(p.status) === 0` 比较。
-- **handleAutoModeEnable 安全底线 + 诊断日志 (v1.14.3)**: `handleAutoModeEnable()` 商品过滤新增：1) 过滤前记录 freshItems status 原始值样本（类型+值）；2) 过滤逻辑包裹 try/catch，异常时保留原商品继续；3) 全部过滤时安全底线保留原商品；4) 最终防线 — `enableParams.products` 为空时记录完整诊断信息并抛出明确错误。确保即使 API 返回格式异常也不会导致自动模式静默失败。
+- **Auto mode SW recovery (v1.14.2)**: SW startup clears stale alarms before recovery via `clearAutoModeAlarms()` then `scheduleNextRound()`. `scheduleNextRound()` recognizes `waiting_enable` phase (SW died after create but before enable) and directly rebuilds `auto_mode_enable` alarm without re-creating the flash sale. `handleAutoModeHeartbeat()` detects lost alarms (via `chrome.alarms.get()`) and triggers re-scheduling. Stale `auto_mode_enable` cleared when entering `waiting_create` phase. Debug mode also clears stale enable alarm. —— 为什么：MV3 的 Service Worker 会被 Chrome 随时回收（闲置几十秒就休眠），alarm 是唯一能把它**叫醒**的机制；若启动时不清理并重建 alarm，被打断的那一轮会**永远卡住**（活动建好了、商品永远不提交），用户看到"自动模式在跑但店铺没动静"。
+- **Auto mode re-entry protection (v1.14.2)**: `_autoModeStarting` module-level mutex prevents concurrent START_AUTO_MODE handling (double-click or message re-delivery). `_autoModeStopRequested` flag signals running loops to abort. —— 为什么：`sendMessage` 在 MV3 下可能被投递多次，加上用户手快手慢连点，会导致**并起两套循环**，同一场次被提交两遍 / 活动互相覆盖。用户看不到任何报错，只看到店铺数据乱了。
+- **Auto mode persistent logging (v1.14.2)**: `logAutoMode()` writes structured entries to `_autoModeLogs` storage key (max 500, prepend). Each entry has `iso` readable timestamp, `type` (info/warning/success/error), `message`, optional `data` record. Serialized via `_logLock` promise chain to prevent write races. `sendAutoModeLog()` broadcasts to popup + content script for real-time display. `EXPORT_AUTO_MODE_LOGS` message handler formats all logs as text and triggers browser download. Popup `AutoModePanel` has "导出日志" button. Log points cover: alarm triggers, SW startup, heartbeat, schedule/recovery, create/enable phases, stop events. —— 为什么：自动模式跑在**无人看守**的时段（半夜、用户关着弹窗甚至关着浏览器），出问题时 Service Worker 的控制台**看不到**（尤其是指纹浏览器）；不落盘就没有任何证据，只能靠猜。`_logLock` 串行化是为了避免并发写入互相截断，导致日志本身损坏、反而误导排查。
+- **Auto mode SW recovery — nextTargetTime 复用 (v1.14.3)**: `scheduleNextRound()` 恢复路径中，当 `phase === 'waiting_create'` 且 `nextTargetTime` 仍然有效（未过期）时，直接复用已有目标时间创建 alarm，跳过 `pickNextTargetTime()` → `injectedFetch()` → `executeScriptSafe()` 链。修复了 SW 被 alarm 唤醒时无 `seller.shopee.tw` 标签页导致 `scripting.executeScript()` 被 Chrome 拒绝（"Cannot access contents of the page"）的问题。此恢复检查在「第一轮选中场次检查」之前执行，确保后者不会因同样的 `injectedFetch` 调用失败。 —— 为什么：SW 被 alarm 唤醒时用户可能已关掉卖家中心页面，这时任何"注入页面取数据"的调用都会被 Chrome 拒绝；若恢复路径依赖它，自动模式会在**每次电脑空闲后**静默断链，用户以为还在跑。
+- **filterActiveProducts 安全底线 (v1.14.3)**: `filterActiveProducts()` 通过 GraphQL API 检查商品是否仍处于上架状态（`status === 0`）。如果 API 返回异常（无匹配商品或全部 status ≠ 0）导致所有商品被判定为已下架，现在保留原商品列表并记录 warning，防止 `enableParams.products` 变为空数组 → `handleAutoModeEnable()` 报「没有固化商品参数」→ 整个自动模式流程崩溃。同时在全部过滤/部分过滤/API 异常三个路径都加入 `logAutoMode()` 记录，确保问题可追踪。 —— 为什么：这条**曾经真的炸过**（2026-05-22，提交 `145668f`）——一次 API 抖动把 17 个商品全判为已下架，参数变空数组，整个自动模式当场崩溃且无痕迹。"宁可提交错的商品，也不要在无人看守时整个流程死掉"是本项目的取舍；`logAutoMode` 是事后唯一证据。
+- **handleAutoModeEnable 商品过滤 Number() 类型转换 (v1.14.3)**: `handleAutoModeEnable()` 中独立的商品活跃检查（函数内 `freshItems.some(p => Number(p.status) !== 0)`，**不写死行号**——行号必然继续漂移）与 `filterActiveProducts()` 使用相同的 `status === 0` 比较。Shopee GraphQL API 可能返回字符串 `"0"` 而非数字 `0`，导致严格相等失败 → 所有商品误判为已下架 → `itemCount: 0`。修复：两处过滤点统一使用 `Number(p.status) === 0` 比较。 —— 为什么：这是一次**真实事故**（`ab1b72a`、`670156a`）——`"0" === 0` 为 false，全部商品被误判下架。**任何从虾皮 API 读来的 `status` 都必须先 `Number()`**，否则"看起来完全正确"的代码会静默过滤掉全部数据。
+- **handleAutoModeEnable 安全底线 + 诊断日志 (v1.14.3)**: `handleAutoModeEnable()` 商品过滤新增：1) 过滤前记录 freshItems status 原始值样本（类型+值）；2) 过滤逻辑包裹 try/catch，异常时保留原商品继续；3) 全部过滤时安全底线保留原商品；4) 最终防线 — `enableParams.products` 为空时记录完整诊断信息并抛出明确错误。确保即使 API 返回格式异常也不会导致自动模式静默失败。 —— 为什么：同上一类事故的加固。四层里最关键是第 3 层（全部过滤时保留原商品）——它把"静默崩溃"降级为"可能提交略旧的库存"，后者用户能在数据里看出来并补救，前者用户根本不知道发生了什么。
 - **Minimize/restore buttons**: Unified panel has a `−` minimize button (top-right). `toggleMinimize()` collapses the panel to a thin right-side strip showing `◀` arrow + one-line countdown/status summary, updating in real-time. Click the arrow to restore. Copy UI has separate `toggleCopyMinimize()` with the same behavior. `panelMinimized` / `copyMinimized` flags track state; `updateMinimizedContent()` / `updateCopyMinimizedContent()` refresh the compact display.
-- **`showComplete()` initialization fix**: `showComplete()` now calls `createPanel()` + `buildProgressSection()` before checking `headerEl`, preventing silent failure when `ENABLE_COMPLETE` arrives without a preceding `ENABLE_PROGRESS` (e.g., zero items or immediate error).
-- **Wizard duplicate-click prevention**: "立即加入"/"定时"/"开始"/"调试" buttons disabled when `isEnabling || oneDaySkuFlow.running || !!oneDaySkuFlow.message`. Store-level guards in `addToExistingFlashSale`, `scheduleEnableForFlashSale`, `createNewFlashSaleAndAdd` reject re-entry: `if (state.isEnabling || oneDaySkuFlow.running || oneDaySkuFlow.message) return`. `goToFlashSaleSelection` clears `message` and `error` so guide text doesn't block buttons.
+- **`showComplete()` initialization fix**: `showComplete()` now calls `createPanel()` + `buildProgressSection()` before checking `headerEl`, preventing silent failure when `ENABLE_COMPLETE` arrives without a preceding `ENABLE_PROGRESS` (e.g., zero items or immediate error). —— 为什么：零商品或立即失败时 `ENABLE_COMPLETE` 会**先于**任何进度消息到达；旧代码此时 `headerEl` 还不存在，直接 return，用户端**什么都不显示**——看起来像插件没反应，实际是已经失败了。
+- **Wizard duplicate-click prevention**: "立即加入"/"定时"/"开始"/"调试" buttons disabled when `isEnabling || oneDaySkuFlow.running || !!oneDaySkuFlow.message`. Store-level guards in `addToExistingFlashSale`, `scheduleEnableForFlashSale`, `createNewFlashSaleAndAdd` reject re-entry: `if (state.isEnabling || oneDaySkuFlow.running || oneDaySkuFlow.message) return`. `goToFlashSaleSelection` clears `message` and `error` so guide text doesn't block buttons. —— 为什么：这些按钮会**真的在店铺里建活动/提交商品**，重复点击就会建出两个活动、或同一批 SKU 提交两遍。UI 的 `disabled` 只是第一层，store 层的守卫是第二层（防止快捷键、程序化触发或 UI 状态滞后绕过）。
 - **Minimize/restore copy visibility fix**: `toggleMinimize()` in content.ts now saves/restores `wasCopyVisible` alongside `wasAutoVisible` and `wasProgressVisible`, preventing copy section from staying hidden after expand.
 - **"使用说明" button**: Non-admin users see a "使用说明" button (left of "定制开发") that opens the Feishu user manual wiki in a new tab via `window.open()`.
 - **QR code contact modal**: "定制开发" modal contact section has a "查看二维码" button that opens a centered overlay showing `contact-qr.png` (作者微信二维码) from `public/`, using `browser.runtime.getURL()`.
@@ -288,59 +286,11 @@ backend/                      # Standalone backend service
 - `SSH_CONNECT.md` — SSH server connection guide
 - `docs/shopee-flash-sale-api.md` — Shopee API endpoints and response formats
 - `docs/superpowers/` — Design specs and implementation plans
-- `AGENTS.md` — Detailed version history (775 lines), loaded alongside CLAUDE.md
+- `AGENTS.md` — Detailed version history, loaded alongside CLAUDE.md
 
 ## Config Files
 
-- `wxt.config.ts`: `extensionApi: 'chrome'`, permissions `['storage','cookies','scripting','alarms','unlimitedStorage']`, host_permissions `['https://*.shopee.tw/*']`
+- `wxt.config.ts`: `extensionApi: 'chrome'`, permissions `['storage','cookies','scripting','alarms','unlimitedStorage','downloads']`, host_permissions `['https://*.shopee.tw/*']`
 - `tsconfig.json` (root): `strict=true`, `moduleResolution=Bundler`, `baseUrl=.`, `paths: @/* → ./*`
 - `tsconfig.json` (backend): `strict=true`, `moduleResolution=Bundler`, `outDir: ./dist`
 - `tailwind.config.ts`: Content paths `entrypoints/**/*.{ts,tsx}`, `components/**/*.{ts,tsx}`
-
-<!-- gitnexus:start -->
-# GitNexus — Code Intelligence
-
-This project is indexed by GitNexus as **limited-time-sale** (1779 symbols, 2799 relationships, 112 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
-
-> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
-
-## Always Do
-
-- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
-- **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
-- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
-- When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
-- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
-
-## Never Do
-
-- NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
-- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
-- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
-- NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
-
-## Resources
-
-| Resource | Use for |
-|----------|---------|
-| `gitnexus://repo/limited-time-sale/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/limited-time-sale/clusters` | All functional areas |
-| `gitnexus://repo/limited-time-sale/processes` | All execution flows |
-| `gitnexus://repo/limited-time-sale/process/{name}` | Step-by-step execution trace |
-
-## CLI
-
-| Task | Read this skill file |
-|------|---------------------|
-| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
-| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
-| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
-| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
-| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
-| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
-| Work in the Popup area (98 symbols) | `.claude/skills/generated/popup/SKILL.md` |
-| Work in the Product area (76 symbols) | `.claude/skills/generated/product/SKILL.md` |
-| Work in the Entrypoints area (55 symbols) | `.claude/skills/generated/entrypoints/SKILL.md` |
-| Work in the Ui area (16 symbols) | `.claude/skills/generated/ui/SKILL.md` |
-
-<!-- gitnexus:end -->

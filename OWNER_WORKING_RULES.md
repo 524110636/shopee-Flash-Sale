@@ -17,6 +17,19 @@
 Claude 会话专属的角色说明放在项目级 `.claude/`（`.claude/CLAUDE.md`，Claude 会话每次开始自动读取）；共享文档只保留这条分工，不写“本项目只做规划不编码”，避免开发智能体误读。
 派任务给开发智能体时，任务书必须附上 `OWNER_WORKING_RULES.md` 路径、`PROJECT_STATUS.md` 路径和当前任务边界。
 
+### 0.1 并发写规则（2026-10-12 用户认可）
+
+多智能体可能在同一工作区并行作业（历史上已发生过两个会话同时改文件的险情）。为避免互相覆盖，约定：
+
+| 文件 | 写权 |
+| --- | --- |
+| `OWNER_WORKING_RULES.md`、`PROJECT_STATUS.md`、`SESSION_CONTEXT.md`、`.claude/CLAUDE.md`、`.claude/settings.json` | **规划方独占**；开发方只读 |
+| `AGENTS.md`、`CLAUDE.md`、`README.md`、`运维速查.md`、源码与配置文件 | 按任务书划定的范围，谁被指派谁写 |
+
+- 改任何共用文件前先 `git status` / 看 mtime，**只做加法、先读后改**，不覆盖其他 Agent 的未提交修改。
+- 任务书、台账、交接说明、验收报告统一放 `.claude/tasks/`，不放仓库根目录、不放 `docs/`（`docs/` 被 gitignore）。
+- 发现别人正在改同一文件时，停下并告知用户，不要抢写。
+
 ## 1. 每轮都执行的工作方式
 
 1. 接手、规划、开发或验收前，读取本文、`PROJECT_STATUS.md` 和 `SESSION_CONTEXT.md`（后者是 2026-05 历史快照，仅作排查线索，引用前须核实）；同一会话已读且未变化可复用。再按修改范围阅读现有技术规则。上下文压缩或移交后，恢复当前目标、边界、真实进度和下一步。
