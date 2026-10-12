@@ -1,0 +1,16 @@
+{
+  "unknownTypes": [
+    "constructor",
+    "__proto__",
+    "toString",
+    "hasOwnProperty",
+    "valueOf",
+    "ordinary_unknown"
+  ],
+  "status": 200,
+  "allEvents": 7,
+  "knownFieldsPreserved": true,
+  "credentialsRemoved": true,
+  "browserReadable": true,
+  "pageErrors": []
+}

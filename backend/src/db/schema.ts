@@ -1,4 +1,9 @@
+import { sql } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+
+// 注意：`.default('CURRENT_TIMESTAMP')` 会被 Drizzle 当成字面量字符串写入，
+// 导致该列永远存字符串 "CURRENT_TIMESTAMP"。必须用 sql 模板让 SQLite 求值。
+const now = sql`(datetime('now'))`;
 
 export const users = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -10,8 +15,8 @@ export const users = sqliteTable('users', {
   autoModeEnabled: integer('auto_mode_enabled').notNull().default(0),
   trialUsed: integer('trial_used').notNull().default(0),
   trialEnabled: integer('trial_enabled').notNull().default(1),
-  createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
-  updatedAt: text('updated_at').notNull().default('CURRENT_TIMESTAMP'),
+  createdAt: text('created_at').notNull().default(now),
+  updatedAt: text('updated_at').notNull().default(now),
 });
 
 export const verificationCodes = sqliteTable('verification_codes', {
@@ -20,7 +25,7 @@ export const verificationCodes = sqliteTable('verification_codes', {
   code: text('code').notNull(),
   expiresAt: text('expires_at').notNull(),
   isUsed: integer('is_used').notNull().default(0),
-  createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
+  createdAt: text('created_at').notNull().default(now),
 });
 
 export const storeBindings = sqliteTable('store_bindings', {
@@ -33,7 +38,7 @@ export const storeBindings = sqliteTable('store_bindings', {
   shopName: text('shop_name'),
   maxStores: integer('max_stores').notNull().default(1),
   isActive: integer('is_active').notNull().default(1),
-  createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
+  createdAt: text('created_at').notNull().default(now),
 });
 
 export const inviteCodes = sqliteTable('invite_codes', {
@@ -41,7 +46,7 @@ export const inviteCodes = sqliteTable('invite_codes', {
   code: text('code').notNull().unique(),
   isUsed: integer('is_used').notNull().default(0),
   usedBy: integer('used_by'),
-  createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
+  createdAt: text('created_at').notNull().default(now),
   usedAt: text('used_at'),
 });
 
@@ -50,7 +55,7 @@ export const analyticsEvents = sqliteTable('analytics_events', {
   userId: integer('user_id').notNull().references(() => users.id),
   eventType: text('event_type').notNull(),
   eventData: text('event_data'),
-  createdAt: text('created_at').notNull().default('CURRENT_TIMESTAMP'),
+  createdAt: text('created_at').notNull().default(now),
 });
 
 export type User = typeof users.$inferSelect;

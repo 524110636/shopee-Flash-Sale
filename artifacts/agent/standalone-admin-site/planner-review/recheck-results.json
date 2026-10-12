@@ -1,0 +1,49 @@
+[
+  {
+    "name": "self deletion still rejected",
+    "passed": true
+  },
+  {
+    "name": "binding credentials still removed",
+    "passed": true
+  },
+  {
+    "name": "current role still checked",
+    "passed": true
+  },
+  {
+    "name": "API redaction and known fields",
+    "passed": true
+  },
+  {
+    "name": "browser redaction and real fields",
+    "passed": true
+  },
+  {
+    "name": "refresh failure labels stale values",
+    "passed": true
+  },
+  {
+    "name": "first failure not shown as zero",
+    "passed": true
+  },
+  {
+    "name": "real zero distinguished",
+    "passed": true
+  },
+  {
+    "name": "unknown inherited type constructor",
+    "passed": false,
+    "error": "Internal Server Error\n\n500 !== 200\n"
+  },
+  {
+    "name": "unknown inherited type __proto__",
+    "passed": false,
+    "error": "Internal Server Error\n\n500 !== 200\n"
+  },
+  {
+    "name": "unknown inherited type toString",
+    "passed": false,
+    "error": "Internal Server Error\n\n500 !== 200\n"
+  }
+]

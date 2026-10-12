@@ -4,7 +4,11 @@ import { existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import * as schema from './schema.js';
 
-const DB_PATH = join(process.cwd(), 'data', 'sale.db');
+// 数据库位置默认 backend/data/sale.db；可用 DB_PATH 指向隔离库（测试/验收用），
+// 避免把测试数据写进正式库。
+const DB_PATH = process.env.DB_PATH
+  ? process.env.DB_PATH
+  : join(process.cwd(), 'data', 'sale.db');
 
 let client: ReturnType<typeof createClient>;
 let db: ReturnType<typeof drizzle<typeof schema>>;

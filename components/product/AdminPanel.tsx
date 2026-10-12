@@ -334,10 +334,15 @@ export function AdminPanel() {
                     )}
                   </div>
                   <div className="mt-0.5 text-muted-foreground space-x-2">
-                    {b.shopId && <span>店铺 ID: {b.shopId}</span>}
-                    {b.shopUsername && <span>用户名: {b.shopUsername}</span>}
-                    {b.shopName && <span>{b.shopName}</span>}
-                    {!b.shopId && <span>SPC_CDS: {b.spcCds.slice(0, 16)}...</span>}
+                    {b.shopId ? (
+                      <>
+                        <span>店铺 ID: {b.shopId}</span>
+                        {b.shopUsername && <span>用户名: {b.shopUsername}</span>}
+                        {b.shopName && <span>{b.shopName}</span>}
+                      </>
+                    ) : (
+                      <span>店铺信息待补全</span>
+                    )}
                   </div>
                 </div>
                 {b.isActive && (
