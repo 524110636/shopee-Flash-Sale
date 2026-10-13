@@ -1,0 +1,52 @@
+{
+  "acceptance": "fourth-round listed blockers independently verified; ready for scoped user experience",
+  "userAccepted": false,
+  "realStoreTested": false,
+  "realPlatformRequestsAllowed": 0,
+  "sourceUnchangedDuringReview": true,
+  "reviewerProductSourceEdits": 0,
+  "relatedUnitTestsPassed": 79,
+  "build": "1.14.3 / 812.64 kB",
+  "targetPackage": "D:\\shopee_xm\\虾皮限时特卖-更新迭代\\.output\\chrome-mv3",
+  "targetCodeEquivalentExceptBackendUrl": true,
+  "recovery": {
+    "blockedBeforeRead": true,
+    "appliedBeforeEditing": true,
+    "editedReopenedDiscount": 31,
+    "selectionReachable": true
+  },
+  "unknownRemoval": {
+    "r4-single-unknown": {
+      "status": "failed",
+      "steps": [
+        "remove"
+      ],
+      "removals": [
+        {
+          "name": "fixture discount",
+          "promotionId": 99,
+          "status": "unknown"
+        }
+      ]
+    },
+    "r4-partial-unknown": {
+      "status": "failed",
+      "steps": [
+        "remove",
+        "remove"
+      ],
+      "removals": [
+        {
+          "name": "fixture discount",
+          "promotionId": 99,
+          "status": "success"
+        },
+        {
+          "name": "fixture discount",
+          "promotionId": 100,
+          "status": "unknown"
+        }
+      ]
+    }
+  }
+}

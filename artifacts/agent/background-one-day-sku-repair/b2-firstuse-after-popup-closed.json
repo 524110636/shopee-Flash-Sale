@@ -1,0 +1,182 @@
+{
+  "checkpoints": [
+    {
+      "at": 1791872092316,
+      "itemId": "1001",
+      "promotionId": 902333706846208,
+      "promotionName": "隔离折扣活动",
+      "seq": 1,
+      "step": "delete_abnormal_seller_discount_items",
+      "writeSent": true
+    },
+    {
+      "at": 1791872092320,
+      "itemId": "1001",
+      "outcome": "success",
+      "promotionId": 902333706846208,
+      "promotionName": "隔离折扣活动",
+      "seq": 2,
+      "step": "delete_abnormal_seller_discount_items",
+      "writeSent": true
+    },
+    {
+      "at": 1791872094329,
+      "itemId": "1001",
+      "seq": 3,
+      "step": "update_product_info",
+      "writeSent": true
+    },
+    {
+      "at": 1791872106373,
+      "itemId": "1001",
+      "seq": 4,
+      "step": "update_seller_discount_items",
+      "writeSent": true
+    }
+  ],
+  "currentIndex": 2,
+  "discountRate": 80,
+  "error": null,
+  "items": [
+    {
+      "discountRemovals": [
+        {
+          "name": "隔离折扣活动",
+          "promotionId": 902333706846208,
+          "status": "success"
+        }
+      ],
+      "discountRemoved": true,
+      "discountRestored": true,
+      "discounts": [
+        {
+          "endTime": 4102444800,
+          "name": "隔离折扣活动",
+          "promotionId": 902333706846208,
+          "raw": {
+            "discount_id": 902333706846208,
+            "end_time": 4102444800,
+            "name": "隔离折扣活动",
+            "start_time": 1,
+            "time_status": 2
+          },
+          "startTime": 1,
+          "timeStatus": 2
+        }
+      ],
+      "flashSaleStatus": "idle",
+      "hasOneDaySku": false,
+      "highestPrice": 1000,
+      "itemId": "1001",
+      "itemName": "隔离商品-需新增SKU(发布较慢)",
+      "publishStatus": "success",
+      "skuCreated": true
+    },
+    {
+      "discountRemoved": false,
+      "discountRestored": false,
+      "flashSaleStatus": "idle",
+      "hasOneDaySku": true,
+      "highestPrice": 1000,
+      "itemId": "1002",
+      "itemName": "隔离商品-已有1天SKU",
+      "publishStatus": "success",
+      "skuCreated": false
+    }
+  ],
+  "message": "修复完成：2 个可继续",
+  "ownerUserId": 1,
+  "phase": "editing_params",
+  "requestId": "odr-1791872092289-eawh8v",
+  "resultProducts": [
+    {
+      "images": [],
+      "inputOriginPrice": "1000",
+      "itemNormalStock": 10,
+      "itemSellerSellableStock": 10,
+      "itemTotalReservedStock": 0,
+      "itemWmsSellableStock": 0,
+      "itemid": "1001",
+      "localPrice": "0",
+      "minPurchaseLimit": 1,
+      "modelList": [
+        {
+          "enableShopFlashSaleNewStock": false,
+          "inputOriginPrice": "1000",
+          "localPrice": "0",
+          "modelNormalStock": 10,
+          "modelSellerSellableStock": 10,
+          "modelTotalReservedStock": 0,
+          "modelWmsSellableStock": 0,
+          "modelid": "5001",
+          "name": "默认规格",
+          "normalSellerStock": 10,
+          "normalStock": 10,
+          "normalWmsStock": 0,
+          "originPrice": "1000",
+          "pffTag": false,
+          "totalNormalStock": 10
+        }
+      ],
+      "name": "隔离商品-需新增SKU(发布较慢)",
+      "normalSellerStock": 10,
+      "normalStock": 10,
+      "normalWmsStock": 0,
+      "originPrice": "1000",
+      "pffTag": false,
+      "status": 0,
+      "transparentBackgroundImage": "",
+      "variationImages": []
+    },
+    {
+      "images": [],
+      "inputOriginPrice": "1000",
+      "itemNormalStock": 10,
+      "itemSellerSellableStock": 10,
+      "itemTotalReservedStock": 0,
+      "itemWmsSellableStock": 0,
+      "itemid": "1002",
+      "localPrice": "0",
+      "minPurchaseLimit": 1,
+      "modelList": [
+        {
+          "enableShopFlashSaleNewStock": false,
+          "inputOriginPrice": "1000",
+          "localPrice": "0",
+          "modelNormalStock": 10,
+          "modelSellerSellableStock": 10,
+          "modelTotalReservedStock": 0,
+          "modelWmsSellableStock": 0,
+          "modelid": "5001",
+          "name": "默认规格",
+          "normalSellerStock": 10,
+          "normalStock": 10,
+          "normalWmsStock": 0,
+          "originPrice": "1000",
+          "pffTag": false,
+          "totalNormalStock": 10
+        }
+      ],
+      "name": "隔离商品-已有1天SKU",
+      "normalSellerStock": 10,
+      "normalStock": 10,
+      "normalWmsStock": 0,
+      "originPrice": "1000",
+      "pffTag": false,
+      "status": 0,
+      "transparentBackgroundImage": "",
+      "variationImages": []
+    }
+  ],
+  "revision": 13,
+  "shopId": 777,
+  "source": "first-use",
+  "spcCdsFingerprint": "10e4ca00",
+  "startedAt": 1791872092298,
+  "status": "completed",
+  "taskId": "odr-1791872092289-eawh8v",
+  "total": 2,
+  "updatedAt": 1791872106397,
+  "workItem": null,
+  "writeStarted": true
+}

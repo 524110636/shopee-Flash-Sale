@@ -1,0 +1,12 @@
+{
+  "statusBeforeClose": "running",
+  "currentIndexBeforeClose": 1,
+  "writesBeforeClose": 1,
+  "resolvedStatus": "interrupted",
+  "resolvedMessage": "修复已中断（后台执行者已退出）。有 1 个商品可能已被修改，请核对后再决定是否重跑。",
+  "checkpointsKept": 1,
+  "writeStarted": true,
+  "writesAfterRestart": 1,
+  "writesDuringObservation": 1,
+  "note": "本环境按 PID 结束进程不可靠；用\"关闭上下文 + 重启\"制造真实终止"
+}

@@ -1,0 +1,51 @@
+{
+  "sourceUnchanged": true,
+  "productSourceEdited": false,
+  "realPlatformRequestsAllowed": 0,
+  "ordinaryClosedMs": 46301,
+  "ordinaryCompleted": true,
+  "firstUseCompleted": true,
+  "freshSku5002Loaded": true,
+  "staleReadBlocked": false,
+  "newSkuActuallyPublishedInStaleCase": true,
+  "edit": {
+    "input": 37,
+    "persisted": 80,
+    "reopened": 80
+  },
+  "copyWritesWhileRepairRunning": [
+    {
+      "mode": "copy-during-repair",
+      "step": "copy-sale-write",
+      "path": "/api/marketing/v4/shop_flash_sale/set_shop_flash_sale/",
+      "body": {
+        "flash_sale_id": 555,
+        "status": 2
+      },
+      "repairStatus": "running",
+      "at": 1791866413806
+    },
+    {
+      "mode": "copy-during-repair",
+      "step": "copy-sale-write",
+      "path": "/api/marketing/v4/shop_flash_sale/set_shop_flash_sale/",
+      "body": {
+        "time_slot_id": 999
+      },
+      "repairStatus": "running",
+      "at": 1791866413816
+    }
+  ],
+  "classification": {
+    "coreBlockers": [
+      "BR2 copy writes during repair",
+      "BR3 stale result readiness and actual UI edit persistence"
+    ],
+    "protocolOnlyUnprovenNormalReachability": [
+      "BR1 missing owner request"
+    ],
+    "conditionalNotProvenOnRealPlatform": [
+      "BR4 multiple discount partial removal evidence"
+    ]
+  }
+}

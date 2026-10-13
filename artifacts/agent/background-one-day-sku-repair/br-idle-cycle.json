@@ -1,0 +1,12 @@
+{
+  "items": 4,
+  "publishDelayMs": 25000,
+  "postCloseWaitMs": 36000,
+  "progressAtClose": 1,
+  "progressAfterIdle": 2,
+  "heartbeatRefreshedAfterClose": true,
+  "totalDurationMs": 100138,
+  "publishCount": 4,
+  "finalStatus": "completed",
+  "resultProducts": 4
+}

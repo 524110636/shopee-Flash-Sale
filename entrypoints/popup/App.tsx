@@ -18,6 +18,7 @@ import { ScheduledTaskCard } from '@/components/product/ScheduledTaskCard';
 import { FeatureHome } from '@/components/product/FeatureHome';
 import { FLASH_SALE_FEATURE_ID } from '@/components/product/feature-catalog';
 import { buildTaskSummaries, type TaskSummary } from '@/components/product/task-summary';
+import { buildRepairSummary } from '@/entrypoints/popup/one-day-sku-task';
 import { useAppStore, setupBackgroundListener } from './store';
 import type { ShopeeProduct, TimeSlot } from './types';
 import * as backendApi from './backend-api';
@@ -82,6 +83,7 @@ export default function App() {
     loadAutoModeStatus,
     oneDaySkuSelectedIds, oneDaySkuFlow,
     toggleOneDaySkuSelection, setOneDaySkuSelection, runOneDaySkuAndEnable,
+    repairTask, syncOneDayRepairTask, acknowledgeInterruptedRepair,
     openFirstUse,
     goToFlashSaleSelection, addToExistingFlashSale, createNewFlashSaleAndAdd, scheduleEnableForFlashSale,
   } = useAppStore();
@@ -110,7 +112,7 @@ export default function App() {
   const [wizardAdvanceMin, setWizardAdvanceMin] = useState('5');
   const [wizardDelayMin, setWizardDelayMin] = useState('5');
   const [selectedWizardSlotId, setSelectedWizardSlotId] = useState<number | null>(null);
-  const { checkAuthOnStartup, isLoggedIn, isCheckingAuth, storeBindings, storeBindingsLoaded, storeBindingsError, shopId, pendingUndiscountedSkus, showUndiscountedModal, isAutoRefreshingBinding } = useAppStore();
+  const { checkAuthOnStartup, isLoggedIn, isCheckingAuth, storeBindings, storeBindingsLoaded, storeBindingsError, shopId, authUser, pendingUndiscountedSkus, showUndiscountedModal, isAutoRefreshingBinding } = useAppStore();
 
   // 检测当前店铺 SPC_CDS 是否在用户绑定列表中
   const isCurrentStoreBound = useMemo(() => {
@@ -211,6 +213,7 @@ export default function App() {
       selecting_flash_sale: '选择场次',
       success: '已完成',
       failed: '已停止',
+      interrupted: '已中断',
     };
     return labels[oneDaySkuFlow.phase] || oneDaySkuFlow.phase;
   }, [oneDaySkuFlow.phase]);
@@ -230,6 +233,7 @@ export default function App() {
         checkCopyTaskStatus(),
         checkScheduledCopy(),
         checkScheduledEnable(),
+        syncOneDayRepairTask(),
       ]);
       if (cancelled) return;
       // 任一关键读取失败即视为状态未知：保持加载态，不伪称空闲
@@ -240,7 +244,16 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [isConnected, spcCds, extractSpcCds, loadCache, checkBackgroundStatus, checkCopyTaskStatus, checkScheduledCopy, checkScheduledEnable, loadAutoModeStatus, checkAuthOnStartup]);
+  }, [isConnected, spcCds, extractSpcCds, loadCache, checkBackgroundStatus, checkCopyTaskStatus, checkScheduledCopy, checkScheduledEnable, loadAutoModeStatus, checkAuthOnStartup, syncOneDayRepairTask]);
+
+  /**
+   * 冷打开时店铺身份与后台结果是并行取回的：第一次同步可能"还没核实到归属"。
+   * 身份就绪后必须再同步一次，否则用户自己的修复结果会被一直挡在门外。
+   */
+  useEffect(() => {
+    if (shopId === null && authUser?.id === undefined) return;
+    void syncOneDayRepairTask();
+  }, [shopId, authUser?.id, syncOneDayRepairTask]);
 
   useEffect(() => {
     if (flashSaleList.length > 0) {
@@ -257,32 +270,40 @@ export default function App() {
   }, [autoModeActive]);
 
   // 首页任务摘要：全部来自真实状态；autoModeActive（页签选中）不参与判断
-  const homeTaskSummaries = useMemo(
-    () =>
-      buildTaskSummaries({
-        statusReady: taskStatusReady,
-        autoModeRunning: autoModeStatus?.isRunning === true,
-        autoModeRound: autoModeStatus?.currentRound,
-        autoModePhase: autoModeStatus?.phase,
-        isEnabling,
-        enableRound: enableProgress?.currentRound,
-        enableMaxRounds: enableProgress?.maxRetries,
-        // 定时复制（创建新活动）与定时加入是两条独立链路，各自显示，互不遮蔽
-        scheduledCopyExists: hasScheduledCopy && scheduledTaskStatus?.exists === true,
-        scheduledCopyTargetTime: scheduledTaskStatus?.params?.targetStartTime,
-        scheduledEnableExists: scheduledEnableStatus?.exists === true,
-        scheduledEnableTargetTime: scheduledEnableStatus?.targetTime,
-        copyCompleted: _completedCopyInfo?.isNew === true,
-        copyCompletedName: _completedCopyInfo?.sourceFlashSaleName,
-      }),
-    [
-      taskStatusReady, autoModeStatus?.isRunning, autoModeStatus?.currentRound, autoModeStatus?.phase,
-      isEnabling, enableProgress?.currentRound, enableProgress?.maxRetries,
-      hasScheduledCopy, scheduledTaskStatus,
-      scheduledEnableStatus,
-      _completedCopyInfo?.isNew, _completedCopyInfo?.sourceFlashSaleName,
-    ],
-  );
+  const homeTaskSummaries = useMemo(() => {
+    const summaries = buildTaskSummaries({
+      statusReady: taskStatusReady,
+      autoModeRunning: autoModeStatus?.isRunning === true,
+      autoModeRound: autoModeStatus?.currentRound,
+      autoModePhase: autoModeStatus?.phase,
+      isEnabling,
+      enableRound: enableProgress?.currentRound,
+      enableMaxRounds: enableProgress?.maxRetries,
+      // 定时复制（创建新活动）与定时加入是两条独立链路，各自显示，互不遮蔽
+      scheduledCopyExists: hasScheduledCopy && scheduledTaskStatus?.exists === true,
+      scheduledCopyTargetTime: scheduledTaskStatus?.params?.targetStartTime,
+      scheduledEnableExists: scheduledEnableStatus?.exists === true,
+      scheduledEnableTargetTime: scheduledEnableStatus?.targetTime,
+      copyCompleted: _completedCopyInfo?.isNew === true,
+      copyCompletedName: _completedCopyInfo?.sourceFlashSaleName,
+    });
+
+    // 后台「一键修复」是独立任务链路：执行在 background，进度存在 storage，这里只读展示
+    if (taskStatusReady) {
+      const repair = buildRepairSummary(repairTask);
+      if (repair) {
+        summaries.push({ kind: 'repair', ...repair });
+      }
+    }
+    return summaries;
+  }, [
+    taskStatusReady, autoModeStatus?.isRunning, autoModeStatus?.currentRound, autoModeStatus?.phase,
+    isEnabling, enableProgress?.currentRound, enableProgress?.maxRetries,
+    hasScheduledCopy, scheduledTaskStatus,
+    scheduledEnableStatus,
+    _completedCopyInfo?.isNew, _completedCopyInfo?.sourceFlashSaleName,
+    repairTask,
+  ]);
 
   /** 首页卡片普通入口：固定进入手动模式（工作页内的绑定/身份门控照旧拦截业务操作） */
   const enterFeature = (featureId: string) => {
@@ -311,6 +332,10 @@ export default function App() {
       return;
     }
     if (autoModeActive) exitAutoMode();
+    // 一键修复原本就在手动工作页里呈现，返回手动模式即可看到真实进度/结果
+    if (summary.kind === 'repair') {
+      return;
+    }
     if (summary.kind === 'copy-completed') {
       acknowledgeCompletedCopy();
       fetchFlashSaleList(true);
@@ -1095,7 +1120,24 @@ export default function App() {
                           部分商品处理失败，详情见下方列表。
                         </div>
                       )}
+                      {oneDaySkuFlow.phase === 'interrupted' && (
+                        <div className="text-[10px] text-red-600">
+                          后台执行已停止。若上面提示部分商品可能已被修改，请先在卖家中心核对这些商品，再决定是否重新修复。
+                        </div>
+                      )}
                     </div>
+                  )}
+                  {oneDaySkuFlow.phase === 'interrupted' && (
+                    <button
+                      className="w-full text-center text-[10px] text-amber-800 underline hover:text-amber-900 py-0.5"
+                      onClick={async () => {
+                        await acknowledgeInterruptedRepair();
+                        if (oneDaySkuSelectedIds.length > 0) await runOneDaySkuAndEnable();
+                      }}
+                      title={oneDaySkuSelectedIds.length === 0 ? '将先清除中断记录，请重新勾选商品后再修复' : undefined}
+                    >
+                      已核对商品，重新开始修复
+                    </button>
                   )}
                   {oneDaySkuFlow.items.length > 0 && (
                     <details>
@@ -1197,10 +1239,16 @@ export default function App() {
                   <Button
                     size="sm"
                     className="w-full h-7 text-xs bg-shopee-brand hover:bg-shopee-brand/90"
+                    disabled={!oneDaySkuFlow.canStartFlashSale}
                     onClick={() => goToFlashSaleSelection()}
                   >
                     下一步：选择限时特卖
                   </Button>
+                  {!oneDaySkuFlow.canStartFlashSale && (
+                    <div className="text-[10px] text-amber-700 text-center">
+                      商品数据尚未就绪，暂不能进入选择限时特卖；请稍候或刷新商品列表。
+                    </div>
+                  )}
                 </div>
               )}
 

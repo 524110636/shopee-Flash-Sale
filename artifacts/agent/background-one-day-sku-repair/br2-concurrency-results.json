@@ -1,0 +1,17 @@
+{
+  "results": [
+    "PASS  BR2 两个并发启动只有一个被接受，另一个得到忙态",
+    "PASS  BR2 同 requestId 重复投递复用原任务（不报忙态、不重复执行）",
+    "PASS  BR2 参数键被其他窗口覆盖时拒绝启动（不拿别人的参数改商品）",
+    "PASS  BR2 同店铺自动模式运行中时拒绝新修复",
+    "PASS  BR2 开启特卖进行中时拒绝新修复",
+    "PASS  BR2 无冲突时正常接受并执行",
+    "PASS  BR2 修复进行中拒绝启动开卖，且开卖不发出写请求",
+    "PASS  BR2 修复进行中拒绝复制，且不关闭也不创建任何活动",
+    "PASS  BR2 全程未出现预期外的店铺写请求"
+  ],
+  "publishCalls": 1,
+  "flashSaleWrites": 0,
+  "copyWrites": 0,
+  "unstubbedWrites": []
+}

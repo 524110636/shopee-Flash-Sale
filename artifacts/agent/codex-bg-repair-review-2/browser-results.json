@@ -1,0 +1,187 @@
+{
+  "results": [
+    {
+      "case": "normal-fast",
+      "response": {
+        "success": true,
+        "taskId": "review-normal"
+      },
+      "status": "completed",
+      "resultCount": 2,
+      "credentialLogged": false,
+      "writes": [
+        {
+          "mode": "normal-fast",
+          "step": "remove",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791864463001
+        },
+        {
+          "mode": "normal-fast",
+          "step": "publish",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791864465094
+        },
+        {
+          "mode": "normal-fast",
+          "step": "restore",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791864467126
+        },
+        {
+          "mode": "normal-fast",
+          "step": "remove",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791864467151
+        },
+        {
+          "mode": "normal-fast",
+          "step": "publish",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791864469175
+        },
+        {
+          "mode": "normal-fast",
+          "step": "restore",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791864471194
+        }
+      ]
+    },
+    {
+      "case": "shop-switch",
+      "response": {
+        "success": true,
+        "taskId": "review-shop-switch"
+      },
+      "status": "failed",
+      "error": "当前店铺或账号与任务归属不一致（任务店铺 777／账号 1，实际 888／1），已停止后续商品修复",
+      "writes": [
+        {
+          "mode": "shop-switch",
+          "step": "remove",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791864471516
+        }
+      ],
+      "diagnostics": [
+        {
+          "actualShopId": 888,
+          "actualUserId": 1,
+          "at": 1791864473528,
+          "confirmedActions": [],
+          "kind": "ownership-stopped",
+          "phase": "preparing_sku",
+          "reason": "当前店铺或账号与任务归属不一致（任务店铺 777／账号 1，实际 888／1），已停止后续商品修复",
+          "requestId": "review-shop-switch",
+          "taskId": "review-shop-switch",
+          "taskOwnerUserId": 1,
+          "taskShopId": 777,
+          "unknownActions": []
+        }
+      ],
+      "diagnosticContainsFixtureCredential": false
+    },
+    {
+      "case": "owner-switch",
+      "response": {
+        "success": true,
+        "taskId": "review-owner-switch"
+      },
+      "status": "failed",
+      "error": "当前店铺或账号与任务归属不一致（任务店铺 777／账号 1，实际 777／2），已停止后续商品修复",
+      "writes": [
+        {
+          "mode": "owner-switch",
+          "step": "remove",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791864473871
+        }
+      ],
+      "diagnostics": [
+        {
+          "actualShopId": 777,
+          "actualUserId": 2,
+          "at": 1791864475891,
+          "confirmedActions": [],
+          "kind": "ownership-stopped",
+          "phase": "preparing_sku",
+          "reason": "当前店铺或账号与任务归属不一致（任务店铺 777／账号 1，实际 777／2），已停止后续商品修复",
+          "requestId": "review-owner-switch",
+          "taskId": "review-owner-switch",
+          "taskOwnerUserId": 1,
+          "taskShopId": 777,
+          "unknownActions": []
+        }
+      ],
+      "diagnosticContainsFixtureCredential": false
+    },
+    {
+      "case": "owner-logout",
+      "response": {
+        "success": true,
+        "taskId": "review-owner-logout"
+      },
+      "status": "failed",
+      "error": "当前店铺或账号与任务归属不一致（任务店铺 777／账号 1，实际 777／核实不到），已停止后续商品修复",
+      "writes": [
+        {
+          "mode": "owner-logout",
+          "step": "remove",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791864476177
+        }
+      ],
+      "diagnostics": [
+        {
+          "actualShopId": 777,
+          "actualUserId": null,
+          "at": 1791864478191,
+          "confirmedActions": [],
+          "kind": "ownership-stopped",
+          "phase": "preparing_sku",
+          "reason": "当前店铺或账号与任务归属不一致（任务店铺 777／账号 1，实际 777／核实不到），已停止后续商品修复",
+          "requestId": "review-owner-logout",
+          "taskId": "review-owner-logout",
+          "taskOwnerUserId": 1,
+          "taskShopId": 777,
+          "unknownActions": []
+        }
+      ],
+      "diagnosticContainsFixtureCredential": false
+    }
+  ],
+  "blockedUnexpectedOrigins": [],
+  "backendCalls": [
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores/validate",
+    "/api/stores",
+    "/api/stores",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores/validate",
+    "/api/stores",
+    "/api/stores",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores/validate",
+    "/api/stores",
+    "/api/stores",
+    "/api/auth/check-admin",
+    "/api/stores/validate",
+    "/api/auth/check-admin",
+    "/api/stores",
+    "/api/stores"
+  ],
+  "realPlatformRequestsAllowed": 0
+}

@@ -1,0 +1,47 @@
+{
+  "results": [
+    "PASS  B10 初始无任务时首页如实显示\"当前没有进行中的任务\"",
+    "PASS  B1 后台先持久确认再执行（接受时已有记录与归属锚）",
+    "PASS  B1 真实关闭 popup 后后台继续推进并完成，结果由后台准备",
+    "PASS  B2 未创建/开启活动，也未消耗试用",
+    "PASS  B1 重开 popup 显示真实结果并可进入编辑参数（且不重启任务）",
+    "PASS  B9 每件商品只产生一套模拟副作用；已有 1 天 SKU 的商品不被再发布",
+    "PASS  B6 需要新增 SKU 与已有 SKU 的商品区分对待，逐项结果一致",
+    "PASS  B5 同一 requestId 重复投递复用原任务，不产生第二套副作用",
+    "PASS  B2 首次使用入口与普通勾选走同一条后台路径（无 popup 定时器依赖）",
+    "PASS  B2 首次使用：编辑参数页在重开后仍可用（结果未丢）",
+    "PASS  BR3 拿不到可编辑模型时不得进入选择限时特卖",
+    "PASS  BR3 已应用结果时再同步不把选场次退回编辑参数",
+    "PASS  BR3 界面填入的折扣/库存/限购在关闭重开后仍保留",
+    "PASS  BR3 补读成功后编辑的折扣不会被下一次同步覆盖",
+    "PASS  B1 没有出现预期外的店铺写请求"
+  ],
+  "sideEffects": {
+    "1001": {
+      "publish": 2,
+      "removeDiscount": 2,
+      "restoreDiscount": 2
+    },
+    "1003": {
+      "publish": 1,
+      "removeDiscount": 0,
+      "restoreDiscount": 0
+    }
+  },
+  "snapshots": {
+    "sideEffectsAtB9": {
+      "1001": {
+        "publish": 1,
+        "removeDiscount": 1,
+        "restoreDiscount": 1
+      },
+      "1003": {
+        "publish": 1,
+        "removeDiscount": 0,
+        "restoreDiscount": 0
+      }
+    }
+  },
+  "unstubbedWrites": [],
+  "consoleErrors": []
+}

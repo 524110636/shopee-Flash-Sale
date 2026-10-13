@@ -1,0 +1,368 @@
+[
+  {
+    "case": "normal",
+    "status": "completed",
+    "events": [
+      {
+        "step": "remove"
+      },
+      {
+        "step": "sleep",
+        "ms": 2000
+      },
+      {
+        "step": "publish"
+      },
+      {
+        "step": "sleep",
+        "ms": 2000
+      },
+      {
+        "step": "restore"
+      }
+    ],
+    "item": {
+      "itemId": "1001",
+      "itemName": "isolated review",
+      "hasOneDaySku": false,
+      "skuCreated": true,
+      "publishStatus": "success",
+      "discountRemoved": true,
+      "discountRestored": true,
+      "flashSaleStatus": "idle",
+      "highestPrice": 1000,
+      "discounts": [
+        {
+          "promotionId": 99,
+          "name": "fixture discount",
+          "endTime": 4102444800,
+          "timeStatus": 2,
+          "raw": {
+            "discount_id": 99,
+            "name": "fixture discount",
+            "time_status": 2,
+            "end_time": 4102444800
+          }
+        }
+      ]
+    },
+    "workItem": null,
+    "checkpoints": [
+      {
+        "itemId": "1001",
+        "step": "delete_abnormal_seller_discount_items",
+        "writeSent": true,
+        "at": 1791859474505,
+        "seq": 1
+      },
+      {
+        "itemId": "1001",
+        "step": "update_product_info",
+        "writeSent": true,
+        "at": 1791859474505,
+        "seq": 2
+      },
+      {
+        "itemId": "1001",
+        "step": "update_seller_discount_items",
+        "writeSent": true,
+        "at": 1791859474505,
+        "seq": 3
+      }
+    ]
+  },
+  {
+    "case": "publish-transport",
+    "status": "failed",
+    "events": [
+      {
+        "step": "remove"
+      },
+      {
+        "step": "sleep",
+        "ms": 2000
+      },
+      {
+        "step": "publish"
+      }
+    ],
+    "item": {
+      "itemId": "1001",
+      "itemName": "isolated review",
+      "hasOneDaySku": false,
+      "skuCreated": false,
+      "publishStatus": "failed",
+      "discountRemoved": true,
+      "discountRestored": false,
+      "flashSaleStatus": "idle",
+      "highestPrice": 1000,
+      "discounts": [
+        {
+          "promotionId": 99,
+          "name": "fixture discount",
+          "endTime": 4102444800,
+          "timeStatus": 2,
+          "raw": {
+            "discount_id": 99,
+            "name": "fixture discount",
+            "time_status": 2,
+            "end_time": 4102444800
+          }
+        }
+      ],
+      "error": "fixture publish failure"
+    },
+    "workItem": null,
+    "checkpoints": [
+      {
+        "itemId": "1001",
+        "step": "delete_abnormal_seller_discount_items",
+        "writeSent": true,
+        "at": 1791859474506,
+        "seq": 1
+      },
+      {
+        "itemId": "1001",
+        "step": "update_product_info",
+        "writeSent": true,
+        "at": 1791859474506,
+        "seq": 2
+      }
+    ]
+  },
+  {
+    "case": "restore-transport",
+    "status": "failed",
+    "events": [
+      {
+        "step": "remove"
+      },
+      {
+        "step": "sleep",
+        "ms": 2000
+      },
+      {
+        "step": "publish"
+      },
+      {
+        "step": "sleep",
+        "ms": 2000
+      },
+      {
+        "step": "restore"
+      }
+    ],
+    "item": {
+      "itemId": "1001",
+      "itemName": "isolated review",
+      "hasOneDaySku": false,
+      "skuCreated": false,
+      "publishStatus": "failed",
+      "discountRemoved": false,
+      "discountRestored": false,
+      "flashSaleStatus": "idle",
+      "highestPrice": 1000,
+      "error": "fixture restore failure"
+    },
+    "workItem": null,
+    "checkpoints": [
+      {
+        "itemId": "1001",
+        "step": "delete_abnormal_seller_discount_items",
+        "writeSent": true,
+        "at": 1791859474507,
+        "seq": 1
+      },
+      {
+        "itemId": "1001",
+        "step": "update_product_info",
+        "writeSent": true,
+        "at": 1791859474507,
+        "seq": 2
+      },
+      {
+        "itemId": "1001",
+        "step": "update_seller_discount_items",
+        "writeSent": true,
+        "at": 1791859474507,
+        "seq": 3
+      }
+    ]
+  },
+  {
+    "case": "owner-null",
+    "status": "completed",
+    "events": [
+      {
+        "step": "remove"
+      },
+      {
+        "step": "sleep",
+        "ms": 2000
+      },
+      {
+        "step": "publish"
+      },
+      {
+        "step": "sleep",
+        "ms": 2000
+      },
+      {
+        "step": "restore"
+      }
+    ],
+    "item": {
+      "itemId": "1001",
+      "itemName": "isolated review",
+      "hasOneDaySku": false,
+      "skuCreated": true,
+      "publishStatus": "success",
+      "discountRemoved": true,
+      "discountRestored": true,
+      "flashSaleStatus": "idle",
+      "highestPrice": 1000,
+      "discounts": [
+        {
+          "promotionId": 99,
+          "name": "fixture discount",
+          "endTime": 4102444800,
+          "timeStatus": 2,
+          "raw": {
+            "discount_id": 99,
+            "name": "fixture discount",
+            "time_status": 2,
+            "end_time": 4102444800
+          }
+        }
+      ]
+    },
+    "workItem": null,
+    "checkpoints": [
+      {
+        "itemId": "1001",
+        "step": "delete_abnormal_seller_discount_items",
+        "writeSent": true,
+        "at": 1791859474507,
+        "seq": 1
+      },
+      {
+        "itemId": "1001",
+        "step": "update_product_info",
+        "writeSent": true,
+        "at": 1791859474508,
+        "seq": 2
+      },
+      {
+        "itemId": "1001",
+        "step": "update_seller_discount_items",
+        "writeSent": true,
+        "at": 1791859474508,
+        "seq": 3
+      }
+    ]
+  },
+  {
+    "case": "shop-null",
+    "error": "RepairOwnershipError",
+    "status": "running",
+    "events": [
+      {
+        "step": "remove"
+      },
+      {
+        "step": "sleep",
+        "ms": 2000
+      }
+    ],
+    "item": {
+      "itemId": "1001",
+      "itemName": "isolated review",
+      "hasOneDaySku": false,
+      "skuCreated": false,
+      "publishStatus": "idle",
+      "discountRemoved": true,
+      "discountRestored": false,
+      "flashSaleStatus": "idle",
+      "highestPrice": 1000,
+      "discounts": [
+        {
+          "promotionId": 99,
+          "name": "fixture discount",
+          "endTime": 4102444800,
+          "timeStatus": 2,
+          "raw": {
+            "discount_id": 99,
+            "name": "fixture discount",
+            "time_status": 2,
+            "end_time": 4102444800
+          }
+        }
+      ]
+    },
+    "workItem": {
+      "itemId": "1001",
+      "itemName": "isolated review",
+      "hasOneDaySku": false,
+      "skuCreated": false,
+      "publishStatus": "idle",
+      "discountRemoved": true,
+      "discountRestored": false,
+      "flashSaleStatus": "idle",
+      "highestPrice": 1000,
+      "discounts": [
+        {
+          "promotionId": 99,
+          "name": "fixture discount",
+          "endTime": 4102444800,
+          "timeStatus": 2,
+          "raw": {
+            "discount_id": 99,
+            "name": "fixture discount",
+            "time_status": 2,
+            "end_time": 4102444800
+          }
+        }
+      ]
+    },
+    "checkpoints": [
+      {
+        "itemId": "1001",
+        "step": "delete_abnormal_seller_discount_items",
+        "writeSent": true,
+        "at": 1791859474508,
+        "seq": 1
+      }
+    ]
+  },
+  {
+    "case": "already-applied-selecting",
+    "originalPhase": "selecting_flash_sale",
+    "afterPhase": "editing_params",
+    "canStartFlashSale": true,
+    "message": null,
+    "discount": 37
+  },
+  {
+    "case": "unloaded-stale-ready",
+    "originalPhase": "editing_params",
+    "afterPhase": "editing_params",
+    "canStartFlashSale": true,
+    "message": null,
+    "discount": 37
+  },
+  {
+    "case": "owner-unknown-helper",
+    "writeAllowed": true,
+    "uiVerdict": "match"
+  },
+  {
+    "case": "fresh-orphan",
+    "status": "interrupted"
+  },
+  {
+    "case": "late-heartbeat",
+    "taskStatus": "completed",
+    "resultCount": 1,
+    "heartbeatKeyWritten": true
+  }
+]

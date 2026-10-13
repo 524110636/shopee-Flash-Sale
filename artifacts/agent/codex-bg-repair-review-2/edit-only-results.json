@@ -1,0 +1,323 @@
+{
+  "results": [
+    {
+      "case": "edit-only-reopen",
+      "status": "completed",
+      "owner": 1,
+      "source": "manual-selection",
+      "items": [
+        {
+          "discountRemoved": true,
+          "discountRestored": true,
+          "discounts": [
+            {
+              "endTime": 4102444800,
+              "name": "fixture discount",
+              "promotionId": 99,
+              "raw": {
+                "discount_id": 99,
+                "end_time": 4102444800,
+                "name": "fixture discount",
+                "time_status": 2
+              },
+              "timeStatus": 2
+            }
+          ],
+          "flashSaleStatus": "idle",
+          "hasOneDaySku": false,
+          "highestPrice": 1000,
+          "itemId": "1001",
+          "itemName": "review-product-1001",
+          "publishStatus": "success",
+          "skuCreated": true
+        }
+      ],
+      "resultProducts": [
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1001",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "name": "默认规格",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            },
+            {
+              "modelid": "5002",
+              "name": "批發客戶下訂-請勿下單",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1001",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        }
+      ],
+      "cacheProducts": [
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1001",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "name": "默认规格",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            },
+            {
+              "modelid": "5002",
+              "name": "批發客戶下訂-請勿下單",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1001",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        }
+      ],
+      "discount": 80,
+      "applied": {
+        "at": 1791866487756,
+        "taskId": "odr-1791866483647-jakxw8"
+      },
+      "nextVisible": true,
+      "nextEnabled": true,
+      "writes": [
+        {
+          "mode": "edit-only-ui",
+          "step": "remove",
+          "promotion": 99,
+          "body": {
+            "promotion_id": 99,
+            "item_id_list": [
+              1001
+            ]
+          },
+          "at": 1791866483682
+        },
+        {
+          "mode": "edit-only-ui",
+          "step": "publish",
+          "id": "1001",
+          "at": 1791866485723
+        },
+        {
+          "mode": "edit-only-ui",
+          "step": "restore",
+          "body": {
+            "promotion_id": 99,
+            "discount_model_list": [
+              {
+                "item_id": 1001,
+                "model_id": 5001,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              },
+              {
+                "item_id": 1001,
+                "model_id": 5002,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              }
+            ]
+          },
+          "at": 1791866487748
+        }
+      ],
+      "body": "全部功能\n限时特卖助手\n已连接\n管理\nreview1@example.invalid\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nreview isolated\n当前\n手动模式\n自动模式\n第一次使用\n限时特卖活动\n清除缓存\n刷新\n▼\n隔离已有活动\n10/13 12:21 ~ 10/13 13:41\n复制\n进行中\n\n复制活动到新时间段\n\n点击活动右侧的「复制」按钮，将此活动的商品复制到新的时间段\n\n已完成 1 个商品，请编辑参数后选择限时特卖并点击开启\n商品列表（1/1）\n全选修复\n无图\nreview-product-1001\nID: 1001\n2 SKU\n价格: NT$1,000\n库存: 10\n1 天备货 SKU 修复\n已选 0 个商品，系统将修复这些商品，使其能够开启限时特卖。\n一键修复并开启\n编辑参数\n等待处理\n0/0\n处理详情 (1)\n无图\nreview-product-1001\n2 SKU · 价格: NT$1,000\n\n修复完成，请点击上方商品列表修改限时特卖商品价格，库存，限购等信息(默认参数是你的折扣信息。)，然后点击下一步：选择限时特卖。\n\n折扣率\n%\n库存\n限购\n下一步：选择限时特卖\n更多",
+      "trialCalls": [],
+      "inputAfterEdit": [
+        "37",
+        "5",
+        "1"
+      ],
+      "cacheAfterEdit": {
+        "discountRate": 80,
+        "enableProgress": null,
+        "flashSaleId": null,
+        "flashSaleInfo": "已完成 1 个商品，请编辑参数后选择限时特卖并点击开启",
+        "flashSaleList": [
+          {
+            "enabled": true,
+            "end_time": 1791870083,
+            "flash_sale_id": 555,
+            "name": "隔离已有活动",
+            "start_time": 1791865283,
+            "status": 1
+          }
+        ],
+        "flashSaleStock": 5,
+        "infiniteRetry": false,
+        "maxRetries": 10,
+        "products": [
+          {
+            "images": [],
+            "inputOriginPrice": "1000",
+            "itemid": "1001",
+            "modelList": [
+              {
+                "modelid": "5001",
+                "name": "默认规格",
+                "normalStock": 10,
+                "originPrice": "1000",
+                "totalNormalStock": 10
+              },
+              {
+                "modelid": "5002",
+                "name": "批發客戶下訂-請勿下單",
+                "normalStock": 10,
+                "originPrice": "1000",
+                "totalNormalStock": 10
+              }
+            ],
+            "name": "review-product-1001",
+            "normalStock": 10,
+            "originPrice": "1000",
+            "status": 0,
+            "variationImages": []
+          }
+        ],
+        "purchaseLimit": 1,
+        "skuOverrides": {},
+        "timestamp": 1791866487756
+      },
+      "actualPublishedModels": [
+        [
+          "1001",
+          {
+            "enable_model_level_dts": true,
+            "std_tier_variation_list": [
+              {
+                "value_list": [
+                  {
+                    "custom_value": "默认"
+                  },
+                  {
+                    "id": 0,
+                    "custom_value": "批發客戶下訂-請勿下單"
+                  }
+                ]
+              }
+            ],
+            "model_list": [
+              {
+                "id": 5001,
+                "price": "1000",
+                "stock_setting_list": [
+                  {
+                    "sellable_stock": 10
+                  }
+                ],
+                "pre_order_info": {
+                  "days_to_ship": 7
+                },
+                "name": "默认规格",
+                "price_info": {
+                  "input_normal_price": 1000
+                }
+              },
+              {
+                "id": 5002,
+                "price": "1000",
+                "is_default": false,
+                "gtin_code": "",
+                "confirm_empty_gtin": false,
+                "sku": "",
+                "stock_setting_list": [
+                  {
+                    "sellable_stock": 10
+                  }
+                ],
+                "sku_image": "",
+                "pre_order_info": {
+                  "days_to_ship": 1,
+                  "pre_order": false
+                },
+                "tier_index": [
+                  1
+                ],
+                "name": "批發客戶下訂-請勿下單",
+                "price_info": {
+                  "input_normal_price": 1000
+                }
+              }
+            ]
+          }
+        ]
+      ]
+    }
+  ],
+  "blockedUnexpectedOrigins": [],
+  "backendCalls": [
+    {
+      "mode": "edit-only-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "edit-only-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "edit-only-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "edit-only-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "edit-only-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "edit-only-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "edit-only-ui",
+      "path": "/api/stores/validate"
+    },
+    {
+      "mode": "edit-only-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "edit-only-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "edit-only-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "edit-only-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "edit-only-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "edit-only-ui",
+      "path": "/api/stores"
+    }
+  ],
+  "realPlatformRequestsAllowed": 0
+}

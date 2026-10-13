@@ -1,0 +1,57 @@
+{
+  "results": [
+    {
+      "case": "cold-applied",
+      "discount": 37,
+      "cachedProduct": "1001",
+      "modelCount": 1,
+      "markedApplied": true,
+      "nextExists": 1,
+      "nextEnabled": true,
+      "body": "全部功能\n限时特卖助手\n已连接\n管理\nreview1@example.invalid\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nreview isolated\n当前\n手动模式\n自动模式\n第一次使用\n商品列表（1/1）\n全选修复\n无图\nreview-product-1001\nID: 1001\n1 SKU\n价格: NT$1,000\n库存: 10\n1 天备货 SKU 修复\n已选 0 个商品，系统将修复这些商品，使其能够开启限时特卖。\n一键修复并开启\n编辑参数\n等待处理\n0/0\n处理详情 (1)\n无图\nreview-product-1001\n1 SKU · 价格: NT$1,000\n\n修复完成，请点击上方商品列表修改限时特卖商品价格，库存，限购等信息(默认参数是你的折扣信息。)，然后点击下一步：选择限时特卖。\n\n折扣率\n%\n库存\n限购\n下一步：选择限时特卖\n更多"
+    },
+    {
+      "case": "foreign-owner",
+      "discount": 37,
+      "cachedProduct": "702",
+      "modelCount": 1,
+      "markedApplied": false,
+      "nextExists": 0,
+      "nextEnabled": false,
+      "body": "全部功能\n限时特卖助手\n已连接\n管理\nreview1@example.invalid\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nreview isolated\n当前\n手动模式\n自动模式\n第一次使用\n商品列表（1/1）\n全选修复\n无图\nreview-product-702\nID: 702\n1 SKU\n价格: NT$1,000\n库存: 10\n1 天备货 SKU 修复\n已选 0 个商品，系统将修复这些商品，使其能够开启限时特卖。\n一键修复并开启\n已停止\n等待处理\n0/0\n该修复结果属于其他店铺或账号，未套用到当前店铺；请自行核对商品。\n部分商品处理失败，详情见下方列表。\n处理详情 (1)\n更多"
+    },
+    {
+      "case": "unloaded-result",
+      "discount": 37,
+      "cachedProduct": "1001",
+      "modelCount": 0,
+      "markedApplied": false,
+      "nextExists": 1,
+      "nextEnabled": true,
+      "body": "全部功能\n限时特卖助手\n已连接\n管理\nreview1@example.invalid\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nreview isolated\n当前\n手动模式\n自动模式\n第一次使用\n商品列表（1/1）\n全选修复\n无图\nreview-product-1001\nID: 1001\n0 SKU\n价格: NT$1,000\n库存: 10\n1 天备货 SKU 修复\n已选 0 个商品，系统将修复这些商品，使其能够开启限时特卖。\n一键修复并开启\n编辑参数\n等待处理\n0/0\n处理详情 (1)\n无图\nreview-product-1001\n0 SKU · 价格: NT$1,000\n\n修复完成，请点击上方商品列表修改限时特卖商品价格，库存，限购等信息(默认参数是你的折扣信息。)，然后点击下一步：选择限时特卖。\n\n折扣率\n%\n库存\n限购\n下一步：选择限时特卖\n更多",
+      "selectionVisible": true
+    }
+  ],
+  "blockedUnexpectedOrigins": [],
+  "backendCalls": [
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores",
+    "/api/stores",
+    "/api/stores",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores",
+    "/api/stores",
+    "/api/stores",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores",
+    "/api/stores",
+    "/api/stores"
+  ],
+  "realPlatformRequestsAllowed": 0
+}

@@ -1,0 +1,45 @@
+{
+  "results": [
+    {
+      "case": "request-owner-null-auth-changed",
+      "response": {
+        "success": true,
+        "taskId": "review-owner-unanchored"
+      },
+      "persistedOwner": null,
+      "status": "completed",
+      "writes": [
+        {
+          "mode": "owner-unanchored",
+          "step": "remove",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791864682537
+        },
+        {
+          "mode": "owner-unanchored",
+          "step": "publish",
+          "shopId": 777,
+          "owner": 2,
+          "at": 1791864684627
+        },
+        {
+          "mode": "owner-unanchored",
+          "step": "restore",
+          "shopId": 777,
+          "owner": 2,
+          "at": 1791864686644
+        }
+      ]
+    }
+  ],
+  "blockedUnexpectedOrigins": [],
+  "backendCalls": [
+    "/api/stores/validate",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores",
+    "/api/stores"
+  ],
+  "realPlatformRequestsAllowed": 0
+}

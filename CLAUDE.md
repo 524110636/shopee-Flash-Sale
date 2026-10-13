@@ -1,6 +1,12 @@
 # CLAUDE.md
 
-## 用户长期协作规则（2026-10-12 起必读）
+## 新会话职责与规划入口（必读）
+
+本项目的规划、任务书、独立验收、进度维护及用户沟通由 **Codex 规划／验收会话** 负责。现行分工与写权的唯一依据是 [OWNER_WORKING_RULES.md 第 0.0 节](OWNER_WORKING_RULES.md#00-codex-职责与新会话接手2026-10-13-用户确认)。
+
+- 新 Codex 会话接手、规划、验收或恢复上下文时，先读下列三份文件，从 `PROJECT_STATUS.md` 的“当前状态／下一步规划”恢复目标、已确认结果和待决定范围，再开始工作；用户无需重复说明本项目职责。
+- 用户明确指派编码／实现或提供开发任务书时，按开发角色执行任务书；其他接手会话默认承担 Codex 规划／验收角色。开发角色的编码职责与规划角色的独立验收职责分别执行，不能把“规划不写产品代码”套给所有智能体。
+- 用户已有验收结论继续有效；历史任务书与 `SESSION_CONTEXT.md` 只用于追溯，按当前进度表确定下一步。任务书沿用 `.claude/tasks/`，目录名不代表由 Claude 负责。
 
 **工作目录**：`D:\shopee_xm\虾皮限时特卖-更新迭代`（磁盘上另有一份内容相同的副本 `D:\shopee_xm\limited-time-sale`，不要在那里作业；旧文档写的正是那个路径）。
 
@@ -12,9 +18,9 @@
 先复用已有能力，接通用户能实际操作的完整基本流程；可体验时主动安排用户手测。正常回复说清已能用、还不能用、下一步及责任人。授权用大白话说明实际影响。自己的临时测试产物由自己限量、隔离、清理并报告。
 派给子代理时同时传递上述三份文件及当前任务边界。
 
-> 本项目 Claude 会话的规划/验收角色说明在 [.claude/CLAUDE.md](.claude/CLAUDE.md)（仅 Claude 会话读取）。
+> [.claude/CLAUDE.md](.claude/CLAUDE.md) 是旧工具兼容入口，指向同一份 Codex 职责规则；技术索引继续保留。
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+本文件保留为读取 `CLAUDE.md` 的工具兼容入口；当前负责人及任务角色以 `OWNER_WORKING_RULES.md` 为准。
 
 ## 限时特卖助手
 

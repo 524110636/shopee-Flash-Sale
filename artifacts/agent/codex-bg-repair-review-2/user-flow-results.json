@@ -1,0 +1,1337 @@
+{
+  "results": [
+    {
+      "case": "ordinary-ui",
+      "status": "completed",
+      "owner": 1,
+      "source": "manual-selection",
+      "items": [
+        {
+          "discountRemoved": true,
+          "discountRestored": true,
+          "discounts": [
+            {
+              "endTime": 4102444800,
+              "name": "fixture discount",
+              "promotionId": 99,
+              "raw": {
+                "discount_id": 99,
+                "end_time": 4102444800,
+                "name": "fixture discount",
+                "time_status": 2
+              },
+              "timeStatus": 2
+            }
+          ],
+          "flashSaleStatus": "idle",
+          "hasOneDaySku": false,
+          "highestPrice": 1000,
+          "itemId": "1001",
+          "itemName": "review-product-1001",
+          "publishStatus": "success",
+          "skuCreated": true
+        },
+        {
+          "discountRemoved": true,
+          "discountRestored": true,
+          "discounts": [
+            {
+              "endTime": 4102444800,
+              "name": "fixture discount",
+              "promotionId": 99,
+              "raw": {
+                "discount_id": 99,
+                "end_time": 4102444800,
+                "name": "fixture discount",
+                "time_status": 2
+              },
+              "timeStatus": 2
+            }
+          ],
+          "flashSaleStatus": "idle",
+          "hasOneDaySku": false,
+          "highestPrice": 1000,
+          "itemId": "1002",
+          "itemName": "review-product-1002",
+          "publishStatus": "success",
+          "skuCreated": true
+        }
+      ],
+      "resultProducts": [
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1001",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            },
+            {
+              "modelid": "5002",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1001",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        },
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1002",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            },
+            {
+              "modelid": "5002",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1002",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        }
+      ],
+      "cacheProducts": [
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1001",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            },
+            {
+              "modelid": "5002",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1001",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        },
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1002",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            },
+            {
+              "modelid": "5002",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1002",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        }
+      ],
+      "discount": 80,
+      "applied": {
+        "at": 1791866395465,
+        "taskId": "odr-1791866351135-4l2fye"
+      },
+      "nextVisible": true,
+      "nextEnabled": true,
+      "writes": [
+        {
+          "mode": "ordinary-ui",
+          "step": "remove",
+          "promotion": 99,
+          "body": {
+            "promotion_id": 99,
+            "item_id_list": [
+              1001
+            ]
+          },
+          "at": 1791866351171
+        },
+        {
+          "mode": "ordinary-ui",
+          "step": "publish",
+          "id": "1001",
+          "at": 1791866353186
+        },
+        {
+          "mode": "ordinary-ui",
+          "step": "restore",
+          "body": {
+            "promotion_id": 99,
+            "discount_model_list": [
+              {
+                "item_id": 1001,
+                "model_id": 5001,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              },
+              {
+                "item_id": 1001,
+                "model_id": 5002,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              }
+            ]
+          },
+          "at": 1791866373202
+        },
+        {
+          "mode": "ordinary-ui",
+          "step": "remove",
+          "promotion": 99,
+          "body": {
+            "promotion_id": 99,
+            "item_id_list": [
+              1002
+            ]
+          },
+          "at": 1791866373221
+        },
+        {
+          "mode": "ordinary-ui",
+          "step": "publish",
+          "id": "1002",
+          "at": 1791866375241
+        },
+        {
+          "mode": "ordinary-ui",
+          "step": "restore",
+          "body": {
+            "promotion_id": 99,
+            "discount_model_list": [
+              {
+                "item_id": 1002,
+                "model_id": 5001,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              },
+              {
+                "item_id": 1002,
+                "model_id": 5002,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              }
+            ]
+          },
+          "at": 1791866395258
+        }
+      ],
+      "body": "全部功能\n限时特卖助手\n已连接\n管理\nreview1@example.invalid\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nreview isolated\n当前\n手动模式\n自动模式\n第一次使用\n限时特卖活动\n清除缓存\n刷新\n▼\n隔离已有活动\n10/13 12:19 ~ 10/13 13:39\n复制\n进行中\n\n复制活动到新时间段\n\n点击活动右侧的「复制」按钮，将此活动的商品复制到新的时间段\n\n已完成 2 个商品，请编辑参数后选择限时特卖并点击开启\n商品列表（2/2）\n全选修复\n无图\nreview-product-1001\nID: 1001\n2 SKU\n价格: NT$1,000\n库存: 10\n无图\nreview-product-1002\nID: 1002\n2 SKU\n价格: NT$1,000\n库存: 10\n1 天备货 SKU 修复\n已选 0 个商品，系统将修复这些商品，使其能够开启限时特卖。\n一键修复并开启\n编辑参数\n修复完成：2 个可继续\n2/2\n处理详情 (2)\n修复完成：2 个可继续\n无图\nreview-product-1001\n2 SKU · 价格: NT$1,000\n无图\nreview-product-1002\n2 SKU · 价格: NT$1,000\n\n修复完成，请点击上方商品列表修改限时特卖商品价格，库存，限购等信息(默认参数是你的折扣信息。)，然后点击下一步：选择限时特卖。\n\n折扣率\n%\n库存\n限购\n下一步：选择限时特卖\n更多",
+      "trialCalls": [],
+      "closedMs": 46301,
+      "actualPublishedModels": [
+        {
+          "id": "1001",
+          "models": [
+            {
+              "id": 5001
+            },
+            {
+              "id": 5002
+            }
+          ]
+        },
+        {
+          "id": "1002",
+          "models": [
+            {
+              "id": 5001
+            },
+            {
+              "id": 5002
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "edited-reopen",
+      "status": "completed",
+      "owner": 1,
+      "source": "manual-selection",
+      "items": [
+        {
+          "discountRemoved": true,
+          "discountRestored": true,
+          "discounts": [
+            {
+              "endTime": 4102444800,
+              "name": "fixture discount",
+              "promotionId": 99,
+              "raw": {
+                "discount_id": 99,
+                "end_time": 4102444800,
+                "name": "fixture discount",
+                "time_status": 2
+              },
+              "timeStatus": 2
+            }
+          ],
+          "flashSaleStatus": "idle",
+          "hasOneDaySku": false,
+          "highestPrice": 1000,
+          "itemId": "1001",
+          "itemName": "review-product-1001",
+          "publishStatus": "success",
+          "skuCreated": true
+        },
+        {
+          "discountRemoved": true,
+          "discountRestored": true,
+          "discounts": [
+            {
+              "endTime": 4102444800,
+              "name": "fixture discount",
+              "promotionId": 99,
+              "raw": {
+                "discount_id": 99,
+                "end_time": 4102444800,
+                "name": "fixture discount",
+                "time_status": 2
+              },
+              "timeStatus": 2
+            }
+          ],
+          "flashSaleStatus": "idle",
+          "hasOneDaySku": false,
+          "highestPrice": 1000,
+          "itemId": "1002",
+          "itemName": "review-product-1002",
+          "publishStatus": "success",
+          "skuCreated": true
+        }
+      ],
+      "resultProducts": [
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1001",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            },
+            {
+              "modelid": "5002",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1001",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        },
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1002",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            },
+            {
+              "modelid": "5002",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1002",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        }
+      ],
+      "cacheProducts": [
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1001",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            },
+            {
+              "modelid": "5002",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1001",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        },
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1002",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            },
+            {
+              "modelid": "5002",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1002",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        }
+      ],
+      "discount": 80,
+      "applied": {
+        "at": 1791866395465,
+        "taskId": "odr-1791866351135-4l2fye"
+      },
+      "nextVisible": true,
+      "nextEnabled": true,
+      "writes": [
+        {
+          "mode": "ordinary-ui",
+          "step": "remove",
+          "promotion": 99,
+          "body": {
+            "promotion_id": 99,
+            "item_id_list": [
+              1001
+            ]
+          },
+          "at": 1791866351171
+        },
+        {
+          "mode": "ordinary-ui",
+          "step": "publish",
+          "id": "1001",
+          "at": 1791866353186
+        },
+        {
+          "mode": "ordinary-ui",
+          "step": "restore",
+          "body": {
+            "promotion_id": 99,
+            "discount_model_list": [
+              {
+                "item_id": 1001,
+                "model_id": 5001,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              },
+              {
+                "item_id": 1001,
+                "model_id": 5002,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              }
+            ]
+          },
+          "at": 1791866373202
+        },
+        {
+          "mode": "ordinary-ui",
+          "step": "remove",
+          "promotion": 99,
+          "body": {
+            "promotion_id": 99,
+            "item_id_list": [
+              1002
+            ]
+          },
+          "at": 1791866373221
+        },
+        {
+          "mode": "ordinary-ui",
+          "step": "publish",
+          "id": "1002",
+          "at": 1791866375241
+        },
+        {
+          "mode": "ordinary-ui",
+          "step": "restore",
+          "body": {
+            "promotion_id": 99,
+            "discount_model_list": [
+              {
+                "item_id": 1002,
+                "model_id": 5001,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              },
+              {
+                "item_id": 1002,
+                "model_id": 5002,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              }
+            ]
+          },
+          "at": 1791866395258
+        }
+      ],
+      "body": "全部功能\n限时特卖助手\n已连接\n管理\nreview1@example.invalid\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nreview isolated\n当前\n手动模式\n自动模式\n第一次使用\n限时特卖活动\n清除缓存\n刷新\n▼\n隔离已有活动\n10/13 12:19 ~ 10/13 13:39\n复制\n进行中\n\n复制活动到新时间段\n\n点击活动右侧的「复制」按钮，将此活动的商品复制到新的时间段\n\n已完成 2 个商品，请编辑参数后选择限时特卖并点击开启\n商品列表（2/2）\n全选修复\n无图\nreview-product-1001\nID: 1001\n2 SKU\n价格: NT$1,000\n库存: 10\n无图\nreview-product-1002\nID: 1002\n2 SKU\n价格: NT$1,000\n库存: 10\n1 天备货 SKU 修复\n已选 0 个商品，系统将修复这些商品，使其能够开启限时特卖。\n一键修复并开启\n编辑参数\n等待处理\n0/0\n处理详情 (2)\n无图\nreview-product-1001\n2 SKU · 价格: NT$1,000\n无图\nreview-product-1002\n2 SKU · 价格: NT$1,000\n\n修复完成，请点击上方商品列表修改限时特卖商品价格，库存，限购等信息(默认参数是你的折扣信息。)，然后点击下一步：选择限时特卖。\n\n折扣率\n%\n库存\n限购\n下一步：选择限时特卖\n更多",
+      "trialCalls": [],
+      "selectedPage": true,
+      "cacheAfterNext": {
+        "discountRate": 80,
+        "enableProgress": null,
+        "flashSaleId": null,
+        "flashSaleInfo": "已完成 2 个商品，请编辑参数后选择限时特卖并点击开启",
+        "flashSaleList": [
+          {
+            "enabled": true,
+            "end_time": 1791869950,
+            "flash_sale_id": 555,
+            "name": "隔离已有活动",
+            "start_time": 1791865150,
+            "status": 1
+          }
+        ],
+        "flashSaleStock": 5,
+        "infiniteRetry": false,
+        "maxRetries": 10,
+        "products": [
+          {
+            "images": [],
+            "inputOriginPrice": "1000",
+            "itemid": "1001",
+            "modelList": [
+              {
+                "modelid": "5001",
+                "normalStock": 10,
+                "originPrice": "1000",
+                "totalNormalStock": 10
+              },
+              {
+                "modelid": "5002",
+                "normalStock": 10,
+                "originPrice": "1000",
+                "totalNormalStock": 10
+              }
+            ],
+            "name": "review-product-1001",
+            "normalStock": 10,
+            "originPrice": "1000",
+            "status": 0,
+            "variationImages": []
+          },
+          {
+            "images": [],
+            "inputOriginPrice": "1000",
+            "itemid": "1002",
+            "modelList": [
+              {
+                "modelid": "5001",
+                "normalStock": 10,
+                "originPrice": "1000",
+                "totalNormalStock": 10
+              },
+              {
+                "modelid": "5002",
+                "normalStock": 10,
+                "originPrice": "1000",
+                "totalNormalStock": 10
+              }
+            ],
+            "name": "review-product-1002",
+            "normalStock": 10,
+            "originPrice": "1000",
+            "status": 0,
+            "variationImages": []
+          }
+        ],
+        "purchaseLimit": 1,
+        "skuOverrides": {},
+        "timestamp": 1791866395465
+      }
+    },
+    {
+      "case": "first-use-ui",
+      "status": "completed",
+      "owner": 1,
+      "source": "first-use",
+      "items": [
+        {
+          "discountRemoved": true,
+          "discountRestored": true,
+          "discounts": [
+            {
+              "endTime": 4102444800,
+              "name": "fixture discount",
+              "promotionId": 99,
+              "raw": {
+                "discount_id": 99,
+                "end_time": 4102444800,
+                "name": "fixture discount",
+                "time_status": 2
+              },
+              "timeStatus": 2
+            }
+          ],
+          "flashSaleStatus": "idle",
+          "hasOneDaySku": false,
+          "highestPrice": 1000,
+          "itemId": "1001",
+          "itemName": "review-product-1001",
+          "publishStatus": "success",
+          "skuCreated": true
+        }
+      ],
+      "resultProducts": [
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1001",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            },
+            {
+              "modelid": "5002",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1001",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        }
+      ],
+      "cacheProducts": [
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1001",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            },
+            {
+              "modelid": "5002",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1001",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        }
+      ],
+      "discount": 80,
+      "applied": {
+        "at": 1791866404030,
+        "taskId": "odr-1791866399707-1yegnp"
+      },
+      "nextVisible": true,
+      "nextEnabled": true,
+      "writes": [
+        {
+          "mode": "first-use-ui",
+          "step": "remove",
+          "promotion": 99,
+          "body": {
+            "promotion_id": 99,
+            "item_id_list": [
+              1001
+            ]
+          },
+          "at": 1791866399739
+        },
+        {
+          "mode": "first-use-ui",
+          "step": "publish",
+          "id": "1001",
+          "at": 1791866401753
+        },
+        {
+          "mode": "first-use-ui",
+          "step": "restore",
+          "body": {
+            "promotion_id": 99,
+            "discount_model_list": [
+              {
+                "item_id": 1001,
+                "model_id": 5001,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              },
+              {
+                "item_id": 1001,
+                "model_id": 5002,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              }
+            ]
+          },
+          "at": 1791866403766
+        }
+      ],
+      "body": "全部功能\n限时特卖助手\n已连接\n管理\nreview1@example.invalid\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nreview isolated\n当前\n手动模式\n自动模式\n第一次使用\n已完成 1 个商品，请编辑参数后选择限时特卖并点击开启\n商品列表（1/1）\n全选修复\n无图\nreview-product-1001\nID: 1001\n2 SKU\n价格: NT$1,000\n库存: 10\n1 天备货 SKU 修复\n已选 0 个商品，系统将修复这些商品，使其能够开启限时特卖。\n一键修复并开启\n编辑参数\n修复完成：1 个可继续\n1/1\n处理详情 (1)\n修复完成：1 个可继续\n无图\nreview-product-1001\n2 SKU · 价格: NT$1,000\n\n修复完成，请点击上方商品列表修改限时特卖商品价格，库存，限购等信息(默认参数是你的折扣信息。)，然后点击下一步：选择限时特卖。\n\n折扣率\n%\n库存\n限购\n下一步：选择限时特卖\n更多",
+      "trialCalls": []
+    },
+    {
+      "case": "stale-results",
+      "status": "completed",
+      "owner": 1,
+      "source": "manual-selection",
+      "items": [
+        {
+          "discountRemoved": true,
+          "discountRestored": true,
+          "discounts": [
+            {
+              "endTime": 4102444800,
+              "name": "fixture discount",
+              "promotionId": 99,
+              "raw": {
+                "discount_id": 99,
+                "end_time": 4102444800,
+                "name": "fixture discount",
+                "time_status": 2
+              },
+              "timeStatus": 2
+            }
+          ],
+          "flashSaleStatus": "idle",
+          "hasOneDaySku": false,
+          "highestPrice": 1000,
+          "itemId": "1001",
+          "itemName": "review-product-1001",
+          "publishStatus": "success",
+          "skuCreated": true
+        }
+      ],
+      "resultProducts": [],
+      "cacheProducts": [
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1001",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "name": "default",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1001",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        }
+      ],
+      "discount": 80,
+      "applied": {
+        "at": 1791866409798,
+        "taskId": "odr-1791866405484-ksbzlr"
+      },
+      "nextVisible": true,
+      "nextEnabled": true,
+      "writes": [
+        {
+          "mode": "stale-results",
+          "step": "remove",
+          "promotion": 99,
+          "body": {
+            "promotion_id": 99,
+            "item_id_list": [
+              1001
+            ]
+          },
+          "at": 1791866405525
+        },
+        {
+          "mode": "stale-results",
+          "step": "publish",
+          "id": "1001",
+          "at": 1791866407540
+        },
+        {
+          "mode": "stale-results",
+          "step": "restore",
+          "body": {
+            "promotion_id": 99,
+            "discount_model_list": [
+              {
+                "item_id": 1001,
+                "model_id": 5001,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              },
+              {
+                "item_id": 1001,
+                "model_id": 5002,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              }
+            ]
+          },
+          "at": 1791866409561
+        }
+      ],
+      "body": "全部功能\n限时特卖助手\n已连接\n管理\nreview1@example.invalid\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nreview isolated\n当前\n手动模式\n自动模式\n第一次使用\n限时特卖活动\n清除缓存\n刷新\n▼\n隔离已有活动\n10/13 12:20 ~ 10/13 13:40\n复制\n进行中\n\n复制活动到新时间段\n\n点击活动右侧的「复制」按钮，将此活动的商品复制到新的时间段\n\n已完成 1 个商品，请编辑参数后选择限时特卖并点击开启\n商品列表（1/1）\n全选修复\n无图\nreview-product-1001\nID: 1001\n1 SKU\n价格: NT$1,000\n库存: 10\n1 天备货 SKU 修复\n已选 0 个商品，系统将修复这些商品，使其能够开启限时特卖。\n一键修复并开启\n编辑参数\n修复完成：1 个可继续\n1/1\n处理详情 (1)\n修复完成：1 个可继续\n无图\nreview-product-1001\n1 SKU · 价格: NT$1,000\n\n修复完成，请点击上方商品列表修改限时特卖商品价格，库存，限购等信息(默认参数是你的折扣信息。)，然后点击下一步：选择限时特卖。\n\n折扣率\n%\n库存\n限购\n下一步：选择限时特卖\n更多",
+      "trialCalls": [],
+      "publishedNewSku": false,
+      "selectedPage": true
+    },
+    {
+      "case": "copy-during-repair",
+      "status": "running",
+      "owner": 1,
+      "source": "manual-selection",
+      "items": [
+        {
+          "discountRemoved": true,
+          "discountRestored": false,
+          "discounts": [
+            {
+              "endTime": 4102444800,
+              "name": "fixture discount",
+              "promotionId": 99,
+              "raw": {
+                "discount_id": 99,
+                "end_time": 4102444800,
+                "name": "fixture discount",
+                "time_status": 2
+              },
+              "timeStatus": 2
+            }
+          ],
+          "flashSaleStatus": "idle",
+          "hasOneDaySku": false,
+          "highestPrice": 1000,
+          "itemId": "1001",
+          "itemName": "review-product-1001",
+          "publishStatus": "idle",
+          "skuCreated": false
+        }
+      ],
+      "resultProducts": [],
+      "cacheProducts": [
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1001",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "name": "default",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1001",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        }
+      ],
+      "discount": 37,
+      "nextVisible": false,
+      "nextEnabled": false,
+      "writes": [
+        {
+          "mode": "copy-during-repair",
+          "step": "remove",
+          "promotion": 99,
+          "body": {
+            "promotion_id": 99,
+            "item_id_list": [
+              1001
+            ]
+          },
+          "at": 1791866411323
+        },
+        {
+          "mode": "copy-during-repair",
+          "step": "publish",
+          "id": "1001",
+          "at": 1791866413359
+        },
+        {
+          "mode": "copy-during-repair",
+          "step": "copy-sale-write",
+          "path": "/api/marketing/v4/shop_flash_sale/set_shop_flash_sale/",
+          "body": {
+            "flash_sale_id": 555,
+            "status": 2
+          },
+          "repairStatus": "running",
+          "at": 1791866413806
+        },
+        {
+          "mode": "copy-during-repair",
+          "step": "copy-sale-write",
+          "path": "/api/marketing/v4/shop_flash_sale/set_shop_flash_sale/",
+          "body": {
+            "time_slot_id": 999
+          },
+          "repairStatus": "running",
+          "at": 1791866413816
+        }
+      ],
+      "body": "全部功能\n限时特卖助手\n已连接\n管理\nreview1@example.invalid\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nreview isolated\n当前\n手动模式\n自动模式\n返回活动列表\n选择源活动\n→\n选择目标时间\n→\n创建复制任务\n复制限时特卖\n源活动:\n隔离已有活动\n活动时间:\n10/13 12:20 ~ 10/13 13:40\n商品数量:\n1 个查看\n目标活动时间段\n10/13 12:30 ~ 10/13 13:10\n已选中\n\n系统将在 10/13 12:25 自动执行复制\n\n使用模板（可选）\n\n暂无已保存的模板，将沿用源活动配置\n\n取消\n⏳ 正在创建任务...",
+      "trialCalls": []
+    },
+    {
+      "case": "partial-discount-ui",
+      "status": "failed",
+      "owner": 1,
+      "source": "manual-selection",
+      "items": [
+        {
+          "discountRemoved": false,
+          "discountRestored": false,
+          "discounts": [
+            {
+              "endTime": 4102444800,
+              "name": "fixture discount",
+              "promotionId": 99,
+              "raw": {
+                "discount_id": 99,
+                "end_time": 4102444800,
+                "name": "fixture discount",
+                "time_status": 2
+              },
+              "timeStatus": 2
+            },
+            {
+              "endTime": 4102444800,
+              "name": "fixture discount",
+              "promotionId": 100,
+              "raw": {
+                "discount_id": 100,
+                "end_time": 4102444800,
+                "name": "fixture discount",
+                "time_status": 1
+              },
+              "timeStatus": 1
+            }
+          ],
+          "error": "无法从折扣活动\"fixture discount\"中移除商品，请手动关闭折扣活动后重试。",
+          "flashSaleStatus": "idle",
+          "hasOneDaySku": false,
+          "highestPrice": 1000,
+          "itemId": "1001",
+          "itemName": "review-product-1001",
+          "publishStatus": "failed",
+          "skuCreated": false
+        }
+      ],
+      "resultProducts": [],
+      "cacheProducts": [
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1001",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "name": "default",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1001",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        }
+      ],
+      "discount": 37,
+      "nextVisible": false,
+      "nextEnabled": false,
+      "writes": [
+        {
+          "mode": "partial-discount-ui",
+          "step": "remove",
+          "promotion": 99,
+          "body": {
+            "promotion_id": 99,
+            "item_id_list": [
+              1001
+            ]
+          },
+          "at": 1791866435700
+        },
+        {
+          "mode": "partial-discount-ui",
+          "step": "remove",
+          "promotion": 100,
+          "body": {
+            "promotion_id": 100,
+            "item_id_list": [
+              1001
+            ]
+          },
+          "at": 1791866437723
+        }
+      ],
+      "body": "全部功能\n限时特卖助手\n已连接\n管理\nreview1@example.invalid\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nreview isolated\n当前\n手动模式\n自动模式\n第一次使用\n限时特卖活动\n清除缓存\n刷新\n▼\n隔离已有活动\n10/13 12:20 ~ 10/13 13:40\n复制\n进行中\n\n复制活动到新时间段\n\n点击活动右侧的「复制」按钮，将此活动的商品复制到新的时间段\n\n商品列表（1/1）\n取消全选\n无图\nreview-product-1001\nID: 1001\n1 SKU\n价格: NT$1,000\n库存: 10\n1 天备货 SKU 修复\n已选 1 个商品，系统将修复这些商品，使其能够开启限时特卖。\n一键修复并开启\n已停止\n处理完成：1 个失败\n1/1\n1 个商品处理失败，请查看详情。\n部分商品处理失败，详情见下方列表。\n处理详情 (1)\n更多",
+      "trialCalls": []
+    },
+    {
+      "case": "auth-init-ui",
+      "body": "检查登录状态...",
+      "authAnchored": true
+    }
+  ],
+  "blockedUnexpectedOrigins": [],
+  "backendCalls": [
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/stores/validate"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "ordinary-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "first-use-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "first-use-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "first-use-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "first-use-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "first-use-ui",
+      "path": "/api/stores/validate"
+    },
+    {
+      "mode": "first-use-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "first-use-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "first-use-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "first-use-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "stale-results",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "stale-results",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "stale-results",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "stale-results",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "stale-results",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "stale-results",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "stale-results",
+      "path": "/api/stores/validate"
+    },
+    {
+      "mode": "stale-results",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "stale-results",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "stale-results",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "stale-results",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "stale-results",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "stale-results",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "copy-during-repair",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "copy-during-repair",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "copy-during-repair",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "copy-during-repair",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "copy-during-repair",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "copy-during-repair",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "copy-during-repair",
+      "path": "/api/stores/validate"
+    },
+    {
+      "mode": "copy-during-repair",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "copy-during-repair",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "copy-during-repair",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "copy-during-repair",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "copy-during-repair",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "copy-during-repair",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "copy-during-repair",
+      "path": "/api/stores/validate"
+    },
+    {
+      "mode": "partial-discount-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "partial-discount-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "partial-discount-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "partial-discount-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "partial-discount-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "partial-discount-ui",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "partial-discount-ui",
+      "path": "/api/stores/validate"
+    },
+    {
+      "mode": "auth-init-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "auth-init-ui",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "auth-init-ui",
+      "path": "/api/auth/check-admin"
+    }
+  ],
+  "realPlatformRequestsAllowed": 0
+}

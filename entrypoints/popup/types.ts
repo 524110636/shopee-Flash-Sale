@@ -348,7 +348,9 @@ export type OneDaySkuFlowPhase =
   | 'editing_params'
   | 'selecting_flash_sale'
   | 'success'
-  | 'failed';
+  | 'failed'
+  /** 后台执行者消失（worker 意外重启）留下的真实中断；不是失败，也不自动重放 */
+  | 'interrupted';
 
 export interface OneDaySkuDiscountInfo {
   promotionId: number;
@@ -371,6 +373,13 @@ export interface OneDaySkuItemStatus {
   highestPrice?: number;
   error?: string;
   discounts?: OneDaySkuDiscountInfo[];
+  /**
+   * 逐折扣活动的处理结果：哪个活动已确认移除成功、哪个结果未知。
+   *
+   * 多折扣商品上「活动 99 移除成功、活动 100 失败」时，只写一个 `discountRemoved: false`
+   * 会把已成功的部分覆盖成"都没动"，用户无法判断要去核对哪一份折扣。
+   */
+  discountRemovals?: Array<{ promotionId: number; name: string; status: 'success' | 'failed' | 'unknown' }>;
 }
 
 export interface OneDaySkuFlowState {
@@ -382,6 +391,110 @@ export interface OneDaySkuFlowState {
   error: string | null;
   items: OneDaySkuItemStatus[];
   canStartFlashSale: boolean;
+  /** 当前任务标识；后台持久记录用它配对，popup 用它判断结果是否已应用过 */
+  taskId?: string;
+}
+
+// ===== 后台一键修复任务（持久契约，popup 与 background 共用）=====
+
+/** 任务状态：accepted/running 为执行中，其余为终态 */
+export type OneDayRepairTaskStatus = 'accepted' | 'running' | 'completed' | 'failed' | 'interrupted';
+
+/** 逐商品检查点：记录关键写请求「发送前/后」，用于中断时说明哪些商品可能已被改动 */
+export interface OneDaySkuCheckpoint {
+  /** 单调递增序号，用于判断新旧 */
+  seq: number;
+  itemId: string;
+  /** 步骤标识（如 update_product_info / delete_abnormal_seller_discount_items） */
+  step: string;
+  /** 请求是否已发出；已发出即不能在中断后盲目重放 */
+  writeSent: boolean;
+  at: number;
+  /**
+   * 本步骤作用于哪个折扣活动（多折扣时会先后处理多个）。
+   * 用于区分"哪一份折扣已经改成功"，而不是只留下一句笼统的失败。
+   */
+  promotionId?: number;
+  promotionName?: string;
+  /** 该请求的结果：`success` 已确认成功；`unknown` 已发出但结果不明 */
+  outcome?: 'success' | 'unknown';
+}
+
+export interface OneDayRepairTask {
+  taskId: string;
+  /** 同一次启动的请求标识；重复投递复用同一任务 */
+  requestId: string;
+  /** 发起者：普通勾选或首次使用 */
+  source: 'manual-selection' | 'first-use';
+  status: OneDayRepairTaskStatus;
+  /** 归属锚：任务开始时实际核实的店铺与后端账号；不采用客户端自称值 */
+  shopId: number | null;
+  ownerUserId: number | null;
+  /** 开始执行时的凭据指纹，只存指纹不存凭据，用于识别换账号 */
+  spcCdsFingerprint: string;
+  phase: OneDaySkuFlowPhase;
+  currentIndex: number;
+  total: number;
+  message: string;
+  error: string | null;
+  items: OneDaySkuItemStatus[];
+  /** 正在处理中的商品（含已移除的折扣与恢复资料）；发布失败/中断时靠它保留部分修改证据 */
+  workItem: OneDaySkuItemStatus | null;
+  /** 后台准备好的可编辑结果（修复结束时读取，不依赖 popup 再取一次） */
+  resultProducts: ShopeeProduct[];
+  /** 后台检测到的实际折扣率；null 表示无商品带折扣 */
+  discountRate: number | null;
+  checkpoints: OneDaySkuCheckpoint[];
+  /** 是否已有商品写请求发出（中断提示用） */
+  writeStarted: boolean;
+  /** 中断时的心跳时间（仅作证据，判定不依赖它） */
+  heartbeatAt?: number | null;
+  /**
+   * 记录版本号：每次后台写入自增。
+   * 心跳与 popup 的标记写入都带上自己读到的版本，只有版本未变才允许写，
+   * 避免用旧整份记录覆盖更新的进度或终态。
+   */
+  revision: number;
+  startedAt: number;
+  updatedAt: number;
+}
+
+/**
+ * 独立的心跳键。
+ *
+ * 为什么不放在任务记录里：心跳与进度是两条并发写路径，放在同一份记录里就必然出现
+ * 「心跳读到 running → runner 写入 completed → 迟到心跳把旧副本写回」的回退。
+ * 拆成独立键后心跳只能写自己那份，物理上无法覆盖任务状态。
+ */
+export interface OneDayRepairHeartbeat {
+  taskId: string;
+  at: number;
+}
+
+/**
+ * 独立的「结果已应用」标记键。
+ *
+ * 为什么不让 popup 写回任务记录：popup 手里的是它读到的那份快照，整对象回写会覆盖
+ * 后台在此期间写入的内容。标记单独存，后台权威记录不被 popup 触碰。
+ */
+export interface OneDayRepairAppliedMarker {
+  taskId: string;
+  at: number;
+}
+
+/**
+ * popup → background 的短启动请求。
+ * 商品快照与归属锚先写入 storage，再发一条不含大负载的消息，和既有 `_enableParams` + `START_ENABLE` 一致。
+ * 刻意不带 Cookie/SPC_CDS：后台自己从 Cookie 读，避免凭据副本落进 storage。
+ */
+export interface OneDayRepairRequest {
+  requestId: string;
+  taskId: string;
+  source: OneDayRepairTask['source'];
+  shopId: number | null;
+  ownerUserId: number | null;
+  products: ShopeeProduct[];
+  createdAt: number;
 }
 
 // ===== 第一次使用（获取全部商品 + 选择修复）类型 =====

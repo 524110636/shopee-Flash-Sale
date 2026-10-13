@@ -1,0 +1,61 @@
+{
+  "appliedAt": null,
+  "checkpoints": [
+    {
+      "at": 1791871444519,
+      "itemId": "1001",
+      "seq": 1,
+      "step": "update_product_info",
+      "writeSent": true
+    },
+    {
+      "at": 1791871444519,
+      "itemId": "1001",
+      "seq": 2,
+      "step": "update_seller_discount_items",
+      "writeSent": true
+    }
+  ],
+  "currentIndex": 1,
+  "discountRate": null,
+  "error": "0 个商品失败，其余未完成。",
+  "heartbeatAt": null,
+  "items": [
+    {
+      "discountRemoved": true,
+      "discountRestored": true,
+      "flashSaleStatus": "idle",
+      "hasOneDaySku": false,
+      "highestPrice": 1000,
+      "itemId": "1001",
+      "itemName": "隔离商品A",
+      "publishStatus": "success",
+      "skuCreated": true
+    },
+    {
+      "discountRemoved": false,
+      "discountRestored": false,
+      "flashSaleStatus": "idle",
+      "hasOneDaySku": false,
+      "highestPrice": 1000,
+      "itemId": "1002",
+      "itemName": "隔离商品B",
+      "publishStatus": "idle",
+      "skuCreated": false
+    }
+  ],
+  "message": "修复已中断（后台执行者已退出）。有 1 个商品可能已被修改，请核对后再决定是否重跑。",
+  "ownerUserId": 1,
+  "phase": "interrupted",
+  "requestId": "odr-orphan-fixture",
+  "resultProducts": [],
+  "shopId": 777,
+  "source": "manual-selection",
+  "spcCdsFingerprint": "deadbeef",
+  "startedAt": 1791871444519,
+  "status": "interrupted",
+  "taskId": "odr-orphan-fixture",
+  "total": 2,
+  "updatedAt": 1791872045700,
+  "writeStarted": true
+}

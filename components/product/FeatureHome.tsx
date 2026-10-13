@@ -112,7 +112,9 @@ export function FeatureHome({
                           ? 'animate-pulse-dot bg-shopee-green'
                           : summary.tone === 'pending'
                             ? 'bg-shopee-blue'
-                            : 'bg-shopee-brand'
+                            : summary.tone === 'interrupted'
+                              ? 'bg-destructive'
+                              : 'bg-shopee-brand'
                       }`}
                     />
                   )}

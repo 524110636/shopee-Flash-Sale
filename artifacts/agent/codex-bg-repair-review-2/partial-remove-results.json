@@ -1,0 +1,77 @@
+[
+  {
+    "case": "remove-partial",
+    "status": "failed",
+    "events": [
+      {
+        "step": "remove",
+        "promotionId": 99,
+        "responseError": 0
+      },
+      {
+        "step": "sleep",
+        "ms": 2000
+      },
+      {
+        "step": "remove",
+        "promotionId": 100,
+        "responseError": 1
+      }
+    ],
+    "item": {
+      "itemId": "1001",
+      "itemName": "isolated review",
+      "hasOneDaySku": false,
+      "skuCreated": false,
+      "publishStatus": "failed",
+      "discountRemoved": false,
+      "discountRestored": false,
+      "flashSaleStatus": "idle",
+      "highestPrice": 1000,
+      "discounts": [
+        {
+          "promotionId": 99,
+          "name": "fixture discount",
+          "endTime": 4102444800,
+          "timeStatus": 2,
+          "raw": {
+            "discount_id": 99,
+            "name": "fixture discount",
+            "time_status": 2,
+            "end_time": 4102444800
+          }
+        },
+        {
+          "promotionId": 100,
+          "name": "fixture discount B",
+          "endTime": 4102444800,
+          "timeStatus": 2,
+          "raw": {
+            "discount_id": 100,
+            "name": "fixture discount B",
+            "time_status": 2,
+            "end_time": 4102444800
+          }
+        }
+      ],
+      "error": "无法从折扣活动\"fixture discount B\"中移除商品，请手动关闭折扣活动后重试。"
+    },
+    "workItem": null,
+    "checkpoints": [
+      {
+        "itemId": "1001",
+        "step": "delete_abnormal_seller_discount_items",
+        "writeSent": true,
+        "at": 1791864940423,
+        "seq": 1
+      },
+      {
+        "itemId": "1001",
+        "step": "delete_abnormal_seller_discount_items",
+        "writeSent": true,
+        "at": 1791864940423,
+        "seq": 2
+      }
+    ]
+  }
+]

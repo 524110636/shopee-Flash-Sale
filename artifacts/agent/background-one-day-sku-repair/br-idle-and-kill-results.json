@@ -1,0 +1,9 @@
+{
+  "results": [
+    "PASS  A 关闭 popup 后跨越 36s 空闲周期仍持续推进并完成",
+    "PASS  B 执行者终止后留下真实中断、保留检查点、不自动重放",
+    "PASS  全程未出现预期外的店铺写请求"
+  ],
+  "publishCount": 1,
+  "unstubbedWrites": []
+}

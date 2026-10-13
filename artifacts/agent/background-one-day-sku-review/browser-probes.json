@@ -1,0 +1,58 @@
+{
+  "results": [
+    {
+      "case": "cold-popup-applied-task",
+      "expectedDiscount": 37,
+      "cache": {
+        "discountRate": 80,
+        "productId": "1001"
+      }
+    },
+    {
+      "case": "foreign-owner-result",
+      "expectedProductId": "702",
+      "cache": {
+        "discountRate": 80,
+        "productId": "9099"
+      },
+      "foreignProductVisible": true
+    },
+    {
+      "case": "unloaded-result-marked-editable",
+      "emptyState": {
+        "modelCount": 0,
+        "appliedAtSet": true
+      },
+      "nextStepEnabled": true
+    },
+    {
+      "case": "concurrent-start",
+      "expectedAcceptedCount": 1,
+      "replies": [
+        {
+          "success": true,
+          "taskId": "race-A"
+        },
+        {
+          "success": true,
+          "taskId": "race-B"
+        }
+      ],
+      "final": {
+        "taskId": "race-A",
+        "status": "completed"
+      },
+      "publishCount": 1
+    },
+    {
+      "case": "auto-mode-write-conflict",
+      "expectedAccepted": false,
+      "reply": {
+        "success": true,
+        "taskId": "while-auto-active"
+      }
+    }
+  ],
+  "realShopRequestsAllowed": 0,
+  "fixtureBackend": "loopback-only"
+}

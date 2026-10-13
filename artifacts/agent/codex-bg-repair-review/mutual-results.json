@@ -1,0 +1,63 @@
+{
+  "results": [
+    {
+      "case": "repair-active-then-start-enable",
+      "repairStartReply": {
+        "success": true,
+        "taskId": "review-reverse-conflict"
+      },
+      "enableReply": {
+        "success": true
+      },
+      "repairStatus": "running",
+      "enableProgress": {
+        "progress": {
+          "currentRound": 1,
+          "failedSkus": 0,
+          "isComplete": true,
+          "lastResponsePreview": "{\"code\":0,\"data\":{\"list\":[],\"time_slot_list\":[]},\"error\":0}",
+          "maxRetries": 1,
+          "nextRetryItems": [],
+          "successSkus": 1,
+          "totalSkus": 1
+        },
+        "running": false
+      },
+      "writes": [
+        {
+          "mode": "reverse-conflict",
+          "step": "remove",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791860068950
+        },
+        {
+          "mode": "reverse-conflict",
+          "step": "publish",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791860070980
+        },
+        {
+          "mode": "reverse-conflict",
+          "step": "unexpected:/api/marketing/v4/shop_flash_sale/set_shop_flash_sale_items/",
+          "at": 1791860071404
+        }
+      ]
+    }
+  ],
+  "blockedUnexpectedOrigins": [],
+  "backendCalls": [
+    "/api/stores/validate",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores",
+    "/api/stores",
+    "/api/auth/check-admin",
+    "/api/stores/validate",
+    "/api/auth/check-admin",
+    "/api/stores",
+    "/api/stores"
+  ],
+  "realPlatformRequestsAllowed": 0
+}

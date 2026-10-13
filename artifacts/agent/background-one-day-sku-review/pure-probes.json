@@ -1,0 +1,185 @@
+[
+  {
+    "case": "normal-order",
+    "status": "completed",
+    "events": [
+      {
+        "kind": "remove",
+        "shopId": 777
+      },
+      {
+        "kind": "publish",
+        "shopId": 777
+      },
+      {
+        "kind": "sleep",
+        "ms": 2000
+      },
+      {
+        "kind": "restore",
+        "shopId": 777
+      }
+    ],
+    "finalItem": {
+      "itemId": "1001",
+      "itemName": "isolated-review-product",
+      "hasOneDaySku": false,
+      "skuCreated": true,
+      "publishStatus": "success",
+      "discountRemoved": true,
+      "discountRestored": true,
+      "flashSaleStatus": "idle",
+      "highestPrice": 1000,
+      "discounts": [
+        {
+          "promotionId": 99,
+          "name": "isolated-discount-A",
+          "endTime": 4102444800,
+          "timeStatus": 2,
+          "raw": {
+            "discount_id": 99,
+            "name": "isolated-discount-A",
+            "time_status": 2,
+            "end_time": 4102444800
+          }
+        }
+      ]
+    },
+    "checkpointCount": 3,
+    "discountEvidencePersistedBeforePublish": false
+  },
+  {
+    "case": "identity-unknown",
+    "status": "completed",
+    "events": [
+      {
+        "kind": "remove",
+        "shopId": 777
+      },
+      {
+        "kind": "publish",
+        "shopId": 777
+      },
+      {
+        "kind": "sleep",
+        "ms": 2000
+      },
+      {
+        "kind": "restore",
+        "shopId": 777
+      }
+    ],
+    "finalItem": {
+      "itemId": "1001",
+      "itemName": "isolated-review-product",
+      "hasOneDaySku": false,
+      "skuCreated": true,
+      "publishStatus": "success",
+      "discountRemoved": true,
+      "discountRestored": true,
+      "flashSaleStatus": "idle",
+      "highestPrice": 1000,
+      "discounts": [
+        {
+          "promotionId": 99,
+          "name": "isolated-discount-A",
+          "endTime": 4102444800,
+          "timeStatus": 2,
+          "raw": {
+            "discount_id": 99,
+            "name": "isolated-discount-A",
+            "time_status": 2,
+            "end_time": 4102444800
+          }
+        }
+      ]
+    },
+    "checkpointCount": 3,
+    "discountEvidencePersistedBeforePublish": false
+  },
+  {
+    "case": "switch-after-remove",
+    "status": "completed",
+    "events": [
+      {
+        "kind": "remove",
+        "shopId": 777
+      },
+      {
+        "kind": "publish",
+        "shopId": 888
+      },
+      {
+        "kind": "sleep",
+        "ms": 2000
+      },
+      {
+        "kind": "restore",
+        "shopId": 888
+      }
+    ],
+    "finalItem": {
+      "itemId": "1001",
+      "itemName": "isolated-review-product",
+      "hasOneDaySku": false,
+      "skuCreated": true,
+      "publishStatus": "success",
+      "discountRemoved": true,
+      "discountRestored": true,
+      "flashSaleStatus": "idle",
+      "highestPrice": 1000,
+      "discounts": [
+        {
+          "promotionId": 99,
+          "name": "isolated-discount-A",
+          "endTime": 4102444800,
+          "timeStatus": 2,
+          "raw": {
+            "discount_id": 99,
+            "name": "isolated-discount-A",
+            "time_status": 2,
+            "end_time": 4102444800
+          }
+        }
+      ]
+    },
+    "checkpointCount": 3,
+    "discountEvidencePersistedBeforePublish": false
+  },
+  {
+    "case": "publish-transport-failure",
+    "status": "failed",
+    "events": [
+      {
+        "kind": "remove",
+        "shopId": 777
+      },
+      {
+        "kind": "publish",
+        "shopId": 777
+      }
+    ],
+    "finalItem": {
+      "itemId": "1001",
+      "itemName": "isolated-review-product",
+      "hasOneDaySku": false,
+      "skuCreated": false,
+      "publishStatus": "failed",
+      "discountRemoved": false,
+      "discountRestored": false,
+      "flashSaleStatus": "idle",
+      "highestPrice": 1000,
+      "error": "isolated publish transport failure"
+    },
+    "checkpointCount": 2,
+    "discountEvidencePersistedBeforePublish": false
+  },
+  {
+    "case": "persistent-applied-marker",
+    "shouldReapplyWithColdPopup": true
+  },
+  {
+    "case": "new-worker-fresh-heartbeat",
+    "statusWithNoLiveRunner": "running"
+  }
+]

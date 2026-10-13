@@ -1,0 +1,71 @@
+{
+  "results": [
+    {
+      "case": "repair-active-then-start-enable",
+      "repairStartReply": {
+        "success": true,
+        "taskId": "review-reverse-conflict"
+      },
+      "enableReply": {
+        "success": false,
+        "error": "一键修复正在执行商品写操作，请等它结束后再开启限时特卖"
+      },
+      "repairStatus": "running",
+      "enableProgress": {
+        "error": "一键修复正在执行商品写操作，请等它结束后再开启限时特卖",
+        "progress": null,
+        "running": false
+      },
+      "writes": [
+        {
+          "mode": "reverse-conflict",
+          "step": "remove",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791864462622
+        },
+        {
+          "mode": "reverse-conflict",
+          "step": "publish",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791864464673
+        },
+        {
+          "mode": "reverse-conflict",
+          "step": "unexpected:/api/marketing/v4/shop_flash_sale/set_shop_flash_sale/",
+          "at": 1791864466971
+        }
+      ]
+    },
+    {
+      "case": "repair-active-then-execute-copy",
+      "copyReply": {
+        "success": false,
+        "error": "没有可用的时间段"
+      },
+      "repairStatus": "running",
+      "writes": [
+        {
+          "mode": "reverse-conflict",
+          "step": "unexpected:/api/marketing/v4/shop_flash_sale/set_shop_flash_sale/",
+          "at": 1791864466971
+        }
+      ]
+    }
+  ],
+  "blockedUnexpectedOrigins": [],
+  "backendCalls": [
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores/validate",
+    "/api/stores",
+    "/api/stores",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores",
+    "/api/stores",
+    "/api/stores/validate"
+  ],
+  "realPlatformRequestsAllowed": 0
+}

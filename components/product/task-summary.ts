@@ -5,7 +5,7 @@
  * 注意：自动页签选中（autoModeActive）不是运行状态，这里只看 isRunning。
  */
 
-export type TaskSummaryKind = 'loading' | 'auto' | 'manual' | 'scheduled' | 'copy-completed';
+export type TaskSummaryKind = 'loading' | 'auto' | 'manual' | 'scheduled' | 'copy-completed' | 'repair';
 
 export interface TaskSummary {
   kind: TaskSummaryKind;
@@ -13,7 +13,7 @@ export interface TaskSummary {
   detail: string;
   /** 查看入口文案；为空表示无可点击入口（加载态） */
   actionLabel: string;
-  tone: 'loading' | 'running' | 'pending' | 'done';
+  tone: 'loading' | 'running' | 'pending' | 'done' | 'interrupted';
 }
 
 export interface TaskSummaryInput {

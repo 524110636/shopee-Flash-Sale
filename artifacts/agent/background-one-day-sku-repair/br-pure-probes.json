@@ -1,0 +1,463 @@
+{
+  "results": [
+    {
+      "case": "normal-order",
+      "events": [
+        {
+          "kind": "remove",
+          "shopId": 777,
+          "promotionId": 99
+        },
+        {
+          "kind": "sleep",
+          "ms": 2000
+        },
+        {
+          "kind": "publish",
+          "shopId": 777
+        },
+        {
+          "kind": "sleep",
+          "ms": 2000
+        },
+        {
+          "kind": "restore",
+          "shopId": 777
+        }
+      ],
+      "finalStatus": "completed",
+      "finalItem": {
+        "itemId": "1001",
+        "itemName": "isolated-review-product",
+        "hasOneDaySku": false,
+        "skuCreated": true,
+        "publishStatus": "success",
+        "discountRemoved": true,
+        "discountRestored": true,
+        "flashSaleStatus": "idle",
+        "highestPrice": 1000,
+        "discounts": [
+          {
+            "promotionId": 99,
+            "name": "isolated-discount-A",
+            "endTime": 4102444800,
+            "timeStatus": 2,
+            "raw": {
+              "discount_id": 99,
+              "name": "isolated-discount-A",
+              "time_status": 2,
+              "end_time": 4102444800
+            }
+          }
+        ],
+        "discountRemovals": [
+          {
+            "promotionId": 99,
+            "name": "isolated-discount-A",
+            "status": "success"
+          }
+        ]
+      },
+      "evidenceBeforePublish": true,
+      "checkpointSteps": [
+        "delete_abnormal_seller_discount_items",
+        "delete_abnormal_seller_discount_items",
+        "update_product_info",
+        "update_seller_discount_items"
+      ],
+      "workItemDiscountIds": [],
+      "itemDiscountIds": [
+        99
+      ],
+      "itemDiscountRemovals": [
+        {
+          "promotionId": 99,
+          "name": "isolated-discount-A",
+          "status": "success"
+        }
+      ],
+      "revision": 11
+    },
+    {
+      "case": "identity-unknown",
+      "events": [],
+      "error": "RepairOwnershipError: 当前店铺或账号与任务归属不一致（任务店铺 777／账号 1，实际 核实不到／1），已停止后续商品修复",
+      "evidenceBeforePublish": false
+    },
+    {
+      "case": "switch-after-remove",
+      "events": [
+        {
+          "kind": "remove",
+          "shopId": 777,
+          "promotionId": 99
+        },
+        {
+          "kind": "sleep",
+          "ms": 2000
+        }
+      ],
+      "error": "RepairOwnershipError: 当前店铺或账号与任务归属不一致（任务店铺 777／账号 1，实际 888／1），已停止后续商品修复",
+      "evidenceBeforePublish": false
+    },
+    {
+      "case": "publish-transport-failure",
+      "events": [
+        {
+          "kind": "remove",
+          "shopId": 777,
+          "promotionId": 99
+        },
+        {
+          "kind": "sleep",
+          "ms": 2000
+        },
+        {
+          "kind": "publish",
+          "shopId": 777
+        }
+      ],
+      "finalStatus": "failed",
+      "finalItem": {
+        "itemId": "1001",
+        "itemName": "isolated-review-product",
+        "hasOneDaySku": false,
+        "skuCreated": false,
+        "publishStatus": "failed",
+        "discountRemoved": true,
+        "discountRestored": false,
+        "flashSaleStatus": "idle",
+        "highestPrice": 1000,
+        "discounts": [
+          {
+            "promotionId": 99,
+            "name": "isolated-discount-A",
+            "endTime": 4102444800,
+            "timeStatus": 2,
+            "raw": {
+              "discount_id": 99,
+              "name": "isolated-discount-A",
+              "time_status": 2,
+              "end_time": 4102444800
+            }
+          }
+        ],
+        "discountRemovals": [
+          {
+            "promotionId": 99,
+            "name": "isolated-discount-A",
+            "status": "success"
+          }
+        ],
+        "error": "isolated publish transport failure"
+      },
+      "evidenceBeforePublish": true,
+      "checkpointSteps": [
+        "delete_abnormal_seller_discount_items",
+        "delete_abnormal_seller_discount_items",
+        "update_product_info"
+      ],
+      "workItemDiscountIds": [],
+      "itemDiscountIds": [
+        99
+      ],
+      "itemDiscountRemovals": [
+        {
+          "promotionId": 99,
+          "name": "isolated-discount-A",
+          "status": "success"
+        }
+      ],
+      "revision": 11
+    },
+    {
+      "case": "cold-popup-applied-marker",
+      "reappliedWithColdPopup": false,
+      "appliedForForeignOwner": false,
+      "appliedWhenUnloaded": false,
+      "nextStepEnabledWhenUnloaded": false,
+      "phaseWhenSelecting": "selecting_flash_sale",
+      "phaseWhenEditing": "editing_params",
+      "readyViaFallback": true
+    },
+    {
+      "case": "owner-with-null-actual-shop",
+      "sameWhenUnknown": false
+    },
+    {
+      "case": "auth-account-switched-midway",
+      "events": [
+        {
+          "kind": "remove",
+          "shopId": 777,
+          "promotionId": 99
+        },
+        {
+          "kind": "sleep",
+          "ms": 2000
+        }
+      ],
+      "error": "RepairOwnershipError: 当前店铺或账号与任务归属不一致（任务店铺 777／账号 1，实际 777／2），已停止后续商品修复",
+      "evidenceBeforePublish": false
+    },
+    {
+      "case": "auth-logged-out-midway",
+      "events": [
+        {
+          "kind": "remove",
+          "shopId": 777,
+          "promotionId": 99
+        },
+        {
+          "kind": "sleep",
+          "ms": 2000
+        }
+      ],
+      "error": "RepairOwnershipError: 当前店铺或账号与任务归属不一致（任务店铺 777／账号 1，实际 777／核实不到），已停止后续商品修复",
+      "evidenceBeforePublish": false
+    },
+    {
+      "case": "restore-transport-failure",
+      "events": [
+        {
+          "kind": "remove",
+          "shopId": 777,
+          "promotionId": 99
+        },
+        {
+          "kind": "sleep",
+          "ms": 2000
+        },
+        {
+          "kind": "publish",
+          "shopId": 777
+        },
+        {
+          "kind": "sleep",
+          "ms": 2000
+        },
+        {
+          "kind": "restore",
+          "shopId": 777
+        }
+      ],
+      "finalStatus": "completed",
+      "finalItem": {
+        "itemId": "1001",
+        "itemName": "isolated-review-product",
+        "hasOneDaySku": false,
+        "skuCreated": true,
+        "publishStatus": "success",
+        "discountRemoved": true,
+        "discountRestored": false,
+        "flashSaleStatus": "idle",
+        "highestPrice": 1000,
+        "discounts": [
+          {
+            "promotionId": 99,
+            "name": "isolated-discount-A",
+            "endTime": 4102444800,
+            "timeStatus": 2,
+            "raw": {
+              "discount_id": 99,
+              "name": "isolated-discount-A",
+              "time_status": 2,
+              "end_time": 4102444800
+            }
+          }
+        ],
+        "discountRemovals": [
+          {
+            "promotionId": 99,
+            "name": "isolated-discount-A",
+            "status": "success"
+          }
+        ],
+        "error": "商品已发布，但折扣活动\"isolated-discount-A\"恢复结果未知（请求异常：isolated restore transport failure）。请根据活动信息人工核对并恢复。"
+      },
+      "evidenceBeforePublish": true,
+      "checkpointSteps": [
+        "delete_abnormal_seller_discount_items",
+        "delete_abnormal_seller_discount_items",
+        "update_product_info",
+        "update_seller_discount_items"
+      ],
+      "workItemDiscountIds": [],
+      "itemDiscountIds": [
+        99
+      ],
+      "itemDiscountRemovals": [
+        {
+          "promotionId": 99,
+          "name": "isolated-discount-A",
+          "status": "success"
+        }
+      ],
+      "revision": 11
+    },
+    {
+      "case": "multi-discount-partial",
+      "events": [
+        {
+          "kind": "remove",
+          "shopId": 777,
+          "promotionId": 99
+        },
+        {
+          "kind": "sleep",
+          "ms": 2000
+        },
+        {
+          "kind": "remove",
+          "shopId": 777,
+          "promotionId": 100
+        }
+      ],
+      "finalStatus": "failed",
+      "finalItem": {
+        "itemId": "1001",
+        "itemName": "isolated-review-product",
+        "hasOneDaySku": false,
+        "skuCreated": false,
+        "publishStatus": "failed",
+        "discountRemoved": true,
+        "discountRestored": false,
+        "flashSaleStatus": "idle",
+        "highestPrice": 1000,
+        "discounts": [
+          {
+            "promotionId": 99,
+            "name": "isolated-discount-A",
+            "endTime": 4102444800,
+            "timeStatus": 2,
+            "raw": {
+              "discount_id": 99,
+              "name": "isolated-discount-A",
+              "time_status": 2,
+              "end_time": 4102444800
+            }
+          },
+          {
+            "promotionId": 100,
+            "name": "isolated-discount-B",
+            "endTime": 4102444800,
+            "timeStatus": 0,
+            "raw": {
+              "discount_id": 100,
+              "name": "isolated-discount-B",
+              "time_status": 0,
+              "end_time": 4102444800
+            }
+          }
+        ],
+        "discountRemovals": [
+          {
+            "promotionId": 99,
+            "name": "isolated-discount-A",
+            "status": "success"
+          },
+          {
+            "promotionId": 100,
+            "name": "isolated-discount-B",
+            "status": "failed"
+          }
+        ],
+        "error": "无法从折扣活动\"isolated-discount-B\"中移除商品，已停止本商品（未发布、未恢复折扣）。请到折扣活动页面人工核对后再重试。（另有折扣活动已确认移除成功，请一并核对）"
+      },
+      "evidenceBeforePublish": false,
+      "checkpointSteps": [
+        "delete_abnormal_seller_discount_items",
+        "delete_abnormal_seller_discount_items",
+        "delete_abnormal_seller_discount_items",
+        "delete_abnormal_seller_discount_items"
+      ],
+      "workItemDiscountIds": [],
+      "itemDiscountIds": [
+        99,
+        100
+      ],
+      "itemDiscountRemovals": [
+        {
+          "promotionId": 99,
+          "name": "isolated-discount-A",
+          "status": "success"
+        },
+        {
+          "promotionId": 100,
+          "name": "isolated-discount-B",
+          "status": "failed"
+        }
+      ],
+      "revision": 11
+    },
+    {
+      "case": "remove-transport-unknown",
+      "events": [
+        {
+          "kind": "remove",
+          "shopId": 777,
+          "promotionId": 99
+        }
+      ],
+      "finalStatus": "failed",
+      "finalItem": {
+        "itemId": "1001",
+        "itemName": "isolated-review-product",
+        "hasOneDaySku": false,
+        "skuCreated": false,
+        "publishStatus": "failed",
+        "discountRemoved": false,
+        "discountRestored": false,
+        "flashSaleStatus": "idle",
+        "highestPrice": 1000,
+        "discounts": [
+          {
+            "promotionId": 99,
+            "name": "isolated-discount-A",
+            "endTime": 4102444800,
+            "timeStatus": 2,
+            "raw": {
+              "discount_id": 99,
+              "name": "isolated-discount-A",
+              "time_status": 2,
+              "end_time": 4102444800
+            }
+          }
+        ],
+        "discountRemovals": [
+          {
+            "promotionId": 99,
+            "name": "isolated-discount-A",
+            "status": "unknown"
+          }
+        ],
+        "error": "折扣活动\"isolated-discount-A\"的移除结果未知（请求异常），已停止本商品（未发布、未恢复折扣）。请到折扣活动页面人工核对后再重试。"
+      },
+      "evidenceBeforePublish": false,
+      "checkpointSteps": [
+        "delete_abnormal_seller_discount_items",
+        "delete_abnormal_seller_discount_items"
+      ],
+      "workItemDiscountIds": [],
+      "itemDiscountIds": [
+        99
+      ],
+      "itemDiscountRemovals": [
+        {
+          "promotionId": 99,
+          "name": "isolated-discount-A",
+          "status": "unknown"
+        }
+      ],
+      "revision": 9
+    },
+    {
+      "case": "heartbeat-cases",
+      "orphanedNoHeartbeat": "interrupted",
+      "orphanedStaleHeartbeat": "interrupted",
+      "aliveWithFreshHeartbeat": "interrupted",
+      "lateWriteAllowedForCompleted": false
+    }
+  ],
+  "failures": []
+}

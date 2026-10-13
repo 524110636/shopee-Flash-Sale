@@ -1,0 +1,7 @@
+{
+  "case": "late-heartbeat-after-completion",
+  "expectedStatus": "completed",
+  "observedStatus": "running",
+  "resultCount": 0,
+  "method": "actual extracted heartbeat function with a deferred storage read, no product source modifications"
+}

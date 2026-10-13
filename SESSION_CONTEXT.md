@@ -1,7 +1,7 @@
 # 对话进度摘要（2026-05-22 ~ 2026-05-23）
 
 > ⚠ 2026-05 历史快照：下面写的项目路径 `D:\shopee_xm\limited-time-sale`、待办「运行 `npm install`」均已过时；
-> 现行工作目录是 `D:\shopee_xm\虾皮限时特卖-更新迭代`，插件版本以 `package.json` 的 1.6.1 为准。
+> 现行工作目录是 `D:\shopee_xm\虾皮限时特卖-更新迭代`；当前版本以实际 `package.json` 为准，职责与规划以 `OWNER_WORKING_RULES.md` 和 `PROJECT_STATUS.md` 为准。
 > 本文件仅作排查 2026-05 那批问题的线索，引用前必须核实。
 
 ## 项目概况

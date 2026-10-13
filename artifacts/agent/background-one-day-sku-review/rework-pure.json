@@ -1,0 +1,79 @@
+[
+  {
+    "case": "normal-order",
+    "events": [
+      {
+        "step": "remove"
+      },
+      {
+        "step": "sleep",
+        "ms": 2000
+      },
+      {
+        "step": "publish"
+      },
+      {
+        "step": "sleep",
+        "ms": 2000
+      },
+      {
+        "step": "restore"
+      }
+    ],
+    "status": "completed",
+    "discountRemoved": true,
+    "discountsRetained": true
+  },
+  {
+    "case": "publish-transport",
+    "events": [
+      {
+        "step": "remove"
+      },
+      {
+        "step": "sleep",
+        "ms": 2000
+      },
+      {
+        "step": "publish"
+      }
+    ],
+    "status": "failed",
+    "discountRemoved": true,
+    "discountsRetained": true
+  },
+  {
+    "case": "restore-transport",
+    "events": [
+      {
+        "step": "remove"
+      },
+      {
+        "step": "sleep",
+        "ms": 2000
+      },
+      {
+        "step": "publish"
+      },
+      {
+        "step": "sleep",
+        "ms": 2000
+      },
+      {
+        "step": "restore"
+      }
+    ],
+    "status": "failed",
+    "discountRemoved": false,
+    "discountsRetained": false
+  },
+  {
+    "case": "unknown-backend-owner",
+    "writeGuardAllows": true,
+    "uiVerdict": "match"
+  },
+  {
+    "case": "fresh-orphan",
+    "status": "interrupted"
+  }
+]

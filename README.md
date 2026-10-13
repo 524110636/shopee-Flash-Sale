@@ -2,6 +2,10 @@
 
 Chrome 扩展（MV3），专为 Shopee 台湾站卖家打造的限时特卖自动化工具。支持批量修复商品、一键开启特卖、定时复制、自动模式循环监控等功能。
 
+## 智能体接手与当前规划
+
+新 Codex 会话先读 [AGENTS.md](AGENTS.md)，按 [OWNER_WORKING_RULES.md](OWNER_WORKING_RULES.md) 确认规划／验收与开发角色，再从 [PROJECT_STATUS.md](PROJECT_STATUS.md) 恢复已确认结果和下一步。规划、任务书、独立验收及进度维护由 Codex 负责；用户明确指派编码时执行开发角色。已结案资料保留在 `.claude/tasks/` 和 `openspec/changes/archive/`，当前功能规则在 `openspec/specs/`。
+
 ## 技术栈
 
 | 层 | 技术 |

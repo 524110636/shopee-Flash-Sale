@@ -1,0 +1,58 @@
+{
+  "productSourceChangedByReviewer": false,
+  "sourceHashesUnchangedDuringReview": true,
+  "realPlatformRequestsAllowed": 0,
+  "buildBytesReported": "812.17 kB",
+  "relatedUnitTests": 78,
+  "ordinaryClosedMs": 42361,
+  "normalEditedParamsReopened": [
+    "37",
+    "88",
+    "3"
+  ],
+  "copyRejected": {
+    "error": "一键修复正在执行商品写操作，请等它结束后再开启限时特卖",
+    "executed": true,
+    "scheduled": true,
+    "success": false
+  },
+  "copyCloseCreateWriteCount": 0,
+  "staleResultBlocked": true,
+  "partialRemovalResults": [
+    {
+      "name": "fixture discount",
+      "promotionId": 99,
+      "status": "success"
+    },
+    {
+      "name": "fixture discount",
+      "promotionId": 100,
+      "status": "failed"
+    }
+  ],
+  "recoveryEditLost": {
+    "saved": 31,
+    "reopened": 80,
+    "appliedBefore": null,
+    "appliedAfter": {
+      "at": 1791869779633,
+      "taskId": "odr-1791869771757-3ha11x"
+    }
+  },
+  "transportUnknownStillPublishes": {
+    "status": "completed",
+    "removals": [
+      {
+        "name": "fixture discount",
+        "promotionId": 99,
+        "status": "unknown"
+      }
+    ],
+    "steps": [
+      "remove",
+      "publish",
+      "restore"
+    ]
+  },
+  "overall": "normal flow verified in isolation; full acceptance still pending BR3 recovery apply and BR4 transport stop"
+}

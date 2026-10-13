@@ -1,5 +1,28 @@
 import { defineBackground } from 'wxt/utils/define-background';
-import type { ShopeeProduct, EnableItem, EnableResult, EnableProgress, SkuOverride, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, ScheduledTaskStatus, AutoModeStatus, AutoModeLog, TimeSlot } from './popup/types';
+import type { ShopeeProduct, EnableItem, EnableResult, EnableProgress, SkuOverride, CopyTaskStatus, ScheduledCopyParams, CopiedSaleData, ScheduledTaskStatus, AutoModeStatus, AutoModeLog, TimeSlot, OneDayRepairTask, OneDayRepairRequest, OneDayRepairHeartbeat } from './popup/types';
+import {
+  ONE_DAY_REPAIR_TASK_KEY,
+  ONE_DAY_REPAIR_HEARTBEAT_KEY,
+  ONE_DAY_REPAIR_REQUEST_KEY,
+  ONE_DAY_REPAIR_START_ERROR_KEY,
+  ONE_DAY_REPAIR_DIAGNOSTICS_KEY,
+  REPAIR_DIAGNOSTIC_LIMIT,
+  REPAIR_KEEPALIVE_INTERVAL_MS,
+  buildRepairDiagnostic,
+  createRepairTask,
+  isRepairTaskActive,
+  isTerminalRepairStatus,
+  resolveOrphanedTask,
+  type OneDayRepairDiagnostic,
+} from './popup/one-day-sku-task';
+import {
+  buildInitialItems,
+  describeConfirmedActions,
+  runOneDaySkuRepairTask,
+  RepairCheckpointSaveError,
+  RepairOwnershipError,
+  RepairStaleWriteError,
+} from './popup/one-day-sku-runner';
 
 // ===== Constants =====
 const GRAPHQL_URL = 'https://seller.shopee.tw/api/marketing/v4/graphql/query/';
@@ -34,8 +57,19 @@ const PRODUCTS_QUERY = `query Products($productIds: [String], $statusType: Int) 
 // ===== State =====
 let _enableStopRequested = false;
 let _enableRunning = false;
+/** 复制（关闭/创建活动 + 提交商品）正在实际执行；用于与一键修复互斥 */
+let _copyExecuting = false;
 let _autoModeStopRequested = false;
 let _autoModeStarting = false;
+/** 一键修复：同一时刻只允许一个 task 执行（防重入），不跨 worker 重启存活 */
+let _repairRunningTaskId: string | null = null;
+/**
+ * 启动互斥：必须在第一个 await 之前同步取得（Chrome 事件循环单线程，同步段不可被打断），
+ * 否则两个并发启动会双双通过校验，第二个被"接受"却不会执行。
+ */
+let _repairStarting = false;
+/** 一键修复保活定时器；终态必须清理 */
+let _repairKeepaliveTimer: ReturnType<typeof setInterval> | null = null;
 
 // ===== Params type for enable loop =====
 interface EnableParams {
@@ -240,7 +274,7 @@ async function reportAnalyticsEvent(eventType: string, eventData: Record<string,
 // ===== Shop access validation (backend check) =====
 async function validateShopAccess(spcCds: string, action: string, shopId?: number | null): Promise<{ allowed: boolean; error?: string }> {
   const debug = import.meta.env.VITE_DEBUG_LOGS === 'true';
-  if (debug) console.log(`[bg:validate] 开始校验: action=${action}, spcCds=${spcCds.slice(0, 16)}..., shopId=${shopId ?? '(none)'}`);
+  if (debug) console.log(`[bg:validate] 开始校验: action=${action}, spcCds=[已脱敏], shopId=${shopId ?? '(none)'}`);
   try {
     const result = await browser.storage.local.get(['backendAuth', 'backendUrl']);
     const auth = result.backendAuth as { token?: string } | undefined;
@@ -252,7 +286,7 @@ async function validateShopAccess(spcCds: string, action: string, shopId?: numbe
     // fallback to default URL (store.ts 仅持久化非默认值)
     const baseUrl = backendUrl || DEFAULT_BACKEND_URL;
     const body = shopId != null ? { spcCds, action, shopId } : { spcCds, action };
-    if (debug) console.log(`[bg:validate] 请求 POST ${baseUrl}/api/stores/validate, body=`, JSON.stringify({ ...body, spcCds: spcCds.slice(0, 16) + '...' }));
+    if (debug) console.log(`[bg:validate] 请求 POST ${baseUrl}/api/stores/validate, body=`, JSON.stringify({ ...body, spcCds: '[已脱敏]' }));
     const response = await tryBackendFetch(`${baseUrl}/api/stores/validate`, {
       method: 'POST',
       headers: {
@@ -400,7 +434,7 @@ async function injectedFetch<T>(
   body?: object,
   referrerUrl?: string,
 ): Promise<T> {
-  console.log('[bg:injectedFetch] 开始', { url, method, hasBody: !!body, referrerUrl });
+  console.log('[bg:injectedFetch] 开始', { url: redactSpcCds(url), method, hasBody: !!body });
   const allTabs = await browser.tabs.query({ url: '*://seller.shopee.tw/*' });
   if (allTabs.length === 0) throw new Error('没有找到 seller.shopee.tw 标签页，请保持卖家中心页面打开');
 
@@ -410,7 +444,7 @@ async function injectedFetch<T>(
   const selectedTab = marketingTabs[0] || otherTabs[0];
 
   if (!selectedTab?.id) throw new Error('没有找到 seller.shopee.tw 标签页，请保持卖家中心页面打开');
-  console.log('[bg:injectedFetch] 选定标签页:', selectedTab.url?.slice(0, 100));
+  console.log('[bg:injectedFetch] 选定标签页:', redactSpcCds(selectedTab.url || '').slice(0, 100));
 
   console.log('[bg:injectedFetch] 开始执行 API 请求...');
   const results = await executeScriptSafe({
@@ -448,6 +482,561 @@ async function injectedFetch<T>(
   if (result._error) throw new Error(`API 请求失败: ${result._error}`);
   return result as T;
 }
+
+// ===== 一键修复：后台执行接线 =====
+
+/** 写入后台权威任务记录（只由 background 调用） */
+async function saveRepairTask(task: OneDayRepairTask) {
+  // 必须真正落盘：写不进去就不能继续发新的商品写请求（调用方据此抛错）
+  await browser.storage.local.set({ [ONE_DAY_REPAIR_TASK_KEY]: task });
+}
+
+/** 读取后台权威任务记录 */
+async function readRepairTask(): Promise<OneDayRepairTask | null> {
+  const stored = await browser.storage.local.get(ONE_DAY_REPAIR_TASK_KEY);
+  return (stored[ONE_DAY_REPAIR_TASK_KEY] as OneDayRepairTask | undefined) ?? null;
+}
+
+/** 读取上传心跳（独立键，不与任务记录混写） */
+async function readRepairHeartbeat(): Promise<OneDayRepairHeartbeat | null> {
+  const stored = await browser.storage.local.get(ONE_DAY_REPAIR_HEARTBEAT_KEY);
+  return (stored[ONE_DAY_REPAIR_HEARTBEAT_KEY] as OneDayRepairHeartbeat | undefined) ?? null;
+}
+
+/**
+ * 取当前实际登录的店铺与虾皮账号 id。
+ *
+ * 查不到返回 null —— 调用方必须把 null 当作「不一致」并停止写请求，
+ * 不允许把「核实不到」当成「与任务一致」放行。
+ */
+async function getRepairShopIdentity(spcCds: string, spcCdsVer: string): Promise<{ shopId: number | null; accountId: number | null }> {
+  try {
+    const data = await injectedFetch<{ id?: number; shopid?: number }>(
+      `https://seller.shopee.tw/api/v2/login/?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`,
+    );
+    // 只有真正拿到数字才认为核实成功
+    const shopId = typeof data?.shopid === 'number' ? data.shopid : null;
+    const accountId = typeof data?.id === 'number' ? data.id : null;
+    return { shopId, accountId };
+  } catch {
+    return { shopId: null, accountId: null };
+  }
+}
+
+/**
+ * 由**当前持久记录**反推「已经确认产生的副作用」，用于最小脱敏诊断（不含凭据）。
+ * 写请求已发出且已收到成功响应才算"已确认"。
+ */
+function describeConfirmedActionsForTask(task: OneDayRepairTask): string[] {
+  const out: string[] = [];
+  for (const item of task.items) {
+    for (const action of describeConfirmedActions(item)) {
+      out.push(`${item.itemId}: ${action}`);
+    }
+  }
+  return out.slice(0, 20);
+}
+
+/**
+ * 已发出但**结果未知**的写请求（用于诊断"要不要人工核对"）。
+ *
+ * 依据检查点里 `outcome === 'unknown'` 的记录 —— 只有这一类才真的"不知道平台处理了没有"。
+ * 已确认成功（`outcome === 'success'`）的步骤不再列进来，避免把成功当成未知重复展示。
+ */
+function describeUnknownActionsForTask(task: OneDayRepairTask): string[] {
+  const out: string[] = [];
+  for (const cp of task.checkpoints) {
+    if (!cp.writeSent || cp.outcome !== 'unknown') continue;
+    const label = cp.promotionName ? `${cp.step}（${cp.promotionName}）` : cp.step;
+    out.push(`${cp.itemId}: ${label} 已发出但结果未知，请人工核对`);
+  }
+  // 折扣逐活动结果里标记为 unknown 的同样要提示
+  for (const item of task.items) {
+    for (const r of item.discountRemovals ?? []) {
+      if (r.status !== 'unknown') continue;
+      out.push(`${item.itemId}: 折扣活动「${r.name}」移除结果未知，请人工核对`);
+    }
+  }
+  return Array.from(new Set(out)).slice(0, 20);
+}
+
+/**
+ * 追加一条最小脱敏诊断记录。
+ *
+ * 只为了"下一轮不用猜"：记录任务锚 vs 实际锚、阶段、原因与动作确认状态。
+ * 永不记录凭据；写不进去也不影响修复本身。
+ */async function recordRepairDiagnostic(entry: Omit<OneDayRepairDiagnostic, 'at'>) {
+  try {
+    const stored = await browser.storage.local.get(ONE_DAY_REPAIR_DIAGNOSTICS_KEY);
+    const list = (stored[ONE_DAY_REPAIR_DIAGNOSTICS_KEY] as OneDayRepairDiagnostic[] | undefined) || [];
+    const next = [...list, buildRepairDiagnostic(entry)].slice(-REPAIR_DIAGNOSTIC_LIMIT);
+    await browser.storage.local.set({ [ONE_DAY_REPAIR_DIAGNOSTICS_KEY]: next });
+  } catch {
+    /* 诊断写不进去不影响修复 */
+  }
+}
+
+/**
+ * 当前认证的后端账号 id（与虾皮 accountId 属不同身份域，不能互相比相等）。
+ *
+ * **必须现读** `backendAuth`：启动消息里的 `ownerUserId` 是快照，
+ * 修复期间用户切换账号后它就不再代表当前身份（BR1 曾因此放行写请求）。
+ * 读不到（未登录/登出）返回 null，调用方按「不一致」停止写请求。
+ */
+async function getRepairAuthUserId(): Promise<number | null> {
+  try {
+    const stored = await browser.storage.local.get('backendAuth');
+    const auth = stored.backendAuth as { token?: string; user?: { id?: number } } | undefined;
+    if (!auth?.token) return null;
+    const id = auth.user?.id;
+    return typeof id === 'number' ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 用 GraphQL 取回完整商品（含最新 SKU），供修复完成后准备可编辑结果 */
+async function fetchRepairResultProducts(itemIds: string[]): Promise<ShopeeProduct[]> {
+  const { spcCds, spcCdsVer } = await getSpcCdsFromCookies();
+  if (!spcCds || itemIds.length === 0) return [];
+  const data = await injectedFetch<{ data?: { products?: { items?: ShopeeProduct[] } } }>(
+    `${GRAPHQL_URL}?SPC_CDS=${spcCds}&SPC_CDS_VER=${spcCdsVer}`,
+    'POST',
+    { query: PRODUCTS_QUERY, variables: { productIds: itemIds, statusType: 0 } },
+  );
+  return data?.data?.products?.items || [];
+}
+
+/**
+ * 保活 + 心跳。
+ *
+ * 心跳写**独立键**（只含 taskId + 时间），不读改写整份任务记录 —— 否则就会
+ * 「心跳读到 running → runner 写 completed → 迟到心跳把旧副本写回」的回退。
+ * 同时定期核对：如果本实例已不再是执行者（例如任务被协调成中断），保活立刻停止。
+ */
+function startRepairKeepalive(taskId: string) {
+  stopRepairKeepalive();
+  const beat = () => {
+    if (_repairRunningTaskId !== taskId) return;
+    browser.storage.local
+      .set({ [ONE_DAY_REPAIR_HEARTBEAT_KEY]: { taskId, at: Date.now() } })
+      .catch(() => {});
+  };
+  beat();
+  _repairKeepaliveTimer = setInterval(beat, REPAIR_KEEPALIVE_INTERVAL_MS);
+}
+
+function stopRepairKeepalive() {
+  if (_repairKeepaliveTimer !== null) {
+    clearInterval(_repairKeepaliveTimer);
+    _repairKeepaliveTimer = null;
+  }
+}
+
+/**
+ * 协调旧的「执行中」记录。
+ *
+ * MV3 每个扩展同时只有一个 service worker，所以本实例没有执行者就等于没有执行者：
+ * 启动时立刻判定，不需要等心跳过期（等待依赖的定时器会随 worker 被回收 —— BR5）。
+ * 心跳只被读出来作为证据写进记录，便于用户核对。
+ */
+async function reconcileOrphanRepairTask(): Promise<boolean> {
+  try {
+    const task = await readRepairTask();
+    if (!task) return false;
+    const heartbeat = await readHeartbeatFor(task.taskId);
+    const resolved = resolveOrphanedTask(task, _repairRunningTaskId === task.taskId, heartbeat);
+    if (resolved && resolved.status !== task.status) {
+      await saveRepairTask(resolved);
+      await clearOrphanAlarm();
+      console.log('[bg:repair] 检测到无执行者的旧任务，已标记中断:', task.taskId);
+      return true;
+    }
+    // 本实例不是执行者且记录仍活跃：用 alarm 复检（不依赖会被回收的 setTimeout）
+    if (isRepairTaskActive(task) && _repairRunningTaskId !== task.taskId) {
+      scheduleOrphanAlarm();
+    } else {
+      await clearOrphanAlarm();
+    }
+    return false;
+  } catch (e: any) {
+    console.warn('[bg:repair] 协调旧任务失败:', e?.message || e);
+    return false;
+  }
+}
+
+/** 读心跳，并只在它属于该任务时才返回 */
+async function readHeartbeatFor(taskId: string): Promise<{ taskId: string; at: number } | null> {
+  const beat = await readRepairHeartbeat();
+  return beat && beat.taskId === taskId ? beat : null;
+}
+
+/**
+ * 用 alarm 兜底中断复检。
+ *
+ * 为什么不用长时间 setTimeout：worker 约 30 秒空闲即被回收，届时 timer 一并消失，
+ * 判断永远跑不到。alarm 由浏览器持久调度，SW 醒来后能继续。
+ */
+const ORPHAN_ALARM = 'repair_orphan_check';
+
+function scheduleOrphanAlarm() {
+  // 1 分钟内复检一次即可：记录本就是"没有执行者"才会走到这里
+  chrome.alarms.create(ORPHAN_ALARM, { delayInMinutes: 1 });
+}
+
+async function clearOrphanAlarm() {
+  try {
+    await chrome.alarms.clear(ORPHAN_ALARM);
+  } catch { /* ignore */ }
+}
+
+/** 上下文菜单/日志用的脱敏：URL 里的 SPC_CDS 一律替换，避免凭据进日志 */
+function redactSpcCds(text: string): string {
+  return text.replace(/(SPC_CDS=)[^&\s'"]+/gi, '$1***');
+}
+
+/**
+ * 启动一键修复：接受后立即返回，不等整批完成。
+ *
+ * 启动互斥在第一个 await 之前同步取得：Chrome 的监听回调是单线程同步段，
+ * 两个并发消息会依次执行这一段，第二个必然看到 `_repairStarting` 已置位而得到忙态。
+ *
+ * `payload.requestId` 用于把本次启动绑定到它自己那份参数快照：
+ * 参数键是共享的，另一个 popup 可能刚刚覆盖它。requestId 不匹配时拒绝启动，
+ * 绝不用别人的参数去改商品。
+ */
+async function handleStartOneDayRepair(payload?: {
+  ownerUserId?: number | null;
+  requestId?: string;
+}): Promise<{ success: boolean; error?: string; taskId?: string }> {
+  if (_repairStarting) {
+    const busy = '另一个修复启动正在处理中，请稍后再试';
+    await recordRepairStartError(busy);
+    return { success: false, error: busy };
+  }
+  _repairStarting = true;
+  try {
+    const result = await startOneDayRepairInner(payload);
+    // 拒绝原因写进 storage：popup 不能只依赖消息返回（可能被其他监听者抢先应答）
+    await recordRepairStartError(result.success ? null : result.error || '启动修复任务失败');
+    if (!result.success) {
+      // 最小脱敏诊断：启动为什么被拒（任务锚 vs 实际锚、阶段、原因）
+      const stored = await browser.storage.local.get([ONE_DAY_REPAIR_TASK_KEY, ONE_DAY_REPAIR_REQUEST_KEY]);
+      const existingTask = stored[ONE_DAY_REPAIR_TASK_KEY] as OneDayRepairTask | undefined;
+      const request = stored[ONE_DAY_REPAIR_REQUEST_KEY] as OneDayRepairRequest | undefined;
+      // 实际锚取"现在真正登录的账号"，不是客户端自称值 —— 诊断的意义就在于对比这两者
+      const currentAuthUserId = await getRepairAuthUserId();
+      await recordRepairDiagnostic({
+        kind: 'start-rejected',
+        taskId: existingTask?.taskId ?? null,
+        requestId: payload?.requestId ?? request?.requestId ?? null,
+        phase: existingTask?.phase ?? null,
+        taskShopId: existingTask?.shopId ?? null,
+        taskOwnerUserId: existingTask?.ownerUserId ?? null,
+        actualShopId: null,
+        actualUserId: currentAuthUserId,
+        reason: result.error || '启动修复任务失败',
+        confirmedActions: [],
+        unknownActions: existingTask ? describeUnknownActionsForTask(existingTask) : [],
+      });
+    }
+    return result;
+  } finally {
+    _repairStarting = false;
+  }
+}
+
+/** 记录最近一次启动被拒的原因；成功则清除 */
+async function recordRepairStartError(error: string | null) {
+  try {
+    if (error) {
+      await browser.storage.local.set({ [ONE_DAY_REPAIR_START_ERROR_KEY]: { error, at: Date.now() } });
+    } else {
+      await browser.storage.local.remove(ONE_DAY_REPAIR_START_ERROR_KEY);
+    }
+  } catch { /* 记录失败不影响启动本身 */ }
+}
+
+async function startOneDayRepairInner(payload?: {
+  ownerUserId?: number | null;
+  requestId?: string;
+}): Promise<{ success: boolean; error?: string; taskId?: string }> {
+  // 已有修复在跑：明确忙态
+  if (_repairRunningTaskId) {
+    return { success: false, error: '已有修复任务正在执行，请等待完成后再启动' };
+  }
+
+    const stored = await browser.storage.local.get(ONE_DAY_REPAIR_REQUEST_KEY);
+    const request = stored[ONE_DAY_REPAIR_REQUEST_KEY] as OneDayRepairRequest | undefined;
+    if (!request) return { success: false, error: '未找到修复任务参数' };
+
+    // 参数键是共享的：本次消息必须绑定到它自己那份快照，否则可能用别人的商品去改
+    if (payload?.requestId && payload.requestId !== request.requestId) {
+      return { success: false, error: '启动参数已被其他窗口覆盖，请重新点击一键修复' };
+    }
+
+    const existing = await readRepairTask();
+
+    // 同一 requestId 重复投递：复用原任务，不产生第二套副作用
+    if (existing && existing.requestId === request.requestId) {
+      if (isRepairTaskActive(existing)) {
+        if (_repairRunningTaskId === existing.taskId) return { success: true, taskId: existing.taskId };
+        if (existing.writeStarted) {
+          return { success: false, error: '该修复任务已中断且可能已修改商品，请先查看详情再决定是否重跑' };
+        }
+        runRepairInBackground(existing, request.products);
+        return { success: true, taskId: existing.taskId };
+      }
+      return { success: true, taskId: existing.taskId };
+    }
+
+    // 已有另一个未结束的任务：明确忙态，不偷偷终止别人的任务
+    if (existing && isRepairTaskActive(existing)) {
+      return { success: false, error: '已有修复任务正在执行，请等待完成后再启动' };
+    }
+
+    // 旧任务已中断且可能改过商品：不静默覆盖其证据，先让用户核对
+    if (existing && existing.status === 'interrupted' && existing.writeStarted) {
+      return { success: false, error: '上一次修复中断且部分商品可能已修改，请先查看详情再启动新任务' };
+    }
+
+    // 与同店铺的既有写任务互斥：不偷偷停别人的任务，只拒绝新的修复
+    const conflict = await findSameShopWriteConflict();
+    if (conflict) return { success: false, error: conflict };
+
+    // 凭据与归属都从 Cookie/后端现读，不信客户端传来的副本（请求里也不带凭据）
+    const credential = await getSpcCdsFromCookies();
+    if (!credential.spcCds) {
+      return { success: false, error: '登录状态失效，请重新连接店铺' };
+    }
+
+    // 无人看守的执行必须补上只读访问校验（旧 popup 循环没有这一步）
+    const validation = await validateShopAccess(credential.spcCds, 'wizard_flow', request.shopId ?? undefined);
+    if (!validation.allowed) {
+      return { success: false, error: validation.error || '店铺访问校验未通过' };
+    }
+
+    // 归属必须来自实际核实身份，而不是客户端请求里的自称值
+    const identity = await getRepairShopIdentity(credential.spcCds, credential.spcCdsVer);
+    if (identity.shopId === null) {
+      return { success: false, error: '无法核实当前店铺身份，已拒绝启动修复（请确认已登录卖家中心）' };
+    }
+
+    // 账号锚也必须来自**当前实际认证**，不能沿用客户端自称值。
+    // 若这里存了空锚/null，之后 `isSameOwner` 会跳过账号比较 —— 换号也拦不住（BR1 复验复现）。
+    const currentAuthUserId = await getRepairAuthUserId();
+    if (currentAuthUserId === null) {
+      return { success: false, error: '未能确认当前登录账号，已拒绝启动修复（请重新登录后再试）' };
+    }
+
+    const task = createRepairTask({
+      taskId: request.taskId,
+      requestId: request.requestId,
+      source: request.source,
+      shopId: identity.shopId,
+      ownerUserId: currentAuthUserId,
+      spcCds: credential.spcCds,
+      products: request.products,
+      initialItems: buildInitialItems(request.products),
+      now: Date.now(),
+    });
+    // 先持久确认"已接受"，再开始任何写请求
+    await saveRepairTask(task);
+
+    runRepairInBackground(task, request.products);
+    return { success: true, taskId: task.taskId };
+}
+
+/**
+ * 修复是否正在执行（含「启动请求已到达、异步准备尚未完成」的窗口）。
+ *
+ * 为什么窗口期也要算：启动 handler 里第一段 await 之前只是取得互斥量并记录了内存锁，
+ * 任务记录还没落盘。此时若只看 storage 会认为"没有修复任务"，另一条写流程就会挤进来。
+ */
+function isRepairInFlight(): boolean {
+  return _repairStarting || _repairRunningTaskId !== null;
+}
+
+/**
+ * 供开卖/定时等既有写入口调用：修复进行中时返回拒绝原因，否则返回 null。
+ *
+ * 只是拒绝**新**的冲突动作，不去停已经在跑的任务，也不加队列。
+ */
+async function findActiveRepairConflict(): Promise<string | null> {
+  if (isRepairInFlight()) {
+    return '一键修复正在执行商品写操作，请等它结束后再开启限时特卖';
+  }
+  try {
+    const stored = await browser.storage.local.get(ONE_DAY_REPAIR_TASK_KEY);
+    const task = stored[ONE_DAY_REPAIR_TASK_KEY] as OneDayRepairTask | undefined;
+    if (task && isRepairTaskActive(task)) {
+      return '一键修复正在执行商品写操作，请等它结束后再开启限时特卖';
+    }
+  } catch {
+    // 读不到时按"没有修复"处理：这是开卖入口的额外保护，不是它的主校验
+  }
+  return null;
+}
+
+/**
+ * 同店铺已有写任务时拒绝启动修复。
+ * 只做必要的入口 guard，不搭建队列、不取消既有任务。
+ */
+async function findSameShopWriteConflict(): Promise<string | null> {
+  try {
+    const keys = await browser.storage.local.get(['_autoModeStatus', '_scheduledEnable', '_wizardFlowParams', '_enableProgress', '_copyTaskStatus']);
+    const auto = keys._autoModeStatus as AutoModeStatus | undefined;
+    if (auto?.isRunning) return '自动模式正在执行写操作，请等它结束或先停止自动模式';
+    const progress = keys._enableProgress as { running?: boolean } | undefined;
+    if (progress?.running) return '正在开启限时特卖，请等待完成后再启动修复';
+    if (_enableRunning) return '正在开启限时特卖，请等待完成后再启动修复';
+    // 复制正在实际执行（关闭进行中活动／创建新活动／提交商品）时也不能挤进来
+    if (_copyExecuting) return '正在复制限时特卖活动，请等它结束后再启动修复';
+    if (keys._scheduledEnable || keys._wizardFlowParams) {
+      // 定时任务的执行由 alarm 触发；只提示存在冲突写任务，不代替用户取消
+      const scheduled = keys._scheduledEnable as { fireTime?: number } | undefined;
+      const wizard = keys._wizardFlowParams as { createTime?: number } | undefined;
+      void scheduled;
+      void wizard;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** 异步跑修复；不 await，避免与 popup 关闭耦合 */
+function runRepairInBackground(task: OneDayRepairTask, products: ShopeeProduct[]) {
+  if (_repairRunningTaskId) {
+    console.log('[bg:repair] 已有修复在运行，忽略重复启动');
+    return;
+  }
+  _repairRunningTaskId = task.taskId;
+  let staleWrite = false;
+
+  runOneDaySkuRepairTask(task, products, {
+    // 与已有写路径一致：日志里把 SPC_CDS 打码，凭据不进日志
+    injectedFetch: (url, method, body) => {
+      if (import.meta.env.VITE_DEBUG_LOGS === 'true') console.log('[bg:repair] fetch', method || 'GET', redactSpcCds(url));
+      return injectedFetch(url, method, body);
+    },
+    getCredential: getSpcCdsFromCookies,
+    getShopIdentity: (async () => {
+      const cred = await getSpcCdsFromCookies();
+      return getRepairShopIdentity(cred.spcCds, cred.spcCdsVer);
+    }),
+    getAuthUserId: getRepairAuthUserId,
+    fetchProductsByIds: fetchRepairResultProducts,
+    now: () => Date.now(),
+    sleep: (ms: number) => new Promise(r => setTimeout(r, ms)),
+    saveTask: saveRepairTask,
+    loadTask: readRepairTask,
+    startKeepalive: () => startRepairKeepalive(task.taskId),
+    stopKeepalive: stopRepairKeepalive,
+    onItemFailed: info => {
+      void recordRepairDiagnostic({
+        kind: 'item-failed',
+        taskId: task.taskId,
+        requestId: task.requestId,
+        phase: task.phase,
+        taskShopId: task.shopId,
+        taskOwnerUserId: task.ownerUserId,
+        actualShopId: null,
+        actualUserId: null,
+        reason: `商品 ${info.itemId} 处理失败：${info.reason}`,
+        confirmedActions: info.confirmedActions,
+        unknownActions: [],
+      });
+    },
+  }).then(final => {
+    console.log('[bg:repair] 任务结束:', final.taskId, final.status);
+  }).catch(async (e: any) => {
+    console.error('[bg:repair] 任务异常:', e?.message || e);
+    // 诊断必须描述**当前持久状态**，而不是启动时的快照：
+    // 快照里没有已经发生的副作用，会导致"已经移除了折扣却记成没有动作"（规划方复验指出）。
+    const persisted = await readRepairTask().catch(() => null);
+    const diagTask = persisted && persisted.taskId === task.taskId ? persisted : task;
+    // 权威记录已被标记终态/中断：本实例只是迟到的写入者，什么都不该改（BR5）
+    if (e instanceof RepairStaleWriteError) {
+      staleWrite = true;
+      console.warn('[bg:repair] 记录已被标记终态，放弃本实例的后续写入');
+      return;
+    }
+    // 保存进度失败（含浏览器正在关闭）时不能改写状态：此时写不进去，而且"失败"也不属实 ——
+    // 我们并不知道商品是否已被改动。保留最后落盘的真实状态，让下次启动按"无执行者"标记为中断。
+    if (e instanceof RepairCheckpointSaveError || /shutting down|Extension context invalidated|message port closed/i.test(e?.message || '')) {
+      console.warn('[bg:repair] 进度未能落盘（可能是浏览器关闭），保留最后状态交由启动协调标记中断');
+      void recordRepairDiagnostic({
+        kind: 'checkpoint-failed',
+        taskId: diagTask.taskId,
+        requestId: diagTask.requestId,
+        phase: diagTask.phase,
+        taskShopId: diagTask.shopId,
+        taskOwnerUserId: diagTask.ownerUserId,
+        actualShopId: null,
+        actualUserId: null,
+        reason: `进度保存失败：${e?.message || '未知'}`,
+        confirmedActions: describeConfirmedActionsForTask(diagTask),
+        unknownActions: [],
+      });
+      return;
+    }
+    // 归属变化（切店/换号/登出）：如实记录任务锚与实际锚，便于定位是哪一侧变了
+    if (e instanceof RepairOwnershipError) {
+      void recordRepairDiagnostic({
+        kind: 'ownership-stopped',
+        taskId: diagTask.taskId,
+        requestId: diagTask.requestId,
+        phase: diagTask.phase,
+        taskShopId: diagTask.shopId,
+        taskOwnerUserId: diagTask.ownerUserId,
+        actualShopId: e.actualShopId,
+        actualUserId: e.actualUserId,
+        reason: e.message,
+        confirmedActions: describeConfirmedActionsForTask(diagTask),
+        unknownActions: describeUnknownActionsForTask(diagTask),
+      });
+    } else {
+      void recordRepairDiagnostic({
+        kind: 'task-failed',
+        taskId: diagTask.taskId,
+        requestId: diagTask.requestId,
+        phase: diagTask.phase,
+        taskShopId: diagTask.shopId,
+        taskOwnerUserId: diagTask.ownerUserId,
+        actualShopId: null,
+        actualUserId: null,
+        reason: e?.message || '修复任务异常终止',
+        confirmedActions: describeConfirmedActionsForTask(diagTask),
+        unknownActions: [],
+      });
+    }
+    try {
+      const cur = await readRepairTask();
+      if (cur && cur.taskId === task.taskId && !isTerminalRepairStatus(cur.status)) {
+        await saveRepairTask({
+          ...cur,
+          status: 'failed',
+          phase: 'failed',
+          error: e?.message || '修复任务异常终止',
+          message: e?.message || '修复任务异常终止',
+          updatedAt: Date.now(),
+          revision: cur.revision + 1,
+        });
+      }
+    } catch { /* ignore */ }
+  }).finally(() => {
+    if (_repairRunningTaskId === task.taskId) _repairRunningTaskId = null;
+    stopRepairKeepalive();
+    // 终态后不再需要心跳与中断复检；但"迟到写入被拒"时本实例并非记录的主人，
+    // 不能顺手把别人留下的中断证据（心跳）清掉。
+    if (!staleWrite) {
+      browser.storage.local.remove(ONE_DAY_REPAIR_HEARTBEAT_KEY).catch(() => {});
+      clearOrphanAlarm();
+    }
+  });
+}
+
 
 // ===== Enable Loop =====
 async function runEnableLoop(params: EnableParams) {
@@ -574,6 +1163,19 @@ async function runEnableLoop(params: EnableParams) {
 
     try {
       console.log(`[bg:enable] === 第 ${round} 轮提交开始 ===`);
+
+      // 写请求前的互斥复核（双向）：修复可能在开卖等待期间启动。
+      // 只停止本流程的后续写请求并如实报错，不去动修复任务。
+      const repairConflict = await findActiveRepairConflict();
+      if (repairConflict) {
+        const msg = `${repairConflict}（已停止后续提交，剩余 SKU 未提交）`;
+        console.log('[bg:enable] ⛔', msg);
+        logAutoMode('error', msg);
+        await saveProgress(initialProgress, false, msg);
+        await sendProgress(initialProgress, msg);
+        break;
+      }
+
       // 每 3 轮刷新一次 SPC_CDS，防止 token 过期导致 spex common error
       if (round % 3 === 1 && round > 1) {
         const fresh = await getSpcCdsFromCookies();
@@ -798,6 +1400,13 @@ async function executeScheduledCopyFlow(
   const validation = await validateShopAccess(cds, 'scheduled_copy');
   if (!validation.allowed) {
     throw new Error(`店铺验证失败: ${validation.error}`);
+  }
+
+  // 与一键修复互斥：复制会关闭进行中的活动并新建活动，与修复同时跑会把店铺改乱。
+  // 放在**首个副作用之前**（关闭活动之前），拒绝时不发出任何关闭/创建/提交请求。
+  const repairConflict = await findActiveRepairConflict();
+  if (repairConflict) {
+    throw new Error(`${repairConflict}（复制已取消，未关闭或创建任何活动）`);
   }
 
   // Step 1: 关闭进行中的活动
@@ -1602,6 +2211,8 @@ export default defineBackground({
     chrome.alarms.create(HEARTBEAT_ALARM, { periodInMinutes: HEARTBEAT_INTERVAL_MINUTES });
     console.log(`[bg:heartbeat] 心跳 alarm 已创建 (每${HEARTBEAT_INTERVAL_MINUTES}分钟)`);
 
+    // worker 重启后协调旧的一键修复记录：无执行者则标记真实中断，不自动重放写请求
+    reconcileOrphanRepairTask();
     browser.runtime.onMessage.addListener(async (msg: any) => {
       const type = msg?.type;
 
@@ -1637,6 +2248,17 @@ export default defineBackground({
       if (type === 'START_ENABLE') {
         console.log('[START_ENABLE] 收到启动请求, _enableRunning =', _enableRunning);
 
+        // 与后台一键修复互斥（双向）：修复期间不允许再启动会改商品的开卖流程。
+        // 只在真正启动写流程前拒绝，不取消已有任务，也不阻止无关操作。
+        const repairConflict = await findActiveRepairConflict();
+        if (repairConflict) {
+          console.log('[START_ENABLE] ⛔ 修复进行中，拒绝启动开卖:', repairConflict);
+          await browser.storage.local.set({
+            _enableProgress: { progress: null, error: repairConflict, running: false },
+          }).catch(() => {});
+          return { success: false, error: repairConflict };
+        }
+
         // 如果 _enableRunning true 但 storage 显示不在运行，说明是 SW 重启后的假阳性
         if (_enableRunning) {
           try {
@@ -1663,7 +2285,7 @@ export default defineBackground({
             return { success: false, error: '未找到启动参数' };
           }
           const debug = import.meta.env.VITE_DEBUG_LOGS === 'true';
-          if (debug) console.log(`[START_ENABLE] ✅ 参数已找到: flashSaleId=${params.flashSaleId}, spcCds=${params.spcCds?.slice(0, 16)}..., products=${params.products?.length || 0}`);
+          if (debug) console.log(`[START_ENABLE] ✅ 参数已找到: flashSaleId=${params.flashSaleId}, spcCds=[已脱敏], products=${params.products?.length || 0}`);
 
           // 校验店铺访问权限
           const validation = await validateShopAccess(params.spcCds, 'enable', params.shopId);
@@ -1685,6 +2307,19 @@ export default defineBackground({
         } catch (e: any) {
           console.log('[START_ENABLE] ❌ 异常:', e?.message || e);
           return { success: false, error: e?.message || '启动失败' };
+        }
+      }
+
+      // ===== START_ONE_DAY_REPAIR: 启动后台一键修复 =====
+      if (type === 'START_ONE_DAY_REPAIR') {
+        try {
+          return await handleStartOneDayRepair({
+            ownerUserId: msg?.ownerUserId,
+            requestId: msg?.requestId,
+          });
+        } catch (e: any) {
+          console.error('[bg:repair] 启动异常:', e?.message || e);
+          return { success: false, error: e?.message || '启动修复任务失败' };
         }
       }
 
@@ -1777,6 +2412,11 @@ export default defineBackground({
       // ===== COPY_FLASH_SALE: 创建新活动 =====
       if (type === 'COPY_FLASH_SALE') {
         try {
+          // 与一键修复互斥：创建活动属于店铺写操作，修复期间不得插入
+          const repairConflict = await findActiveRepairConflict();
+          if (repairConflict) {
+            return { success: false, error: `${repairConflict}（未创建活动）` };
+          }
           const { timeSlotId, spcCds: cds, spcCdsVer: cdsVer } = msg;
           let finalCds = cds;
           let finalVer = cdsVer || '2';
@@ -1945,6 +2585,17 @@ export default defineBackground({
             return { success: false, error: validation.error };
           }
 
+          // 与一键修复互斥：复制会关闭进行中的活动并新建活动，与修复同时跑会把店铺改乱。
+          // 放在**首个副作用之前**，拒绝时不发出任何关闭/创建/提交请求。
+          const repairConflict = await findActiveRepairConflict();
+          if (repairConflict) {
+            console.log('[EXECUTE_COPY] ⛔ 修复进行中，拒绝复制:', repairConflict);
+            const busyStatus = { scheduled: true, executed: true, success: false, error: repairConflict };
+            await browser.storage.local.set({ _copyTaskStatus: busyStatus }).catch(() => {});
+            sendCopyMessage('COPY_COMPLETE', { success: false, error: repairConflict });
+            return { success: false, error: repairConflict };
+          }
+
           // 步骤 1: 检查并关闭进行中的活动
           sendCopyMessage('COPY_PROGRESS', { currentStep: 1, totalSteps: 4, description: '关闭进行中的活动...' });
           console.log('[bg:executeCopy] 步骤1: 检查进行中的活动');
@@ -1952,6 +2603,8 @@ export default defineBackground({
             `${FLASH_SALE_API}/get_shop_flash_sale_list/?SPC_CDS=${finalCds}&SPC_CDS_VER=${finalVer}&offset=0&limit=50&type=0`
           );
           const activeSales = (listData?.data?.flash_sale_list || []).filter((s: any) => s.status === 1);
+          // 从这里开始已经有真实写动作（关闭活动），标记以挡住新修复
+          _copyExecuting = true;
           for (const sale of activeSales) {
             console.log(`[bg:executeCopy] 关闭活动: ${sale.flash_sale_id}`);
             await injectedFetch(
@@ -2059,6 +2712,9 @@ export default defineBackground({
           console.error('[bg:executeCopy] ❌ 失败:', e);
           sendCopyMessage('COPY_COMPLETE', { success: false, error: e.message });
           return { success: false, error: e.message };
+        } finally {
+          // 复制结束（成功或失败）都必须放行，否则会永久挡住新修复
+          _copyExecuting = false;
         }
       }
 
@@ -2073,7 +2729,13 @@ export default defineBackground({
           if (!cds) throw new Error('SPC_CDS 不存在，请确认已登录 seller.shopee.tw');
 
           chrome.alarms.clear('scheduled_copy');
-          const flowResult = await executeScheduledCopyFlow(params, cds, cdsVer);
+          _copyExecuting = true;
+          let flowResult;
+          try {
+            flowResult = await executeScheduledCopyFlow(params, cds, cdsVer);
+          } finally {
+            _copyExecuting = false;
+          }
           console.log(`[TRIGGER] 空活动已创建: ${flowResult.newFlashSaleId}`);
 
           await browser.storage.local.set({
@@ -2603,6 +3265,11 @@ export default defineBackground({
         return;
       }
 
+      if (alarm.name === ORPHAN_ALARM) {
+        await reconcileOrphanRepairTask();
+        return;
+      }
+
       if (alarm.name === 'scheduled_copy') {
         console.log('[bg:scheduled_copy] 定时复制任务触发 (活动开始前5分钟)');
         try {
@@ -2613,7 +3280,13 @@ export default defineBackground({
           const { spcCds: cds, spcCdsVer: cdsVer } = await getSpcCdsFromCookies();
           if (!cds) throw new Error('SPC_CDS 不存在，请确认已登录 seller.shopee.tw');
 
-          const flowResult = await executeScheduledCopyFlow(params, cds, cdsVer);
+          _copyExecuting = true;
+          let flowResult;
+          try {
+            flowResult = await executeScheduledCopyFlow(params, cds, cdsVer);
+          } finally {
+            _copyExecuting = false;
+          }
           console.log(`[bg:scheduled_copy] 空活动已创建: ${flowResult.newFlashSaleId}`);
 
           await browser.storage.local.set({

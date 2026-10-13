@@ -1,0 +1,374 @@
+{
+  "stage": "r3-no-auth-clean",
+  "results": [
+    {
+      "case": "r3-recovery-blocked",
+      "status": "completed",
+      "owner": 1,
+      "source": "manual-selection",
+      "items": [
+        {
+          "discountRemovals": [
+            {
+              "name": "fixture discount",
+              "promotionId": 99,
+              "status": "success"
+            }
+          ],
+          "discountRemoved": true,
+          "discountRestored": true,
+          "discounts": [
+            {
+              "endTime": 4102444800,
+              "name": "fixture discount",
+              "promotionId": 99,
+              "raw": {
+                "discount_id": 99,
+                "end_time": 4102444800,
+                "name": "fixture discount",
+                "time_status": 2
+              },
+              "timeStatus": 2
+            }
+          ],
+          "flashSaleStatus": "idle",
+          "hasOneDaySku": false,
+          "highestPrice": 1000,
+          "itemId": "1001",
+          "itemName": "review-product-1001",
+          "publishStatus": "success",
+          "skuCreated": true
+        }
+      ],
+      "resultProducts": [],
+      "cacheProducts": [
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1001",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "name": "default",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1001",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        }
+      ],
+      "discount": 37,
+      "nextVisible": true,
+      "nextEnabled": false,
+      "writes": [
+        {
+          "mode": "stale-results",
+          "step": "remove",
+          "promotion": 99,
+          "body": {
+            "promotion_id": 99,
+            "item_id_list": [
+              1001
+            ]
+          },
+          "at": 1791869771808
+        },
+        {
+          "mode": "stale-results",
+          "step": "publish",
+          "id": "1001",
+          "at": 1791869773828
+        },
+        {
+          "mode": "stale-results",
+          "step": "restore",
+          "body": {
+            "promotion_id": 99,
+            "discount_model_list": [
+              {
+                "item_id": 1001,
+                "model_id": 5001,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              },
+              {
+                "item_id": 1001,
+                "model_id": 5002,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              }
+            ]
+          },
+          "at": 1791869775859
+        }
+      ],
+      "body": "全部功能\n限时特卖助手\n已连接\n管理\nreview1@example.invalid\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nreview isolated\n当前\n手动模式\n自动模式\n第一次使用\n限时特卖活动\n清除缓存\n刷新\n▼\n隔离已有活动\n10/13 13:16 ~ 10/13 14:36\n复制\n进行中\n\n复制活动到新时间段\n\n点击活动右侧的「复制」按钮，将此活动的商品复制到新的时间段\n\n商品列表（1/1）\n全选修复\n无图\nreview-product-1001\nID: 1001\n1 SKU\n价格: NT$1,000\n库存: 10\n1 天备货 SKU 修复\n已选 0 个商品，系统将修复这些商品，使其能够开启限时特卖。\n一键修复并开启\n编辑参数\n修复已完成，商品数据待加载；请先刷新商品列表再继续\n0/0\n处理详情 (1)\n修复已完成，商品数据待加载；请先刷新商品列表再继续\n无图\nreview-product-1001\n1 SKU · 价格: NT$1,000\n\n修复完成，请点击上方商品列表修改限时特卖商品价格，库存，限购等信息(默认参数是你的折扣信息。)，然后点击下一步：选择限时特卖。\n\n折扣率\n%\n库存\n限购\n下一步：选择限时特卖\n商品数据尚未就绪，暂不能进入选择限时特卖；请稍候或刷新商品列表。\n更多",
+      "trialCalls": []
+    },
+    {
+      "case": "r3-recovery-loaded",
+      "status": "completed",
+      "owner": 1,
+      "source": "manual-selection",
+      "items": [
+        {
+          "discountRemovals": [
+            {
+              "name": "fixture discount",
+              "promotionId": 99,
+              "status": "success"
+            }
+          ],
+          "discountRemoved": true,
+          "discountRestored": true,
+          "discounts": [
+            {
+              "endTime": 4102444800,
+              "name": "fixture discount",
+              "promotionId": 99,
+              "raw": {
+                "discount_id": 99,
+                "end_time": 4102444800,
+                "name": "fixture discount",
+                "time_status": 2
+              },
+              "timeStatus": 2
+            }
+          ],
+          "flashSaleStatus": "idle",
+          "hasOneDaySku": false,
+          "highestPrice": 1000,
+          "itemId": "1001",
+          "itemName": "review-product-1001",
+          "publishStatus": "success",
+          "skuCreated": true
+        }
+      ],
+      "resultProducts": [],
+      "cacheProducts": [
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1001",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "name": "default",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1001",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        }
+      ],
+      "discount": 37,
+      "nextVisible": true,
+      "nextEnabled": true,
+      "writes": [
+        {
+          "mode": "stale-results",
+          "step": "remove",
+          "promotion": 99,
+          "body": {
+            "promotion_id": 99,
+            "item_id_list": [
+              1001
+            ]
+          },
+          "at": 1791869771808
+        },
+        {
+          "mode": "stale-results",
+          "step": "publish",
+          "id": "1001",
+          "at": 1791869773828
+        },
+        {
+          "mode": "stale-results",
+          "step": "restore",
+          "body": {
+            "promotion_id": 99,
+            "discount_model_list": [
+              {
+                "item_id": 1001,
+                "model_id": 5001,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              },
+              {
+                "item_id": 1001,
+                "model_id": 5002,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              }
+            ]
+          },
+          "at": 1791869775859
+        }
+      ],
+      "body": "全部功能\n限时特卖助手\n已连接\n管理\nreview1@example.invalid\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nreview isolated\n当前\n手动模式\n自动模式\n第一次使用\n限时特卖活动\n清除缓存\n刷新\n▼\n隔离已有活动\n10/13 13:16 ~ 10/13 14:36\n复制\n进行中\n\n复制活动到新时间段\n\n点击活动右侧的「复制」按钮，将此活动的商品复制到新的时间段\n\n商品列表（1/1）\n全选修复\n无图\nreview-product-1001\nID: 1001\n2 SKU\n价格: NT$1,000\n库存: 10\n1 天备货 SKU 修复\n已选 0 个商品，系统将修复这些商品，使其能够开启限时特卖。\n一键修复并开启\n编辑参数\n修复完成：1 个可继续\n0/0\n处理详情 (1)\n修复完成：1 个可继续\n无图\nreview-product-1001\n2 SKU · 价格: NT$1,000\n\n修复完成，请点击上方商品列表修改限时特卖商品价格，库存，限购等信息(默认参数是你的折扣信息。)，然后点击下一步：选择限时特卖。\n\n折扣率\n%\n库存\n限购\n下一步：选择限时特卖\n更多",
+      "trialCalls": []
+    },
+    {
+      "case": "r3-recovery-input-saved",
+      "input": [
+        "31",
+        "5",
+        "1"
+      ],
+      "cachedDiscount": 31,
+      "resultProducts": []
+    },
+    {
+      "case": "r3-recovery-input-lost",
+      "status": "completed",
+      "owner": 1,
+      "source": "manual-selection",
+      "items": [
+        {
+          "discountRemovals": [
+            {
+              "name": "fixture discount",
+              "promotionId": 99,
+              "status": "success"
+            }
+          ],
+          "discountRemoved": true,
+          "discountRestored": true,
+          "discounts": [
+            {
+              "endTime": 4102444800,
+              "name": "fixture discount",
+              "promotionId": 99,
+              "raw": {
+                "discount_id": 99,
+                "end_time": 4102444800,
+                "name": "fixture discount",
+                "time_status": 2
+              },
+              "timeStatus": 2
+            }
+          ],
+          "flashSaleStatus": "idle",
+          "hasOneDaySku": false,
+          "highestPrice": 1000,
+          "itemId": "1001",
+          "itemName": "review-product-1001",
+          "publishStatus": "success",
+          "skuCreated": true
+        }
+      ],
+      "resultProducts": [],
+      "cacheProducts": [
+        {
+          "images": [],
+          "inputOriginPrice": "1000",
+          "itemid": "1001",
+          "modelList": [
+            {
+              "modelid": "5001",
+              "name": "默认规格",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            },
+            {
+              "modelid": "5002",
+              "name": "批發客戶下訂-請勿下單",
+              "normalStock": 10,
+              "originPrice": "1000",
+              "totalNormalStock": 10
+            }
+          ],
+          "name": "review-product-1001",
+          "normalStock": 10,
+          "originPrice": "1000",
+          "status": 0,
+          "variationImages": []
+        }
+      ],
+      "discount": 80,
+      "applied": {
+        "at": 1791869779633,
+        "taskId": "odr-1791869771757-3ha11x"
+      },
+      "nextVisible": true,
+      "nextEnabled": true,
+      "writes": [
+        {
+          "mode": "stale-results",
+          "step": "remove",
+          "promotion": 99,
+          "body": {
+            "promotion_id": 99,
+            "item_id_list": [
+              1001
+            ]
+          },
+          "at": 1791869771808
+        },
+        {
+          "mode": "stale-results",
+          "step": "publish",
+          "id": "1001",
+          "at": 1791869773828
+        },
+        {
+          "mode": "stale-results",
+          "step": "restore",
+          "body": {
+            "promotion_id": 99,
+            "discount_model_list": [
+              {
+                "item_id": 1001,
+                "model_id": 5001,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              },
+              {
+                "item_id": 1001,
+                "model_id": 5002,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              }
+            ]
+          },
+          "at": 1791869775859
+        }
+      ],
+      "body": "全部功能\n限时特卖助手\n已连接\n管理\nreview1@example.invalid\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nreview isolated\n当前\n手动模式\n自动模式\n第一次使用\n限时特卖活动\n清除缓存\n刷新\n▼\n隔离已有活动\n10/13 13:16 ~ 10/13 14:36\n复制\n进行中\n\n复制活动到新时间段\n\n点击活动右侧的「复制」按钮，将此活动的商品复制到新的时间段\n\n已完成 1 个商品，请编辑参数后选择限时特卖并点击开启\n商品列表（1/1）\n全选修复\n无图\nreview-product-1001\nID: 1001\n2 SKU\n价格: NT$1,000\n库存: 10\n1 天备货 SKU 修复\n已选 0 个商品，系统将修复这些商品，使其能够开启限时特卖。\n一键修复并开启\n编辑参数\n修复完成：1 个可继续\n1/1\n处理详情 (1)\n修复完成：1 个可继续\n无图\nreview-product-1001\n2 SKU · 价格: NT$1,000\n\n修复完成，请点击上方商品列表修改限时特卖商品价格，库存，限购等信息(默认参数是你的折扣信息。)，然后点击下一步：选择限时特卖。\n\n折扣率\n%\n库存\n限购\n下一步：选择限时特卖\n更多",
+      "trialCalls": []
+    },
+    {
+      "case": "r3-no-auth-clean",
+      "startError": {
+        "at": 1791869780934,
+        "error": "未登录后端系统，请先登录"
+      },
+      "writes": []
+    }
+  ],
+  "realPlatformRequestsAllowed": 0
+}

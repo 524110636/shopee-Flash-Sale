@@ -1,0 +1,451 @@
+{
+  "results": [
+    {
+      "case": "r3-null-client-owner",
+      "task": {
+        "checkpoints": [
+          {
+            "at": 1791869658895,
+            "itemId": "1001",
+            "promotionId": 99,
+            "promotionName": "fixture discount",
+            "seq": 1,
+            "step": "delete_abnormal_seller_discount_items",
+            "writeSent": true
+          },
+          {
+            "at": 1791869658899,
+            "itemId": "1001",
+            "outcome": "success",
+            "promotionId": 99,
+            "promotionName": "fixture discount",
+            "seq": 2,
+            "step": "delete_abnormal_seller_discount_items",
+            "writeSent": true
+          },
+          {
+            "at": 1791869660927,
+            "itemId": "1001",
+            "seq": 3,
+            "step": "update_product_info",
+            "writeSent": true
+          },
+          {
+            "at": 1791869662965,
+            "itemId": "1001",
+            "seq": 4,
+            "step": "update_seller_discount_items",
+            "writeSent": true
+          }
+        ],
+        "currentIndex": 1,
+        "discountRate": 80,
+        "error": null,
+        "items": [
+          {
+            "discountRemovals": [
+              {
+                "name": "fixture discount",
+                "promotionId": 99,
+                "status": "success"
+              }
+            ],
+            "discountRemoved": true,
+            "discountRestored": true,
+            "discounts": [
+              {
+                "endTime": 4102444800,
+                "name": "fixture discount",
+                "promotionId": 99,
+                "raw": {
+                  "discount_id": 99,
+                  "end_time": 4102444800,
+                  "name": "fixture discount",
+                  "time_status": 2
+                },
+                "timeStatus": 2
+              }
+            ],
+            "flashSaleStatus": "idle",
+            "hasOneDaySku": false,
+            "highestPrice": 1000,
+            "itemId": "1001",
+            "itemName": "review-product-1001",
+            "publishStatus": "success",
+            "skuCreated": true
+          }
+        ],
+        "message": "修复完成：1 个可继续",
+        "ownerUserId": 1,
+        "phase": "editing_params",
+        "requestId": "r3-null-client-owner",
+        "resultProducts": [
+          {
+            "images": [],
+            "inputOriginPrice": "1000",
+            "itemid": "1001",
+            "modelList": [
+              {
+                "modelid": "5001",
+                "name": "默认规格",
+                "normalStock": 10,
+                "originPrice": "1000",
+                "totalNormalStock": 10
+              },
+              {
+                "modelid": "5002",
+                "name": "批發客戶下訂-請勿下單",
+                "normalStock": 10,
+                "originPrice": "1000",
+                "totalNormalStock": 10
+              }
+            ],
+            "name": "review-product-1001",
+            "normalStock": 10,
+            "originPrice": "1000",
+            "status": 0,
+            "variationImages": []
+          }
+        ],
+        "revision": 11,
+        "shopId": 777,
+        "source": "manual-selection",
+        "spcCdsFingerprint": "6abc201f",
+        "startedAt": 1791869658875,
+        "status": "completed",
+        "taskId": "r3-null-client-owner",
+        "total": 1,
+        "updatedAt": 1791869662976,
+        "workItem": null,
+        "writeStarted": true
+      },
+      "writes": [
+        {
+          "mode": "r3-null-client-owner",
+          "step": "remove",
+          "promotion": 99,
+          "body": {
+            "promotion_id": 99,
+            "item_id_list": [
+              1001
+            ]
+          },
+          "at": 1791869658898
+        },
+        {
+          "mode": "r3-null-client-owner",
+          "step": "publish",
+          "id": "1001",
+          "at": 1791869660937
+        },
+        {
+          "mode": "r3-null-client-owner",
+          "step": "restore",
+          "body": {
+            "promotion_id": 99,
+            "discount_model_list": [
+              {
+                "item_id": 1001,
+                "model_id": 5001,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              },
+              {
+                "item_id": 1001,
+                "model_id": 5002,
+                "promotion_price": 80000000,
+                "user_item_limit": 0,
+                "status": 1,
+                "promotion_stock": 0
+              }
+            ]
+          },
+          "at": 1791869662968
+        }
+      ]
+    },
+    {
+      "case": "r3-owner-changed",
+      "task": {
+        "checkpoints": [
+          {
+            "at": 1791869663327,
+            "itemId": "1001",
+            "promotionId": 99,
+            "promotionName": "fixture discount",
+            "seq": 1,
+            "step": "delete_abnormal_seller_discount_items",
+            "writeSent": true
+          },
+          {
+            "at": 1791869663335,
+            "itemId": "1001",
+            "outcome": "success",
+            "promotionId": 99,
+            "promotionName": "fixture discount",
+            "seq": 2,
+            "step": "delete_abnormal_seller_discount_items",
+            "writeSent": true
+          }
+        ],
+        "currentIndex": 1,
+        "discountRate": null,
+        "error": "当前店铺或账号与任务归属不一致（任务店铺 777／账号 1，实际 777／2），已停止后续商品修复",
+        "items": [
+          {
+            "discountRemovals": [
+              {
+                "name": "fixture discount",
+                "promotionId": 99,
+                "status": "success"
+              }
+            ],
+            "discountRemoved": true,
+            "discountRestored": false,
+            "discounts": [
+              {
+                "endTime": 4102444800,
+                "name": "fixture discount",
+                "promotionId": 99,
+                "raw": {
+                  "discount_id": 99,
+                  "end_time": 4102444800,
+                  "name": "fixture discount",
+                  "time_status": 2
+                },
+                "timeStatus": 2
+              }
+            ],
+            "flashSaleStatus": "idle",
+            "hasOneDaySku": false,
+            "highestPrice": 1000,
+            "itemId": "1001",
+            "itemName": "review-product-1001",
+            "publishStatus": "idle",
+            "skuCreated": false
+          }
+        ],
+        "message": "当前店铺或账号与任务归属不一致（任务店铺 777／账号 1，实际 777／2），已停止后续商品修复",
+        "ownerUserId": 1,
+        "phase": "failed",
+        "requestId": "odr-1791869663288-3yka15",
+        "resultProducts": [],
+        "revision": 8,
+        "shopId": 777,
+        "source": "manual-selection",
+        "spcCdsFingerprint": "6abc201f",
+        "startedAt": 1791869663301,
+        "status": "failed",
+        "taskId": "odr-1791869663288-3yka15",
+        "total": 1,
+        "updatedAt": 1791869665346,
+        "workItem": {
+          "discountRemovals": [
+            {
+              "name": "fixture discount",
+              "promotionId": 99,
+              "status": "success"
+            }
+          ],
+          "discountRemoved": true,
+          "discountRestored": false,
+          "discounts": [
+            {
+              "endTime": 4102444800,
+              "name": "fixture discount",
+              "promotionId": 99,
+              "raw": {
+                "discount_id": 99,
+                "end_time": 4102444800,
+                "name": "fixture discount",
+                "time_status": 2
+              },
+              "timeStatus": 2
+            }
+          ],
+          "flashSaleStatus": "idle",
+          "hasOneDaySku": false,
+          "highestPrice": 1000,
+          "itemId": "1001",
+          "itemName": "review-product-1001",
+          "publishStatus": "idle",
+          "skuCreated": false
+        },
+        "writeStarted": true
+      },
+      "diagnostics": [
+        {
+          "actualShopId": 777,
+          "actualUserId": 2,
+          "at": 1791869665345,
+          "confirmedActions": [
+            "1001: 已从折扣活动移除商品",
+            "1001: 折扣未确认恢复"
+          ],
+          "kind": "ownership-stopped",
+          "phase": "preparing_sku",
+          "reason": "当前店铺或账号与任务归属不一致（任务店铺 777／账号 1，实际 777／2），已停止后续商品修复",
+          "requestId": "odr-1791869663288-3yka15",
+          "taskId": "odr-1791869663288-3yka15",
+          "taskOwnerUserId": 1,
+          "taskShopId": 777,
+          "unknownActions": [
+            "1001: delete_abnormal_seller_discount_items 已发出，结果未知；另一账号/店铺已接管，请人工核对",
+            "1001: delete_abnormal_seller_discount_items 已发出，结果未知；另一账号/店铺已接管，请人工核对"
+          ]
+        }
+      ],
+      "writes": [
+        {
+          "mode": "r3-owner-changed",
+          "step": "remove",
+          "promotion": 99,
+          "body": {
+            "promotion_id": 99,
+            "item_id_list": [
+              1001
+            ]
+          },
+          "at": 1791869663330
+        }
+      ]
+    },
+    {
+      "case": "r3-copy-first",
+      "startError": {
+        "at": 1791869666089,
+        "error": "正在复制限时特卖活动，请等它结束后再启动修复"
+      },
+      "writes": [
+        {
+          "mode": "r3-copy-first",
+          "step": "copy-sale-write",
+          "path": "/api/marketing/v4/shop_flash_sale/set_shop_flash_sale/",
+          "body": {
+            "flash_sale_id": 555,
+            "status": 2
+          },
+          "at": 1791869665816
+        }
+      ]
+    },
+    {
+      "case": "r3-no-auth",
+      "reply": {
+        "success": false,
+        "error": "正在复制限时特卖活动，请等它结束后再启动修复"
+      },
+      "startError": {
+        "at": 1791869674135,
+        "error": "正在复制限时特卖活动，请等它结束后再启动修复"
+      },
+      "writes": []
+    }
+  ],
+  "blockedUnexpectedOrigins": [],
+  "backendCalls": [
+    {
+      "mode": "r3-null-client-owner",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "r3-null-client-owner",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "r3-null-client-owner",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "r3-null-client-owner",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "r3-null-client-owner",
+      "path": "/api/stores/validate"
+    },
+    {
+      "mode": "r3-owner-changed",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "r3-owner-changed",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "r3-owner-changed",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "r3-owner-changed",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "r3-owner-changed",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "r3-owner-changed",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "r3-owner-changed",
+      "path": "/api/stores/validate"
+    },
+    {
+      "mode": "r3-copy-first",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "r3-copy-first",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "r3-copy-first",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "r3-copy-first",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "r3-copy-first",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "r3-copy-first",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "r3-copy-first",
+      "path": "/api/stores/validate"
+    },
+    {
+      "mode": "r3-copy-first",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "r3-copy-first",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "r3-copy-first",
+      "path": "/api/auth/check-admin"
+    },
+    {
+      "mode": "r3-copy-first",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "r3-copy-first",
+      "path": "/api/stores"
+    },
+    {
+      "mode": "r3-copy-first",
+      "path": "/api/stores"
+    }
+  ],
+  "realPlatformRequestsAllowed": 0
+}

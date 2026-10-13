@@ -1,0 +1,251 @@
+{
+  "results": [
+    {
+      "case": "closed-popup-cross-idle",
+      "closedAt": 1791859685387,
+      "status": "running",
+      "index": 2,
+      "updatedAfterClose": true,
+      "heartbeatAfterClose": true
+    },
+    {
+      "case": "background-completed",
+      "response": false,
+      "status": "completed",
+      "resultCount": 2,
+      "credentialLogged": true,
+      "writes": [
+        {
+          "mode": "idle",
+          "step": "remove",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791859685361
+        },
+        {
+          "mode": "idle",
+          "step": "publish",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791859687381
+        },
+        {
+          "mode": "idle",
+          "step": "restore",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791859714427
+        },
+        {
+          "mode": "idle",
+          "step": "remove",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791859714458
+        },
+        {
+          "mode": "idle",
+          "step": "publish",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791859716480
+        },
+        {
+          "mode": "idle",
+          "step": "restore",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791859743512
+        }
+      ]
+    },
+    {
+      "case": "shop-switch",
+      "response": {
+        "success": true,
+        "taskId": "review-shop-switch"
+      },
+      "status": "failed",
+      "error": "当前店铺或账号与任务归属不一致（任务店铺 777，实际 888），已停止后续商品修复",
+      "writes": [
+        {
+          "mode": "shop-switch",
+          "step": "remove",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791859743807
+        }
+      ]
+    },
+    {
+      "case": "owner-switch",
+      "response": {
+        "success": true,
+        "taskId": "review-owner-switch"
+      },
+      "status": "completed",
+      "error": null,
+      "writes": [
+        {
+          "mode": "owner-switch",
+          "step": "remove",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791859746176
+        },
+        {
+          "mode": "owner-switch",
+          "step": "publish",
+          "shopId": 777,
+          "owner": 2,
+          "at": 1791859748251
+        },
+        {
+          "mode": "owner-switch",
+          "step": "restore",
+          "shopId": 777,
+          "owner": 2,
+          "at": 1791859750302
+        }
+      ]
+    },
+    {
+      "case": "auto-conflict",
+      "response": {
+        "success": false,
+        "error": "自动模式正在执行写操作，请等它结束或先停止自动模式"
+      },
+      "writes": []
+    },
+    {
+      "case": "schedule-conflict",
+      "response": {
+        "success": true,
+        "taskId": "review-schedule-conflict"
+      },
+      "writes": [
+        {
+          "mode": "schedule-conflict",
+          "step": "remove",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791859751178
+        },
+        {
+          "mode": "schedule-conflict",
+          "step": "publish",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791859753216
+        },
+        {
+          "mode": "schedule-conflict",
+          "step": "restore",
+          "shopId": 777,
+          "owner": 1,
+          "at": 1791859755259
+        }
+      ]
+    },
+    {
+      "case": "cold-applied",
+      "discount": 37,
+      "cachedProduct": "1001",
+      "modelCount": 1,
+      "markedApplied": true,
+      "nextExists": 0,
+      "nextEnabled": false,
+      "body": "全部功能\n限时特卖助手\n已连接\n管理\nreview1@example.invalid\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nreview isolated\n手动模式\n自动模式\n第一次使用\n商品列表（1/1）\n全选修复\n无图\nreview-product-1001\nID: 1001\n1 SKU\n价格: NT$1,000\n库存: 10\n1 天备货 SKU 修复\n已选 0 个商品，系统将修复这些商品，使其能够开启限时特卖。\n一键修复并开启\n更多"
+    },
+    {
+      "case": "foreign-owner",
+      "discount": 37,
+      "cachedProduct": "702",
+      "modelCount": 1,
+      "markedApplied": false,
+      "nextExists": 0,
+      "nextEnabled": false,
+      "body": "全部功能\n限时特卖助手\n已连接\n管理\nreview1@example.invalid\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nreview isolated\n手动模式\n自动模式\n第一次使用\n商品列表（1/1）\n全选修复\n无图\nreview-product-702\nID: 702\n1 SKU\n价格: NT$1,000\n库存: 10\n1 天备货 SKU 修复\n已选 0 个商品，系统将修复这些商品，使其能够开启限时特卖。\n一键修复并开启\n更多"
+    },
+    {
+      "case": "unloaded-result",
+      "discount": 37,
+      "cachedProduct": "1001",
+      "modelCount": 0,
+      "markedApplied": false,
+      "nextExists": 0,
+      "nextEnabled": false,
+      "body": "全部功能\n限时特卖助手\n已连接\n管理\nreview1@example.invalid\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nreview isolated\n手动模式\n自动模式\n第一次使用\n商品列表（1/1）\n全选修复\n无图\nreview-product-1001\nID: 1001\n0 SKU\n价格: NT$1,000\n库存: 10\n1 天备货 SKU 修复\n已选 0 个商品，系统将修复这些商品，使其能够开启限时特卖。\n一键修复并开启\n更多"
+    },
+    {
+      "case": "worker-stop",
+      "before": {
+        "status": "running",
+        "checkpoints": 2
+      },
+      "stopResult": {
+        "success": true
+      },
+      "stopError": null,
+      "after": {
+        "status": "interrupted",
+        "checkpoints": 2,
+        "message": "修复已中断（后台执行者已退出）。有 1 个商品可能已被修改，请核对后再决定是否重跑。"
+      },
+      "newWritesAfterWake": 0
+    }
+  ],
+  "blockedUnexpectedOrigins": [],
+  "backendCalls": [
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores/validate",
+    "/api/stores",
+    "/api/stores",
+    "/api/auth/check-admin",
+    "/api/stores/validate",
+    "/api/auth/check-admin",
+    "/api/stores",
+    "/api/stores",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores/validate",
+    "/api/stores",
+    "/api/stores",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores/validate",
+    "/api/auth/check-admin",
+    "/api/stores",
+    "/api/stores",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores",
+    "/api/stores",
+    "/api/stores",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores",
+    "/api/stores",
+    "/api/stores",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores",
+    "/api/stores",
+    "/api/stores",
+    "/api/auth/check-admin",
+    "/api/stores/validate",
+    "/api/auth/check-admin",
+    "/api/stores",
+    "/api/stores",
+    "/api/auth/check-admin",
+    "/api/auth/check-admin",
+    "/api/stores",
+    "/api/stores"
+  ],
+  "realPlatformRequestsAllowed": 0
+}
