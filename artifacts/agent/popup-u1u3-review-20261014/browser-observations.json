@@ -1,0 +1,110 @@
+{
+  "countText": "共 4 位用户查看过",
+  "viewerText": "查看明细 — 独立统计复核\n共 4 位登录账号查看过。按登录账号累计去重，含该记录历史发布； 同账号多设备只算一位。以服务器收到的展示上报为准，离线或关闭过快可能漏记。\n账号\t首次查看时间\nstale@review.invalid\t2026-10-13 20:34:17\nomitted@review.invalid\t2026-10-13 20:34:16\ninvalid@review.invalid\t2026-10-13 20:34:16\nvalid@review.invalid\t2026-10-13 20:34:16\n1\n关 闭",
+  "guide": "1. 改两处版本号（必须一致，改完保存）\npackage.json 第 3 行：\"version\": \"1.15.1\"\nwxt.config.ts 第 18 行：version: '1.15.1'\n行号可能随源码变化；可直接搜索 version 字段定位，不依赖固定行号。\n只改这两处即可。不要手改 .output 里生成的 manifest.json 代替源码修改。\n2. 构建新包\n本地静态开发包：npm run build -- --mode development → 输出到 .output/chrome-mv3-dev\n日常生产配置： npm run build → 输出到 .output/chrome-mv3\nnpm run dev 是热更新包，终端必须一直开着，否则弹窗白屏。\n3. 保留一份旧包，再装新包\n先把现在的 .output/chrome-mv3 整个目录复制一份留作旧包，再改版本重新构建。\n在 chrome://extensions 用「加载已解压的扩展程序」指向新目录，或对已加载的扩展点「重新加载」。\n下载、解压、加载是三个独立动作；只下载不解压不加载，不会升级。\n只在没有业务任务的测试扩展上重载；重载会改变后台 worker 生命周期，不要自动重载。\n4. 核对实际版本\n打开 chrome://extensions，看这张卡片上显示的版本号。\n本页顶部的后端设置不参与判定 —— 扩展只读自己实际加载的包版本。\n5. 验证解除\n保持后端的强制记录和「要求版本」不变，不要撤回、不要降低要求、不要改文件名。\n重新打开扩展；实际版本达到或超过要求版本后，强制弹窗自行消失。\n只下载或仍加载旧目录时，强制弹窗会继续出现 —— 这是正确行为。",
+  "layouts": [
+    {
+      "width": 953,
+      "labels": [
+        {
+          "x": 120.5,
+          "y": 265,
+          "width": 56,
+          "height": 19
+        },
+        {
+          "x": 482.5,
+          "y": 265,
+          "width": 56,
+          "height": 19
+        }
+      ],
+      "inputs": [
+        {
+          "x": 120.5,
+          "y": 290,
+          "width": 350,
+          "height": 32
+        },
+        {
+          "x": 482.5,
+          "y": 290,
+          "width": 350,
+          "height": 32
+        }
+      ],
+      "labelsAboveInputs": true,
+      "aligned": true,
+      "withinViewport": true
+    },
+    {
+      "width": 1366,
+      "labels": [
+        {
+          "x": 327,
+          "y": 265,
+          "width": 56,
+          "height": 19
+        },
+        {
+          "x": 689,
+          "y": 265,
+          "width": 56,
+          "height": 19
+        }
+      ],
+      "inputs": [
+        {
+          "x": 327,
+          "y": 290,
+          "width": 350,
+          "height": 32
+        },
+        {
+          "x": 689,
+          "y": 290,
+          "width": 350,
+          "height": 32
+        }
+      ],
+      "labelsAboveInputs": true,
+      "aligned": true,
+      "withinViewport": true
+    },
+    {
+      "width": 420,
+      "labels": [
+        {
+          "x": 137.90283203125,
+          "y": 192.03890991210938,
+          "width": 35.40779113769531,
+          "height": 12.01336669921875
+        },
+        {
+          "x": 125.40505981445312,
+          "y": 266.351806640625,
+          "width": 37.83790588378906,
+          "height": 12.837860107421875
+        }
+      ],
+      "inputs": [
+        {
+          "x": 106.18560028076172,
+          "y": 241.43536376953125,
+          "width": 264.29834747314453,
+          "height": 23.757171630859375
+        },
+        {
+          "x": 92.10406494140625,
+          "y": 329.1482238769531,
+          "width": 281.7047119140625,
+          "height": 25.32177734375
+        }
+      ],
+      "labelsAboveInputs": true,
+      "aligned": true,
+      "withinViewport": true
+    }
+  ],
+  "errors": []
+}

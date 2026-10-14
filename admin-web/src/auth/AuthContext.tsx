@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import * as api from '../api/admin';
+import * as popupApi from '../api/popup';
 import { clearSession, getToken, getUser, setSession } from './session';
 import type { SessionUser } from './session';
 
@@ -26,7 +27,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // 服务端判定认证失效（401/403）时，立即退回登录页。
   useEffect(() => {
     api.setUnauthorizedHandler(logout);
-    return () => api.setUnauthorizedHandler(null);
+    popupApi.setPopupUnauthorizedHandler(logout);
+    return () => {
+      api.setUnauthorizedHandler(null);
+      popupApi.setPopupUnauthorizedHandler(null);
+    };
   }, [logout]);
 
   useEffect(() => {

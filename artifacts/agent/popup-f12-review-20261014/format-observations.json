@@ -1,0 +1,76 @@
+[
+  {
+    "reportedRevision": 0,
+    "actualGlobalRevision": 3,
+    "response": {
+      "counted": false,
+      "reason": "bad-revision"
+    },
+    "passed": true
+  },
+  {
+    "reportedRevision": -1,
+    "actualGlobalRevision": 3,
+    "response": {
+      "counted": false,
+      "reason": "bad-revision"
+    },
+    "passed": true
+  },
+  {
+    "reportedRevision": 0.5,
+    "actualGlobalRevision": 3,
+    "response": {
+      "counted": false,
+      "reason": "bad-revision"
+    },
+    "passed": true
+  },
+  {
+    "reportedRevision": 9007199254740992,
+    "actualGlobalRevision": 3,
+    "response": {
+      "counted": false,
+      "reason": "bad-revision"
+    },
+    "passed": true
+  },
+  {
+    "reportedRevision": "1",
+    "actualGlobalRevision": 3,
+    "response": {
+      "counted": false,
+      "reason": "bad-revision"
+    },
+    "passed": true
+  },
+  {
+    "reportedRevision": null,
+    "actualGlobalRevision": 3,
+    "response": {
+      "counted": false,
+      "reason": "bad-revision"
+    },
+    "passed": true
+  },
+  {
+    "reportedRevision": 1,
+    "actualGlobalRevision": 3,
+    "response": {
+      "counted": false,
+      "reason": "stale-revision"
+    },
+    "passed": true
+  },
+  {
+    "name": "global-slot-revision-valid-record-counter-different",
+    "revision": 3,
+    "before": 0,
+    "after": 1,
+    "response": {
+      "counted": true,
+      "isNewView": true
+    },
+    "passed": true
+  }
+]

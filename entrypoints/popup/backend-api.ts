@@ -87,6 +87,37 @@ export function isAdmin() {
   return _auth?.user?.role === 'admin';
 }
 
+/**
+ * 身份就绪订阅（只读接线，供弹窗查看上报等独立模块使用）。
+ *
+ * 为什么需要它：popup 打开时「策略检查」与「从 storage 恢复登录身份」是两条
+ * 并行的异步流程。查看上报必须用真实账号，但**不能**在身份还没恢复时就把这次
+ * 展示判成「匿名不看」—— 否则每次冷启动的第一次展示都会漏记。
+ * 订阅后：已就绪立即回调，未就绪等就绪那一刻再回调。
+ */
+type AuthReadyListener = (userId: number, token: string) => void;
+const _authReadyListeners = new Set<AuthReadyListener>();
+
+export function onAuthReady(listener: AuthReadyListener): () => void {
+  _authReadyListeners.add(listener);
+  if (_auth && !isTokenExpired(_auth.token)) {
+    listener(_auth.user.id, _auth.token);
+  }
+  return () => {
+    _authReadyListeners.delete(listener);
+  };
+}
+
+function notifyAuthReady(): void {
+  if (!_auth || isTokenExpired(_auth.token)) return;
+  // 复制一份再遍历：回调里可能取消订阅，直接遍历原集合会漏掉后面的监听者。
+  for (const listener of [..._authReadyListeners]) {
+    try {
+      listener(_auth.user.id, _auth.token);
+    } catch { /* 单个监听者出错不影响其他监听者与登录流程 */ }
+  }
+}
+
 export function canUseAutoMode(): boolean {
   if (!isLoggedIn()) return false;
   return _auth!.user.role === 'admin' || _auth!.user.autoModeEnabled === 1;
@@ -103,6 +134,7 @@ export async function loadAuthFromStorage() {
         return false;
       }
       _auth = data;
+      notifyAuthReady();
       return true;
     }
   } catch (e) {
@@ -114,6 +146,7 @@ export async function loadAuthFromStorage() {
 export async function saveAuthToStorage(token: string, user: { id: number; email: string; role: string; autoModeEnabled: number; trialUsed: number; trialEnabled: number }) {
   _auth = { token, user };
   await browser.storage.local.set({ [STORAGE_KEY]: _auth });
+  notifyAuthReady();
 }
 
 export async function clearAuth() {

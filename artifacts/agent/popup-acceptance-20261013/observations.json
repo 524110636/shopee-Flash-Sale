@@ -1,0 +1,97 @@
+{
+  "observations": [
+    {
+      "name": "strict-empty",
+      "requests": 1,
+      "responses": [
+        200
+      ],
+      "checking": true,
+      "notice": false,
+      "images": [],
+      "errors": []
+    },
+    {
+      "name": "strict-notice",
+      "requests": 1,
+      "responses": [
+        200
+      ],
+      "checking": true,
+      "notice": false,
+      "images": [],
+      "errors": []
+    },
+    {
+      "name": "control-without-strict",
+      "requests": 1,
+      "responses": [
+        200
+      ],
+      "checking": false,
+      "notice": false,
+      "images": [],
+      "errors": []
+    },
+    {
+      "name": "storage-write-rejection",
+      "requests": 1,
+      "responses": [
+        200
+      ],
+      "checking": false,
+      "notice": false,
+      "images": [],
+      "errors": []
+    },
+    {
+      "name": "relative-image",
+      "requests": 1,
+      "responses": [
+        200
+      ],
+      "checking": false,
+      "notice": false,
+      "images": [
+        {
+          "raw": "/popup-assets/00000000000000000000000000000000",
+          "resolved": "http://127.0.0.1:52187/popup-assets/00000000000000000000000000000000",
+          "loaded": false
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "malformed-object-after-cached-force",
+      "source": "network",
+      "forcedRetained": false,
+      "connectionError": null
+    }
+  ],
+  "acceptance": [
+    {
+      "name": "strict-empty",
+      "pass": false
+    },
+    {
+      "name": "strict-notice",
+      "pass": false
+    },
+    {
+      "name": "control-without-strict",
+      "pass": true
+    },
+    {
+      "name": "storage-write-rejection",
+      "pass": true
+    },
+    {
+      "name": "relative-image",
+      "pass": false
+    },
+    {
+      "name": "malformed-object-after-cached-force",
+      "pass": false
+    }
+  ]
+}

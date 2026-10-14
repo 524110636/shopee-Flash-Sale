@@ -8,6 +8,7 @@ import storesRoutes from './routes/stores.js';
 import analyticsRoutes from './routes/analytics.js';
 import adminRoutes from './routes/admin.js';
 import { adminSite } from './routes/admin-site.js';
+import { popupAdmin, popupPublic, popupAssetsRoute } from './routes/popup.js';
 
 const PORT = parseInt(process.env.PORT || '5724', 10);
 
@@ -31,6 +32,12 @@ async function main() {
   app.route('/api/stores', storesRoutes);
   app.route('/api/analytics', analyticsRoutes);
   app.route('/api/admin', adminRoutes);
+  // 弹窗策略：公开读取挂在 /api/extension（免鉴权，只返回生效内容），
+  // 管理与上传挂在 /api/admin/popup-*（复用 admin middleware 查库判定身份）。
+  app.route('/api/extension', popupPublic);
+  app.route('/api/admin', popupAdmin);
+  // 自有图片资源，路径 /popup-assets/:opaqueId
+  app.route('/popup-assets', popupAssetsRoute);
 
   app.get('/api/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
 

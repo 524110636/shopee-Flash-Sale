@@ -1,0 +1,11 @@
+{
+  "loginStatus": 200,
+  "loginValid": true,
+  "adminStatus": 200,
+  "downloadStatus": 200,
+  "downloadHashMatches": true,
+  "actualVersion": "1.15.2",
+  "packageName": "限时特卖助手（弹窗验收）",
+  "sourceVersion": "1.15.2",
+  "packageDirectory": "D:\\shopee_xm\\虾皮限时特卖-更新迭代\\.agent-tmp\\popup-f12-review-20261014\\built\\chrome-mv3-dev"
+}

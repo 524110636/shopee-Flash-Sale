@@ -1,0 +1,209 @@
+{
+  "results": [
+    {
+      "name": "P18 anonymous both modes: no policy/check/report",
+      "passed": true,
+      "detail": [
+        {
+          "path": "/api/auth/login",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/login",
+          "method": "POST"
+        },
+        {
+          "path": "/api/stores",
+          "method": "GET"
+        },
+        {
+          "path": "/api/extension/popup-policy",
+          "method": "GET"
+        },
+        {
+          "path": "/api/extension/popup-views",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/check-admin",
+          "method": "POST"
+        },
+        {
+          "path": "/api/stores",
+          "method": "GET"
+        },
+        {
+          "path": "/api/extension/popup-policy",
+          "method": "GET"
+        },
+        {
+          "path": "/api/extension/popup-views",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/check-admin",
+          "method": "POST"
+        },
+        {
+          "path": "/api/auth/login",
+          "method": "POST"
+        },
+        {
+          "path": "/api/admin/users",
+          "method": "GET"
+        },
+        {
+          "path": "/api/admin/popup-policies",
+          "method": "GET"
+        },
+        {
+          "path": "/api/admin/popup-policies",
+          "method": "GET"
+        },
+        {
+          "path": "/api/admin/popup-policies",
+          "method": "GET"
+        },
+        {
+          "path": "/api/admin/popup-policies/notice/viewers",
+          "method": "GET"
+        },
+        {
+          "path": "/api/admin/popup-policies",
+          "method": "GET"
+        },
+        {
+          "path": "/api/admin/popup-policies",
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "name": "P18 failed login remains uncovered",
+      "passed": true
+    },
+    {
+      "name": "P19 first binding waits without policy start",
+      "passed": true,
+      "detail": "正在同步店铺信息...\n正在加载店铺绑定信息，请稍候..."
+    },
+    {
+      "name": "P19 same popup login forced appears",
+      "passed": true
+    },
+    {
+      "name": "P19 forced remains after Escape",
+      "passed": true
+    },
+    {
+      "name": "P19 real shown force reported once hidden notice not reported",
+      "passed": true
+    },
+    {
+      "name": "P19 valid saved login cold start notice",
+      "passed": true
+    },
+    {
+      "name": "P18 slow identity restoration ignores forced cache",
+      "passed": true
+    },
+    {
+      "name": "P18 expired credentials no popup or report",
+      "passed": true
+    },
+    {
+      "name": "P18 forced cache retained unchanged",
+      "passed": true,
+      "detail": {
+        "expected": {
+          "http://localhost:5804": {
+            "notice": null,
+            "forcedUpdate": {
+              "recordId": "22222222-2222-3333-4444-555555555555",
+              "mode": "forced_update",
+              "revision": 1,
+              "title": "独立登录后强制",
+              "contentHtml": "<p>验收内容</p>",
+              "requiredVersion": "1.15.3",
+              "downloadUrl": "http://localhost:5804/download.zip",
+              "publishedAt": "2026-10-13T22:53:08.336Z"
+            }
+          }
+        },
+        "actual": {
+          "http://localhost:5804": {
+            "forcedUpdate": {
+              "contentHtml": "<p>验收内容</p>",
+              "downloadUrl": "http://localhost:5804/download.zip",
+              "mode": "forced_update",
+              "publishedAt": "2026-10-13T22:53:08.336Z",
+              "recordId": "22222222-2222-3333-4444-555555555555",
+              "requiredVersion": "1.15.3",
+              "revision": 1,
+              "title": "独立登录后强制"
+            },
+            "notice": null
+          }
+        }
+      }
+    },
+    {
+      "name": "P20 refresh left of New",
+      "passed": true
+    },
+    {
+      "name": "P20 baseline real current count0",
+      "passed": true
+    },
+    {
+      "name": "P20 refreshed count1 no duplicate GET",
+      "passed": true,
+      "detail": [
+        {
+          "path": "/api/admin/popup-policies",
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "name": "P20 viewer detail fetched latest account",
+      "passed": true
+    },
+    {
+      "name": "P20 failure keeps count1",
+      "passed": true
+    },
+    {
+      "name": "P20 retry clears error",
+      "passed": true
+    },
+    {
+      "name": "P20 refresh only reads",
+      "passed": true,
+      "detail": [
+        {
+          "path": "/api/admin/popup-policies",
+          "method": "GET"
+        },
+        {
+          "path": "/api/admin/popup-policies/notice/viewers",
+          "method": "GET"
+        },
+        {
+          "path": "/api/admin/popup-policies",
+          "method": "GET"
+        },
+        {
+          "path": "/api/admin/popup-policies",
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "name": "versions still1.15.2",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "mode": "real delivered extension and isolated current admin build; all backend and store requests intercepted"
+}

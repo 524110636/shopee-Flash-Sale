@@ -7,6 +7,7 @@ import {
   KeyOutlined,
   LogoutOutlined,
   ShopOutlined,
+  NotificationOutlined,
 } from '@ant-design/icons';
 import { useAuth } from './auth/AuthContext';
 import { LoginPage } from './pages/LoginPage';
@@ -14,14 +15,16 @@ import { UsersPage } from './pages/UsersPage';
 import { BindingsPage } from './pages/BindingsPage';
 import { InviteCodesPage } from './pages/InviteCodesPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
+import { PopupPage } from './pages/PopupPage';
 
-type MenuKey = 'users' | 'bindings' | 'invite-codes' | 'analytics';
+type MenuKey = 'users' | 'bindings' | 'invite-codes' | 'analytics' | 'popup';
 
 const MENU_ITEMS = [
   { key: 'users', icon: <TeamOutlined />, label: '用户管理' },
   { key: 'bindings', icon: <LinkOutlined />, label: '绑定管理' },
   { key: 'invite-codes', icon: <KeyOutlined />, label: '邀请码' },
   { key: 'analytics', icon: <BarChartOutlined />, label: '使用统计' },
+  { key: 'popup', icon: <NotificationOutlined />, label: '弹窗管理' },
 ];
 
 export function App() {
@@ -38,6 +41,8 @@ export function App() {
         return <InviteCodesPage />;
       case 'analytics':
         return <AnalyticsPage />;
+      case 'popup':
+        return <PopupPage />;
       default:
         return null;
     }

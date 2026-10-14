@@ -1,0 +1,47 @@
+{
+  "results": [
+    {
+      "phase": "A",
+      "actualVersion": "1.15.1",
+      "forcedVisible": true,
+      "checking": false,
+      "reports": [
+        {
+          "counted": true,
+          "isNewView": true
+        }
+      ]
+    },
+    {
+      "phase": "A-repeat",
+      "actualVersion": "1.15.1",
+      "forcedVisible": true,
+      "checking": false,
+      "reports": [
+        {
+          "counted": true,
+          "isNewView": false
+        }
+      ]
+    },
+    {
+      "phase": "B",
+      "actualVersion": "1.15.1",
+      "forcedVisible": true,
+      "checking": false,
+      "reports": [
+        {
+          "counted": true,
+          "isNewView": true
+        }
+      ]
+    }
+  ],
+  "forcedTotal": 2,
+  "forcedAccounts": [
+    "invalid@review.invalid",
+    "valid@review.invalid"
+  ],
+  "hiddenNoticeTotal": 0,
+  "passed": true
+}

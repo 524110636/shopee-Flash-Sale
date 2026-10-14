@@ -19,6 +19,13 @@ export default defineConfig({
         target: BACKEND_TARGET,
         changeOrigin: true,
       },
+      // 弹窗正文里的自有图片用绝对路径 /popup-assets/xxx 引用。
+      // 生产由后端托管没问题；开发时 vite 是另一个源，必须把该前缀也代理过去，
+      // 否则预览里的图片全部 404（正文能显示、图裂开）。
+      '/popup-assets': {
+        target: BACKEND_TARGET,
+        changeOrigin: true,
+      },
     },
   },
 });

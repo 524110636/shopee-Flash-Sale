@@ -1,0 +1,14 @@
+{
+  "name": "限时特卖助手（弹窗隔离体验）",
+  "version": "1.15.0",
+  "checking": false,
+  "noticeDisplayed": true,
+  "policyResponses": [
+    {
+      "url": "http://127.0.0.1:5796/api/extension/popup-policy",
+      "status": 200
+    }
+  ],
+  "unexpectedOrigins": [],
+  "productionUnchanged": true
+}

@@ -15,7 +15,7 @@ export default defineConfig({
       description: isDev
         ? '【开发版】需保持 npm run dev 终端开启，否则弹窗白屏'
         : '虾皮卖家后台限时特卖自动化工具',
-      version: '1.14.3',
+      version: '1.15.2',
       permissions: ['storage', 'cookies', 'scripting', 'alarms', 'unlimitedStorage', 'downloads'],
       host_permissions: ['https://*.shopee.tw/*'],
     };

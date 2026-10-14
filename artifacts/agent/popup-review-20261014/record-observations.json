@@ -1,0 +1,41 @@
+[
+  {
+    "name": "published-record-change-forced-to-notice",
+    "before": {
+      "forced": "type-change-force"
+    },
+    "afterDraft": {
+      "forced": "type-change-force"
+    },
+    "afterPublish": {
+      "notice": {
+        "mode": "notice",
+        "revision": 1,
+        "title": "now-notice",
+        "contentHtml": "<p>notice-new</p>",
+        "requiredVersion": null,
+        "downloadUrl": null,
+        "publishedAt": "2026-10-13T18:14:45.635Z"
+      },
+      "forcedUpdate": null
+    },
+    "listStatus": "published",
+    "activeSlots": [
+      {
+        "mode": "notice",
+        "revision": 1,
+        "activeRecordId": "94174447-8196-4bef-ae49-87db380ca859"
+      },
+      {
+        "mode": "forced_update",
+        "revision": 1,
+        "activeRecordId": null
+      }
+    ]
+  },
+  {
+    "name": "explicit-withdraw-retained-status",
+    "status": "withdrawn",
+    "retained": true
+  }
+]

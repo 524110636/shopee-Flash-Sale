@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-13",
+  "sourceHashes": {
+    "entrypoints/popup/PopupPolicyHost.tsx": "48008fd13b832e128596736b1cfd38907ce5504fd20c9ffcf0e0e7e9cc95a3bc",
+    "entrypoints/popup/popup-policy.ts": "bd7da1ce19a3636bc299216a19d16e551041e7b9bce553e1d58be6193b058cfa",
+    "entrypoints/popup/main.tsx": "a7306b68661ebfe9f8fc1f8150c606636e18a61d9a24af35db14b068da72208d",
+    "backend/src/routes/popup.ts": "e4dc83715ca47c952fbe52e7bceeec9d6ffd885f7f5c41874ca3eb40ced9bb94",
+    ".agent-tmp/extension-announcements-and-forced-update/verify-extension.mjs": "336713d0c5f10091bd340197ec40f673d1839c539315cac2648c02cf07c4bc25"
+  },
+  "unitTests": "34/34 passed; component defects independently reproduced",
+  "scope": "isolated source host and actual static extension package; user installation not inspected"
+}

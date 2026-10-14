@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-13",
+  "sourceHashes": {
+    "entrypoints/popup/PopupPolicyHost.tsx": "786d2067bee0350130e33f4a82d37bec6d54b382c89cf7f82e6c3c573ac809ca",
+    "entrypoints/popup/popup-policy.ts": "20fe5e6f393d30f5d711a47584be66c60e46016e722022f8245c9873e970fda8",
+    "backend/src/routes/popup.ts": "96f214df6fa1b16e2c2548f5e999ff791996599b4647737b3c023ea24c1b20e9",
+    "backend/src/db/index.ts": "a22780b0e164a304625fd746c59ad716df5a839b5e72292a85987d32665e8141",
+    "admin-web/src/pages/PopupPage.tsx": "847031a47083c20853a8e04a1b57b36b69e0cb0c214347c5a122494bd5d62dcc",
+    ".agent-tmp/extension-announcements-and-forced-update/verify-p9.mjs": "65223c31fc66d03e145be097b94769b1498a4188bbd0cd938fefd53f7e8694c3"
+  },
+  "unitTests": "42/42 passed",
+  "scope": "isolated source host, actual static extension 1.15.0, actual backend on 5797 with own DB, actual admin build; no real store writes"
+}

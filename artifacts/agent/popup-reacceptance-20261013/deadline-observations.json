@@ -1,0 +1,22 @@
+[
+  {
+    "name": "backend-address-storage-hangs",
+    "elapsed": 5734,
+    "checking": true,
+    "forcedShown": false,
+    "downloadButtonPresent": false,
+    "underlyingInert": true,
+    "timeoutText": false,
+    "errors": []
+  },
+  {
+    "name": "network-timeout-with-known-forced-cache",
+    "elapsed": 5685,
+    "checking": false,
+    "forcedShown": false,
+    "downloadButtonPresent": false,
+    "underlyingInert": false,
+    "timeoutText": true,
+    "errors": []
+  }
+]

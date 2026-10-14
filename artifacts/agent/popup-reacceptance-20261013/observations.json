@@ -1,0 +1,99 @@
+{
+  "observations": [
+    {
+      "name": "strict-empty",
+      "requests": 2,
+      "responses": [
+        200,
+        200
+      ],
+      "checking": false,
+      "notice": false,
+      "images": [],
+      "errors": []
+    },
+    {
+      "name": "strict-notice",
+      "requests": 2,
+      "responses": [
+        200,
+        200
+      ],
+      "checking": false,
+      "notice": true,
+      "images": [],
+      "errors": []
+    },
+    {
+      "name": "control-without-strict",
+      "requests": 1,
+      "responses": [
+        200
+      ],
+      "checking": false,
+      "notice": false,
+      "images": [],
+      "errors": []
+    },
+    {
+      "name": "storage-write-rejection",
+      "requests": 1,
+      "responses": [
+        200
+      ],
+      "checking": false,
+      "notice": false,
+      "images": [],
+      "errors": []
+    },
+    {
+      "name": "relative-image",
+      "requests": 1,
+      "responses": [
+        200
+      ],
+      "checking": false,
+      "notice": false,
+      "images": [
+        {
+          "raw": "http://127.0.0.1:59998/popup-assets/00000000000000000000000000000000",
+          "resolved": "http://127.0.0.1:59998/popup-assets/00000000000000000000000000000000",
+          "loaded": false
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "malformed-object-after-cached-force",
+      "source": "cache",
+      "forcedRetained": true,
+      "connectionError": "策略响应格式不正确"
+    }
+  ],
+  "acceptance": [
+    {
+      "name": "strict-empty",
+      "pass": true
+    },
+    {
+      "name": "strict-notice",
+      "pass": true
+    },
+    {
+      "name": "control-without-strict",
+      "pass": true
+    },
+    {
+      "name": "storage-write-rejection",
+      "pass": true
+    },
+    {
+      "name": "relative-image",
+      "pass": false
+    },
+    {
+      "name": "malformed-object-after-cached-force",
+      "pass": true
+    }
+  ]
+}

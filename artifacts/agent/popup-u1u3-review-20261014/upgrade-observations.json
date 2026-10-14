@@ -1,0 +1,23 @@
+{
+  "before": {
+    "version": "1.15.0",
+    "forced": true
+  },
+  "afterClick": {
+    "forced": true,
+    "opened": [
+      "http://127.0.0.1:5803/popup-1.15.1.zip"
+    ]
+  },
+  "afterUpgrade": {
+    "version": "1.15.1",
+    "forced": false
+  },
+  "sameExtensionId": true,
+  "downloadBytes": 356594,
+  "downloadMatchesDeliveredZip": true,
+  "requiredVersionStill": "1.15.1",
+  "recordStillPublished": true,
+  "backend": "http://127.0.0.1:5802",
+  "passed": true
+}

@@ -20,7 +20,7 @@
 
 ## 限时特卖助手
 
-**版本**：1.14.3 ｜ Chrome MV3 扩展 + Node/Hono 后端
+**版本**：1.15.2 ｜ Chrome MV3 扩展 + Node/Hono 后端
 为**虾皮台湾站**（`seller.shopee.tw`）卖家自动化限时特卖操作。
 
 ## 技术细节去哪找

@@ -20,6 +20,7 @@ import { FLASH_SALE_FEATURE_ID } from '@/components/product/feature-catalog';
 import { buildTaskSummaries, type TaskSummary } from '@/components/product/task-summary';
 import { buildRepairSummary } from '@/entrypoints/popup/one-day-sku-task';
 import { useAppStore, setupBackgroundListener } from './store';
+import { PopupPolicyHost } from './PopupPolicyHost';
 import type { ShopeeProduct, TimeSlot } from './types';
 import * as backendApi from './backend-api';
 
@@ -461,9 +462,14 @@ export default function App() {
   const showCommonHeaderActions = page === 'home' || !autoModeActive;
   const boundStoreCount = storeBindings.filter(b => b.isActive).length;
 
+  // 到这里说明：认证已结束、已登录、店铺绑定已加载完成 —— 这就是「进入功能区」。
+  // 弹窗策略宿主只在这一刻挂载（上方三个分支都还没 return 出去），
+  // 因此未登录／恢复身份中／绑定等待时不会出现通知、强制或检查遮罩，
+  // 也不会有任何展示上报。挂在最外层保证页面切换不重建公告状态。
   return (
-    // 高度：不用 vh（扩展弹窗的视口高度由内容决定，vh 会与自身形成循环导致弹窗塌成一条），
-    // 用固定下限 + 目标上限：内容少时保持稳定高度，内容多时在 600px 内单一区域滚动、顶栏保持可达。
+    <PopupPolicyHost>
+    {/* 高度：不用 vh（扩展弹窗的视口高度由内容决定，vh 会与自身形成循环导致弹窗塌成一条），
+        用固定下限 + 目标上限：内容少时保持稳定高度，内容多时在 600px 内单一区域滚动、顶栏保持可达。 */}
     <div className="w-[500px] min-h-[500px] max-h-[600px] overflow-y-auto bg-background">
       {/* Brand Header */}
       <div className="sticky top-0 z-30 bg-shopee-brand px-4 py-2.5 flex items-center justify-between shadow-sm">
@@ -2084,5 +2090,6 @@ export default function App() {
       )}
 
     </div>
+    </PopupPolicyHost>
   );
 }

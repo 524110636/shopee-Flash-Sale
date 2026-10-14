@@ -1,0 +1,29 @@
+{
+  "provenance": "Independent background-probe.mjs execution output observed in Codex tool result, exit code 0",
+  "passed": 18,
+  "failed": 0,
+  "interceptedPlatformCalls": 17,
+  "platformRequests": "all simulated; no real Shopee writes",
+  "covered": [
+    "mandatory popup stays visible and underlying interface stays blocked",
+    "START_ENABLE accepted, real progress and exact shop_flash_sale_items write",
+    "scheduled_copy real alarm and successful copy result",
+    "valid repair payload, success=true, exact update_product_info write and stored task result",
+    "scheduled_enable exact submission and successSkus=1",
+    "wizard_create creates flash_sale_id=777777 and preserves follow-up scheduled_enable alarm",
+    "automatic second round progresses to currentRound=3 and phase=completed",
+    "original alarm names preserved, bounded request count"
+  ],
+  "unitSuite": {
+    "files": 3,
+    "passed": 46,
+    "failed": 0
+  },
+  "sourceSha256": {
+    "entrypoints\\background.ts": "5b5b532f5bfbbf944e305ee7306e3513ec550fc0ee59b12bacaebcfa3ea9a96e",
+    "entrypoints\\popup\\PopupPolicyHost.tsx": "2e074300b7c41505942062e4a40b26e95c141936dfd2c341b0c0f3bef9bc9a0d",
+    "entrypoints\\popup\\popup-policy.ts": "1a57d759235cf38100615e3b69b5a9b33bb9e63b48cfaa66348993c2504b427c",
+    "backend\\src\\routes\\popup.ts": "04caf2e588df76369ca7cf406fcaf71ebcaf846fc4b045338821a61219624232",
+    "backend\\src\\utils\\popup-policy.ts": "7878a44ce682c82c44c98099e00c23418898f21a24cff24eb0a7e5cc0ef314a8"
+  }
+}

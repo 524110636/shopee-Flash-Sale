@@ -1,0 +1,25 @@
+{
+  "environment": "current static release package; isolated no-cookie profile",
+  "version": "1.15.0",
+  "rootMounted": true,
+  "checking": false,
+  "noticeDisplayed": true,
+  "images": [
+    {
+      "raw": "/popup-assets/00000000000000000000000000000000",
+      "resolved": "chrome-extension://ahchogdndcabffnkgopcmldookhphifl/popup-assets/00000000000000000000000000000000",
+      "loaded": false
+    }
+  ],
+  "responses": [
+    200
+  ],
+  "errors": [],
+  "failed": [
+    {
+      "local": false,
+      "extension": true,
+      "error": "net::ERR_FILE_NOT_FOUND"
+    }
+  ]
+}

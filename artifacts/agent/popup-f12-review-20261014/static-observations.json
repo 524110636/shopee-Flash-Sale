@@ -1,0 +1,17 @@
+{
+  "version": "1.15.1",
+  "name": "限时特卖助手（弹窗验收）",
+  "description": "静态本地验收包；仅连接 5799 测试后端，无需热更新服务",
+  "policyResponses": [
+    {
+      "url": "http://localhost:5799/api/extension/popup-policy",
+      "status": 200
+    },
+    {
+      "url": "http://localhost:5799/api/extension/popup-policy",
+      "status": 200
+    }
+  ],
+  "storageBackendWasOverridden": false,
+  "passed": true
+}

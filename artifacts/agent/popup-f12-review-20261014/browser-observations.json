@@ -1,0 +1,110 @@
+{
+  "countText": "共 1 位用户查看过",
+  "viewerText": "查看明细 — 独立统计复核\n共 1 位登录账号查看过。按登录账号累计去重，含该记录历史发布； 同账号多设备只算一位。以服务器收到的展示上报为准，离线或关闭过快可能漏记。\n账号\t首次查看时间\nvalid@review.invalid\t2026-10-13 21:02:08\n1\n关 闭",
+  "guide": "按顺序做这五步即可。示例：旧包 1.15.1 → 要求 1.15.2 → 新包 1.15.2。\n1. 先备份现在的旧包（还没改版本时做）\n当前源码与构建产物是 1.15.1。先确认要用的输出目录，再整个复制一份留作旧包：\n· 生产配置输出目录：`.output/chrome-mv3`（`npm run build` 生成）\n· 开发模式输出目录：`.output/chrome-mv3-dev`（`npm run build -- --mode development` 生成）\n把它复制到别处（例如 `D:\\backup\\chrome-mv3-旧版`），这就是后面用来验证「旧版会被挡」的那一份。\n顺序很重要：先复制再改版本，否则复制到的是新包，旧版阻挡这一步就没法验证了。\n2. 在管理网站发布更高的要求版本，并保持发布\n新建一条「强制更新」，要求版本填 1.15.2（比旧包 1.15.1 高），\n下载地址填能真正下载到新包的地址，然后点「发布」。\n发布后**不要撤回、不要降低要求**，一直保持到第 5 步验证完成。\n3. 用第 1 步备份的旧包确认会被阻挡\n在 `chrome://extensions` 用「加载已解压的扩展程序」指向第 1 步备份的旧包目录。\n只在**没有业务任务的测试扩展**上做这件事；重载会改变后台 worker 生命周期，不要自动重载日常扩展。\n打开扩展，应看到不可取消的强制提示，点「下载最新版本」会跳到第 2 步填的地址。此时版本仍是 1.15.1，提示不会消失。\n4. 改两处版本号并构建新包\npackage.json 第 3 行：\"version\": \"1.15.2\"\nwxt.config.ts 第 18 行：version: '1.15.2'\n行号可能随源码变化；可直接搜索 version 字段定位，不依赖固定行号。\n只改这两处即可。不要手改 .output 里生成的 manifest.json 代替源码修改。\n改完执行 npm run build，产出在 .output/chrome-mv3（开发模式：npm run build -- --mode development → .output/chrome-mv3-dev）。\n5. 下载、解压、加载新包，核对实际版本并确认解除\n下载、解压、加载是三个独立动作；只下载不解压不加载，不会升级。\n在 `chrome://extensions` 用「加载已解压的扩展程序」指向解压后的新目录，或对已加载的扩展点「重新加载」。\n打开扩展卡片，确认显示的版本是 1.15.2（本页顶部的后端设置不参与判定，扩展只读自己实际加载的包版本）。\n重新打开扩展：实际版本达到要求后，强制提示应自行消失。\n前提是第 2 步的记录仍在发布、要求仍是 1.15.2 —— 不能靠撤回记录或降低要求来「让提示消失」。",
+  "layouts": [
+    {
+      "width": 953,
+      "labels": [
+        {
+          "x": 120.5,
+          "y": 265,
+          "width": 56,
+          "height": 19
+        },
+        {
+          "x": 482.5,
+          "y": 265,
+          "width": 56,
+          "height": 19
+        }
+      ],
+      "inputs": [
+        {
+          "x": 120.5,
+          "y": 290,
+          "width": 350,
+          "height": 32
+        },
+        {
+          "x": 482.5,
+          "y": 290,
+          "width": 350,
+          "height": 32
+        }
+      ],
+      "labelsAboveInputs": true,
+      "aligned": true,
+      "withinViewport": true
+    },
+    {
+      "width": 1366,
+      "labels": [
+        {
+          "x": 327,
+          "y": 265,
+          "width": 56,
+          "height": 19
+        },
+        {
+          "x": 689,
+          "y": 265,
+          "width": 56,
+          "height": 19
+        }
+      ],
+      "inputs": [
+        {
+          "x": 327,
+          "y": 290,
+          "width": 350,
+          "height": 32
+        },
+        {
+          "x": 689,
+          "y": 290,
+          "width": 350,
+          "height": 32
+        }
+      ],
+      "labelsAboveInputs": true,
+      "aligned": true,
+      "withinViewport": true
+    },
+    {
+      "width": 420,
+      "labels": [
+        {
+          "x": 32,
+          "y": 295,
+          "width": 56,
+          "height": 19
+        },
+        {
+          "x": 32,
+          "y": 387,
+          "width": 56,
+          "height": 19
+        }
+      ],
+      "inputs": [
+        {
+          "x": 32,
+          "y": 320,
+          "width": 356,
+          "height": 32
+        },
+        {
+          "x": 32,
+          "y": 412,
+          "width": 356,
+          "height": 32
+        }
+      ],
+      "labelsAboveInputs": true,
+      "aligned": true,
+      "withinViewport": true
+    }
+  ],
+  "errors": []
+}

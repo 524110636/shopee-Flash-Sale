@@ -1,0 +1,84 @@
+[
+  {
+    "name": "draft-rejected",
+    "response": {
+      "status": 200,
+      "body": {
+        "counted": false,
+        "reason": "not-published"
+      }
+    },
+    "passed": true
+  },
+  {
+    "name": "valid-and-concurrent-dedup",
+    "first": {
+      "counted": true,
+      "isNewView": true
+    },
+    "total": 1,
+    "viewers": [
+      {
+        "email": "valid@review.invalid",
+        "firstViewedAt": "2026-10-13 21:02:08",
+        "mode": "notice",
+        "revision": 1
+      }
+    ],
+    "passed": true
+  },
+  {
+    "name": "viewer-authorization",
+    "ordinaryStatus": 403,
+    "anonymousStatus": 401,
+    "passed": true
+  },
+  {
+    "name": "invalid-revision-must-not-increment",
+    "actualRevision": 1,
+    "reportedRevision": 999999,
+    "response": {
+      "counted": false,
+      "reason": "stale-revision"
+    },
+    "before": 1,
+    "after": 1,
+    "passed": true
+  },
+  {
+    "name": "omitted-revision-must-not-increment",
+    "actualRevision": 1,
+    "reportedRevision": "missing",
+    "response": {
+      "counted": false,
+      "reason": "bad-revision"
+    },
+    "before": 1,
+    "after": 1,
+    "passed": true
+  },
+  {
+    "name": "old-revision-after-republish",
+    "actualRevision": 2,
+    "reportedRevision": 1,
+    "response": {
+      "counted": false,
+      "reason": "stale-revision"
+    },
+    "passed": true
+  },
+  {
+    "name": "withdraw-retains-and-rejects-late",
+    "total": 1,
+    "response": {
+      "counted": false,
+      "reason": "not-active"
+    },
+    "passed": true
+  },
+  {
+    "name": "revoked-admin-token-rejected",
+    "status": 403,
+    "passed": true
+  }
+]

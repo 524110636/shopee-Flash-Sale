@@ -1,0 +1,49 @@
+[
+  {
+    "name": "published-record-change-forced-to-notice",
+    "before": {
+      "forced": "type-change-force"
+    },
+    "afterDraft": {
+      "forced": "type-change-force"
+    },
+    "afterPublish": {
+      "notice": {
+        "mode": "notice",
+        "revision": 1,
+        "title": "now-notice",
+        "contentHtml": "<p>notice-new</p>",
+        "requiredVersion": null,
+        "downloadUrl": null,
+        "publishedAt": "2026-10-13T09:59:11.898Z"
+      },
+      "forcedUpdate": {
+        "mode": "forced_update",
+        "revision": 1,
+        "title": "now-notice",
+        "contentHtml": "<p>notice-new</p>",
+        "requiredVersion": null,
+        "downloadUrl": null,
+        "publishedAt": "2026-10-13T09:59:11.898Z"
+      }
+    },
+    "listStatus": "published",
+    "activeSlots": [
+      {
+        "mode": "notice",
+        "revision": 1,
+        "activeRecordId": "0f5f509b-3e36-4671-a5df-d779f73e0522"
+      },
+      {
+        "mode": "forced_update",
+        "revision": 1,
+        "activeRecordId": "0f5f509b-3e36-4671-a5df-d779f73e0522"
+      }
+    ]
+  },
+  {
+    "name": "explicit-withdraw-retained-status",
+    "status": "draft",
+    "retained": true
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "version": "1.15.0",
+  "initial": {
+    "forcedShown": true,
+    "inert": true
+  },
+  "afterTimeout": {
+    "checking": false,
+    "forcedShown": false,
+    "inert": false,
+    "timeoutText": true
+  }
+}
