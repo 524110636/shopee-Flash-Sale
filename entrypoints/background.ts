@@ -23,6 +23,16 @@ import {
   RepairOwnershipError,
   RepairStaleWriteError,
 } from './popup/one-day-sku-runner';
+import {
+  handleShippingAlarm,
+  handleShippingMessage,
+  isShippingInFlight,
+  reconcileOrphanShippingTask,
+  checkShippingPlans,
+  checkShippingGroup,
+  syncShippingGroupAlarm,
+  type ShippingBackgroundDeps,
+} from '@/features/shipping/background';
 
 // ===== Constants =====
 const GRAPHQL_URL = 'https://seller.shopee.tw/api/marketing/v4/graphql/query/';
@@ -858,11 +868,33 @@ function isRepairInFlight(): boolean {
 }
 
 /**
+ * shipping 是否正在执行商品写：供特卖开卖／复制／修复入口做反向互斥。
+ *
+ * 双向而非单向：shipping 侧有 `findOtherWritesForShipping`，
+ * 这边也要能看见 shipping，否则"修复启动 vs 改备货"仍可能同时改同一商品。
+ */
+async function findShippingWriteConflict(): Promise<string | null> {
+  try {
+    if (isShippingInFlight()) return '商品备货与物流正在执行商品写操作，请等它结束后再继续';
+    const stored = await browser.storage.local.get('_shippingTask');
+    const task = stored._shippingTask as { status?: string } | undefined;
+    if (task && !['completed', 'failed', 'stopped', 'interrupted'].includes(String(task.status))) {
+      return '商品备货与物流正在执行商品写操作，请等它结束后再继续';
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 供开卖/定时等既有写入口调用：修复进行中时返回拒绝原因，否则返回 null。
  *
  * 只是拒绝**新**的冲突动作，不去停已经在跑的任务，也不加队列。
  */
 async function findActiveRepairConflict(): Promise<string | null> {
+  const shippingConflict = await findShippingWriteConflict();
+  if (shippingConflict) return shippingConflict;
   if (isRepairInFlight()) {
     return '一键修复正在执行商品写操作，请等它结束后再开启限时特卖';
   }
@@ -883,6 +915,8 @@ async function findActiveRepairConflict(): Promise<string | null> {
  * 只做必要的入口 guard，不搭建队列、不取消既有任务。
  */
 async function findSameShopWriteConflict(): Promise<string | null> {
+  const shippingConflict = await findShippingWriteConflict();
+  if (shippingConflict) return shippingConflict;
   try {
     const keys = await browser.storage.local.get(['_autoModeStatus', '_scheduledEnable', '_wizardFlowParams', '_enableProgress', '_copyTaskStatus']);
     const auto = keys._autoModeStatus as AutoModeStatus | undefined;
@@ -904,6 +938,63 @@ async function findSameShopWriteConflict(): Promise<string | null> {
     return null;
   }
 }
+
+/**
+ * shipping 使用的反向冲突检查：同店铺已有特卖／复制／修复的实际写操作时返回可读原因。
+ *
+ * 与 `findSameShopWriteConflict` 是**双向**而非重复：那个函数是"修复入口问别人"，
+ * 这里是"shipping 问别人"，两边都要在发第一条写请求前各自核对一次。
+ */
+async function findOtherWritesForShipping(): Promise<string | null> {
+  if (isRepairInFlight()) return '一键修复正在执行商品写操作，请等它结束后再修改备货';
+  try {
+    const keys = await browser.storage.local.get([
+      '_autoModeStatus',
+      '_enableProgress',
+      '_scheduledEnable',
+      '_wizardFlowParams',
+      ONE_DAY_REPAIR_TASK_KEY,
+    ]);
+    const auto = keys._autoModeStatus as AutoModeStatus | undefined;
+    if (auto?.isRunning) return '自动模式正在执行写操作，请等它结束或先停止自动模式';
+    const progress = keys._enableProgress as { running?: boolean } | undefined;
+    if (progress?.running || _enableRunning) return '正在开启限时特卖，请等待完成后再修改备货';
+    if (_copyExecuting) return '正在复制限时特卖活动，请等它结束后再修改备货';
+    const repairTask = keys[ONE_DAY_REPAIR_TASK_KEY] as OneDayRepairTask | undefined;
+    if (repairTask && isRepairTaskActive(repairTask)) return '一键修复正在执行商品写操作，请等它结束后再修改备货';
+    const scheduled = keys._scheduledEnable as { targetTime?: number } | undefined;
+    if (scheduled?.targetTime) return '存在定时开启特卖任务，可能随时开始写操作，请先处理';
+    const wizard = keys._wizardFlowParams as { enableFireTime?: number } | undefined;
+    if (wizard?.enableFireTime) return '存在定时创建特卖活动任务，请先处理';
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * shipping 的入口依赖组装：复用现有 Cookie 读取、身份核实、MAIN-world 请求与后端校验。
+ *
+ * 刻意**不**复制第二个授权实现：`validateAccess` 直接调既有 `validateShopAccess`，
+ * action 用明确的 shipping 标识；shipping 不调用 `consume-trial`（本轮不新增收费规则）。
+ */
+const shippingDeps: ShippingBackgroundDeps = {
+  injectedFetch: (url, method, body) => injectedFetch<any>(url, method, body),
+  getCredential: getSpcCdsFromCookies,
+  getShopIdentity: (credential) => getRepairShopIdentity(credential.spcCds, credential.spcCdsVer),
+  getAuthUserId: getRepairAuthUserId,
+  validateAccess: async (credential, shopId) => {
+    const result = await validateShopAccess(credential.spcCds, 'shipping_update', shopId);
+    return result.allowed ? { allowed: true } : { allowed: false, error: result.error };
+  },
+  findOtherWriteConflict: findOtherWritesForShipping,
+  log: (message, level) => {
+    const tag = '[bg:shipping]';
+    if (level === 'error') console.error(tag, message);
+    else if (level === 'warn') console.warn(tag, message);
+    else console.log(tag, message);
+  },
+};
 
 /** 异步跑修复；不 await，避免与 popup 关闭耦合 */
 function runRepairInBackground(task: OneDayRepairTask, products: ShopeeProduct[]) {
@@ -2213,8 +2304,32 @@ export default defineBackground({
 
     // worker 重启后协调旧的一键修复记录：无执行者则标记真实中断，不自动重放写请求
     reconcileOrphanRepairTask();
+    // shipping 同理：无执行者的记录标中断并保留结果，不自动重放商品写
+    reconcileOrphanShippingTask().then(changed => {
+      if (changed) console.log('[bg:shipping] 检测到无执行者的旧任务，已标记中断');
+    });
+    // SW 重启后补检计划：只处理当前台湾日期应执行而未执行的轮次
+    checkShippingPlans(shippingDeps).catch(e => {
+      console.warn('[bg:shipping] 启动补检计划失败:', e?.message || e);
+    });
+    /**
+     * SW 重启后先重建单次组的补检 alarm，再补检一次。
+     *
+     * 顺序很重要：31.6 规则 1 要求"浏览器启动／worker 恢复先读记录并恢复必要 alarm，
+     * 不以有网或登录成功为恢复本地调度的前提"。若先补检再建 alarm，
+     * 这一次补检若因离线什么都没做，之后就再也没有下一次机会。
+     */
+    syncShippingGroupAlarm()
+      .then(() => checkShippingGroup(shippingDeps))
+      .catch(e => {
+        console.warn('[bg:shipping] 启动补检单次安排失败:', e?.message || e);
+      });
     browser.runtime.onMessage.addListener(async (msg: any) => {
       const type = msg?.type;
+
+      // ===== 商品备货与物流（shipping）：独立模块处理，入口只做分发 =====
+      const shippingResult = await handleShippingMessage(shippingDeps, msg);
+      if (shippingResult !== undefined) return shippingResult;
 
       // ===== SPC_CDS_REQUEST: Cookie 读取 =====
       if (type === 'SPC_CDS_REQUEST') {
@@ -3264,6 +3379,9 @@ export default defineBackground({
         handleHeartbeat();
         return;
       }
+
+      // shipping 自己的 alarm（计划补检／保活）：交给独立模块，不与其他业务的 alarm 混写
+      if (await handleShippingAlarm(shippingDeps, alarm.name)) return;
 
       if (alarm.name === ORPHAN_ALARM) {
         await reconcileOrphanRepairTask();

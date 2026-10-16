@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { Zap } from 'lucide-react';
+import { Zap, PackageSearch } from 'lucide-react';
 import {
   FEATURES,
   FEATURE_CATEGORIES,
   FLASH_SALE_FEATURE_ID,
+  SHIPPING_FEATURE_ID,
   groupFeaturesByCategory,
   type FeatureDefinition,
 } from '@/components/product/feature-catalog';
@@ -17,11 +18,12 @@ import {
 const EMOJI_RE = /\p{Extended_Pictographic}/u;
 
 describe('feature catalog', () => {
-  it('registers only the real flash sale card', () => {
-    expect(FEATURES).toHaveLength(1);
-    expect(FEATURES[0].id).toBe(FLASH_SALE_FEATURE_ID);
+  it('registers only the real tool cards', () => {
+    expect(FEATURES.map(f => f.id)).toEqual([FLASH_SALE_FEATURE_ID, SHIPPING_FEATURE_ID]);
     expect(FEATURES[0].title).toBe('限时特卖');
     expect(FEATURES[0].categoryId).toBe('shop-operations');
+    expect(FEATURES[1].title).toBe('商品备货与物流');
+    expect(FEATURES[1].categoryId).toBe('shop-operations');
   });
 
   it('keeps the required definition fields for future tools', () => {
@@ -36,8 +38,9 @@ describe('feature catalog', () => {
   });
 
   it('uses a component icon instead of emoji anywhere in the card fields', () => {
+    const icons = new Set([Zap, PackageSearch]);
     for (const feature of FEATURES) {
-      expect(feature.Icon).toBe(Zap);
+      expect(icons.has(feature.Icon)).toBe(true);
       for (const text of [feature.title, feature.description, feature.entry, feature.id]) {
         expect(EMOJI_RE.test(text), `功能定义里不应出现 emoji：${text}`).toBe(false);
       }
@@ -52,6 +55,17 @@ describe('feature catalog', () => {
     expect(description).not.toContain('自动模式');
   });
 
+  it('describes the shipping tool without promising the excluded 满额赠 features', () => {
+    const description = FEATURES[1].description;
+    expect(description).toContain('备货天数');
+    expect(description).toContain('物流');
+    expect(description).toContain('安排');
+    // 满额赠明确不在迁移范围，卡片文案也不能暗示它
+    expect(description).not.toContain('满额赠');
+    // 第 53.4 节 U15：主路径只剩单次成对安排，不能再承诺旧的"至多两项定时计划"
+    expect(description).not.toContain('至多两项');
+  });
+
   it('groups features under their category and drops empty categories', () => {
     const groups = groupFeaturesByCategory(FEATURES, [
       ...FEATURE_CATEGORIES,
@@ -59,7 +73,7 @@ describe('feature catalog', () => {
     ]);
     expect(groups).toHaveLength(1);
     expect(groups[0].category.id).toBe('shop-operations');
-    expect(groups[0].features.map(f => f.id)).toEqual([FLASH_SALE_FEATURE_ID]);
+    expect(groups[0].features.map(f => f.id)).toEqual([FLASH_SALE_FEATURE_ID, SHIPPING_FEATURE_ID]);
   });
 
   it('supports a fixture with many cards without changing entry semantics', () => {

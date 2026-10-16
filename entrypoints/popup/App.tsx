@@ -16,8 +16,11 @@ import { StoreStatus } from '@/components/product/StoreStatus';
 import { UndiscountedSkuModal } from '@/components/product/UndiscountedSkuModal';
 import { ScheduledTaskCard } from '@/components/product/ScheduledTaskCard';
 import { FeatureHome } from '@/components/product/FeatureHome';
-import { FLASH_SALE_FEATURE_ID } from '@/components/product/feature-catalog';
+import { FLASH_SALE_FEATURE_ID, SHIPPING_FEATURE_ID } from '@/components/product/feature-catalog';
 import { buildTaskSummaries, type TaskSummary } from '@/components/product/task-summary';
+import { ShippingWorkPage } from '@/components/product/shipping/ShippingWorkPage';
+import { useShippingStore } from '@/features/shipping/store';
+import { buildShippingSummary } from '@/features/shipping/task';
 import { buildRepairSummary } from '@/entrypoints/popup/one-day-sku-task';
 import { useAppStore, setupBackgroundListener } from './store';
 import { PopupPolicyHost } from './PopupPolicyHost';
@@ -89,10 +92,12 @@ export default function App() {
     goToFlashSaleSelection, addToExistingFlashSale, createNewFlashSaleAndAdd, scheduleEnableForFlashSale,
   } = useAppStore();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  // 导航：首页（选工具）↔ 限时特卖工作页。仅展示状态，不持久化、不参与业务动作。
-  const [page, setPage] = useState<'home' | 'flash-sale'>('home');
+  // 导航：首页（选工具）↔ 限时特卖工作页 / 商品备货与物流工作页。
+  // 仅展示状态，不持久化、不参与业务动作。
+  const [page, setPage] = useState<'home' | 'flash-sale' | 'shipping'>('home');
   // 首次进入后才挂载工作区；返回首页只隐藏不卸载，以保留选品/草稿等局部状态
   const [flashSaleMounted, setFlashSaleMounted] = useState(false);
+  const [shippingMounted, setShippingMounted] = useState(false);
   const [autoPanelMounted, setAutoPanelMounted] = useState(false);
   // 任务状态恢复完成后才认为已就绪，此前首页显示加载态而不是谎称空闲
   const [taskStatusReady, setTaskStatusReady] = useState(false);
@@ -114,6 +119,9 @@ export default function App() {
   const [wizardDelayMin, setWizardDelayMin] = useState('5');
   const [selectedWizardSlotId, setSelectedWizardSlotId] = useState<number | null>(null);
   const { checkAuthOnStartup, isLoggedIn, isCheckingAuth, storeBindings, storeBindingsLoaded, storeBindingsError, shopId, authUser, pendingUndiscountedSkus, showUndiscountedModal, isAutoRefreshingBinding } = useAppStore();
+
+  // 「商品备货与物流」任务记录：只读订阅，用于首页摘要与工作页展示；写入全在 background
+  const shippingTask = useShippingStore(s => s.task);
 
   // 检测当前店铺 SPC_CDS 是否在用户绑定列表中
   const isCurrentStoreBound = useMemo(() => {
@@ -295,6 +303,11 @@ export default function App() {
       if (repair) {
         summaries.push({ kind: 'repair', ...repair });
       }
+      // 「商品备货与物流」同样是独立链路：任务记录只读同步，摘要由本功能自己的规则派生
+      const shipping = buildShippingSummary(shippingTask);
+      if (shipping) {
+        summaries.push(shipping);
+      }
     }
     return summaries;
   }, [
@@ -303,11 +316,17 @@ export default function App() {
     hasScheduledCopy, scheduledTaskStatus,
     scheduledEnableStatus,
     _completedCopyInfo?.isNew, _completedCopyInfo?.sourceFlashSaleName,
-    repairTask,
+    repairTask, shippingTask,
   ]);
 
-  /** 首页卡片普通入口：固定进入手动模式（工作页内的绑定/身份门控照旧拦截业务操作） */
+  /** 首页卡片普通入口：按 featureId 进入对应工作页（工作页内的绑定/身份门控照旧拦截业务操作） */
   const enterFeature = (featureId: string) => {
+    if (featureId === SHIPPING_FEATURE_ID) {
+      setShippingMounted(true);
+      setPage('shipping');
+      if (autoModeActive) exitAutoMode();
+      return;
+    }
     if (featureId !== FLASH_SALE_FEATURE_ID) return;
     setFlashSaleMounted(true);
     setPage('flash-sale');
@@ -326,6 +345,12 @@ export default function App() {
 
   /** 任务摘要查看入口：按真实任务类型直达对应模式，不启动/停止任务 */
   const viewTask = (summary: TaskSummary) => {
+    if (summary.kind === 'shipping') {
+      setShippingMounted(true);
+      setPage('shipping');
+      if (autoModeActive) exitAutoMode();
+      return;
+    }
     setFlashSaleMounted(true);
     setPage('flash-sale');
     if (summary.kind === 'auto') {
@@ -469,12 +494,17 @@ export default function App() {
   return (
     <PopupPolicyHost>
     {/* 高度：不用 vh（扩展弹窗的视口高度由内容决定，vh 会与自身形成循环导致弹窗塌成一条），
-        用固定下限 + 目标上限：内容少时保持稳定高度，内容多时在 600px 内单一区域滚动、顶栏保持可达。 */}
-    <div className="w-[500px] min-h-[500px] max-h-[600px] overflow-y-auto bg-background">
+        用固定下限 + 目标上限：内容少时保持稳定高度，内容多时在 600px 内单一区域滚动、顶栏保持可达。
+        宽度：**不写 max-w-[100vw]**。真实 Chrome 工具栏 action popup 的视口宽度由内容决定，
+        `max-width:100vw` 会让根容器去读"自身撑出来的视口"，形成循环：实测原生 popup 里
+        `window.innerWidth` 只有 25px，整个弹窗被压成窄条（用户截图复现）。
+        改为只给确定的下限／上限（500）：容器自己撑到 500，popup 视口随之变成 500。
+        600px 高度上限与滚动保持原样，也不用 overflow:hidden 藏内容。 */}
+    <div className="w-[500px] min-w-[500px] min-h-[500px] max-h-[600px] overflow-y-auto bg-background">
       {/* Brand Header */}
       <div className="sticky top-0 z-30 bg-shopee-brand px-4 py-2.5 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2.5">
-          {page === 'flash-sale' && (
+          {page !== 'home' && (
             <button
               className="text-[11px] px-2 py-1 rounded border border-white/40 text-white/90 hover:bg-white/10 transition-colors"
               onClick={goHome}
@@ -567,6 +597,23 @@ export default function App() {
             />
           </div>
         )}
+
+        {/* 「商品备货与物流」工作页：独立功能模块自己的界面，外壳只负责导航与挂载 */}
+        <div
+          {...(page === 'shipping' ? {} : { inert: true })}
+          aria-hidden={page === 'shipping' ? undefined : true}
+          className={page === 'shipping' ? 'block' : 'hidden'}
+        >
+          {shippingMounted && (
+            <>
+              <div className="px-4 pt-4">
+                <AuthPanel />
+                {isLoggedIn && <StoreStatus />}
+              </div>
+              <ShippingWorkPage ownerShopId={shopId ?? null} ownerUserId={authUser?.id ?? null} />
+            </>
+          )}
+        </div>
 
         {/* 限时特卖工作页：首次进入后常驻挂载，切回首页只隐藏（inert + hidden，不接收焦点/点击） */}
         <div

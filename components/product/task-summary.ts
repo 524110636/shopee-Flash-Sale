@@ -5,7 +5,7 @@
  * 注意：自动页签选中（autoModeActive）不是运行状态，这里只看 isRunning。
  */
 
-export type TaskSummaryKind = 'loading' | 'auto' | 'manual' | 'scheduled' | 'copy-completed' | 'repair';
+export type TaskSummaryKind = 'loading' | 'auto' | 'manual' | 'scheduled' | 'copy-completed' | 'repair' | 'shipping';
 
 export interface TaskSummary {
   kind: TaskSummaryKind;
