@@ -1,0 +1,78 @@
+{
+  "source": "D:\\shopee_xm\\虾皮插件-客户",
+  "scope": "static source only; root working tree; no runtime or network validation",
+  "files": [
+    {
+      "path": "manifest.json",
+      "bytes": 5216,
+      "sha256": "5e293ecd6b093ed7f76cdb87e3f8c918e295381ce72b6c6c68c265d8948bbf71",
+      "mtime_ns": 1790512754306657700
+    },
+    {
+      "path": "popup.html",
+      "bytes": 22104,
+      "sha256": "6136ae0be216b993ef3e639ce8bceeb5694fa970ae31290725e85822e49a8255",
+      "mtime_ns": 1790513098590072400
+    },
+    {
+      "path": "popup.js",
+      "bytes": 81562,
+      "sha256": "42365931e33df47f59758ea8ad80f6c5f54e4f74e23a59a69724e9ca472b01eb",
+      "mtime_ns": 1790513111200580500
+    },
+    {
+      "path": "dashboard.html",
+      "bytes": 124767,
+      "sha256": "77e10cecd540c08f68edabb2c5b5e19cc5126dd491aeefbbf16726d056d10137",
+      "mtime_ns": 1790285538237836000
+    },
+    {
+      "path": "dashboard.js",
+      "bytes": 598556,
+      "sha256": "e1440638f0fb3cceb84dad11b7042d1c8f10ba87841258f796b75486077e9ab5",
+      "mtime_ns": 1790512760578590400
+    },
+    {
+      "path": "shipping-console.html",
+      "bytes": 61566,
+      "sha256": "465610630bf0e7da23376cafa38600a1b9581fe299e6c7003cc5224d231daf3b",
+      "mtime_ns": 1780421561020265600
+    },
+    {
+      "path": "shipping-console.js",
+      "bytes": 163417,
+      "sha256": "05fd32c7e6fee46d7daebf55c14e89e3b2097f1a73b3c3fe776784eb17799427",
+      "mtime_ns": 1790510727434805200
+    },
+    {
+      "path": "topup.html",
+      "bytes": 21433,
+      "sha256": "d60246611a9e7b0000cc94fea91ebe1626e1fd1d10265e90d3327e50a1dbd720",
+      "mtime_ns": 1779219262160789300
+    },
+    {
+      "path": "topup.js",
+      "bytes": 107668,
+      "sha256": "2a34e1d55ea005558a7155fde32e61d41017339b441c8bdc80d6401afe1cae19",
+      "mtime_ns": 1779418283249541600
+    },
+    {
+      "path": "content.js",
+      "bytes": 33823,
+      "sha256": "6269128b8a679b5a6b9643858e96cb2580a06ef18ca6b88df502427248ead7eb",
+      "mtime_ns": 1790512760563591100
+    },
+    {
+      "path": "background/main.js",
+      "bytes": 1191902,
+      "sha256": "b4ca3a8c7960cd616dab0dc36baa22608367badc7dd73c1ac7348e1ed4cf8641",
+      "mtime_ns": 1790513127380489900
+    },
+    {
+      "path": "site-config.js",
+      "bytes": 5667,
+      "sha256": "b42c174675b5a884806dfe93f66a64dab924fe6872ad44e957dce6dc411ee3d7",
+      "mtime_ns": 1769076980759497300
+    }
+  ]
+}

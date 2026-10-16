@@ -1,0 +1,31 @@
+{
+  "conclusion": "not accepted; task08 section34 rework",
+  "date": "2026-10-15",
+  "relatedRegression": {
+    "command": "npx vitest run tests/unit/shipping-group.test.ts tests/unit/shipping-rules.test.ts tests/unit/shipping-task.test.ts tests/unit/shipping-runner.test.ts tests/unit/shipping-api.test.ts tests/unit/feature-navigation.test.ts tests/unit/one-day-repair-task.test.ts tests/unit/one-day-repair-runner.test.ts tests/unit/popup-policy-host.test.ts",
+    "filesPassed": 9,
+    "testsPassed": 360,
+    "failed": 0,
+    "exitCode": 0,
+    "limitation": "related regression only; does not imply new behavior acceptance"
+  },
+  "actualMV3Observations": {
+    "total": 6,
+    "passed": 1,
+    "failed": 5
+  },
+  "actualUIObservations": {
+    "total": 3,
+    "passed": 0,
+    "failed": 3
+  },
+  "sourceSnapshotUnchanged": true,
+  "deliveredBackgroundSha256": "e740545901aeffcd29ee97f2d59be719a8f5cc26e78f69651816797390a99f96",
+  "realShopeeRequests": 0,
+  "ownProfilesRemoved": true,
+  "productSourcesOrBuildsChanged": false,
+  "servicesStartedOrStopped": false,
+  "temporaryBytes": 129245,
+  "evidenceBytesExcludingReceipt": 125694,
+  "actualWholeWorkerLateCallbackRegression": "not proven; pure-module counterexample only, not separate blocker"
+}

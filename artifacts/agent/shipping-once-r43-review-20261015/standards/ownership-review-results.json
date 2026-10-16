@@ -1,0 +1,48 @@
+{
+  "scope": "Original source functions and switch AST, all process/network/record effects mocked; no real service start/stop.",
+  "sourceSha256": "465e32caa2e5b045017241669f1341752a20ef4e733d83c46fb08eb1c0832dea",
+  "results": [
+    {
+      "scenario": "predicate",
+      "exitCode": 0,
+      "passed": true,
+      "checks": 13
+    },
+    {
+      "scenario": "foreign",
+      "exitCode": 4,
+      "passed": true,
+      "recordedPid": null,
+      "source": null,
+      "realStopCalls": 0,
+      "launchRemoved": true
+    },
+    {
+      "scenario": "child-no-db",
+      "exitCode": 4,
+      "passed": true,
+      "recordedPid": null,
+      "source": null,
+      "realStopCalls": 0,
+      "launchRemoved": true
+    },
+    {
+      "scenario": "child-valid",
+      "exitCode": 0,
+      "passed": true,
+      "recordedPid": 800,
+      "source": "derived-from-this-launch",
+      "realStopCalls": 0,
+      "launchRemoved": true
+    },
+    {
+      "scenario": "child-old",
+      "exitCode": 4,
+      "passed": true,
+      "recordedPid": null,
+      "source": null,
+      "realStopCalls": 0,
+      "launchRemoved": true
+    }
+  ]
+}

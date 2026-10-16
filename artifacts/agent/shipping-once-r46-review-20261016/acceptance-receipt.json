@@ -1,0 +1,32 @@
+{
+  "conclusion": "not accepted; original R7/46 invalidated selection still submits empty; section49 only",
+  "actualMV3UI": {
+    "total": 3,
+    "passed": 3
+  },
+  "specStoreModal": {
+    "total": 17,
+    "passed": 14,
+    "sameRootFailures": 3
+  },
+  "standardsModal": {
+    "total": 5,
+    "passed": 3,
+    "sameRootFailures": 2
+  },
+  "units": {
+    "command": "npx vitest run tests/unit/shipping-exclude-modal.test.ts tests/unit/shipping-store-isolation.test.ts tests/unit/shipping-rules.test.ts",
+    "filesPassed": 3,
+    "testsPassed": 76,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "profileRemoved": true,
+  "coreAndLauncherHashesUnchanged": 6,
+  "productSourcesAndPackageUnchanged": true,
+  "oldEvidenceWritten": false,
+  "realShopeeRequests": 0,
+  "servicesStartedOrStopped": false,
+  "temporaryBytes": 1236529,
+  "evidenceBytesExcludingReceipt": 95853
+}

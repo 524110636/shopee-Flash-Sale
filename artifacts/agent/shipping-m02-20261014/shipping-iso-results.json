@@ -1,0 +1,964 @@
+{
+  "checks": [
+    {
+      "name": "S1 首页出现「商品备货与物流」真实卡片",
+      "ok": true,
+      "detail": "商品备货与物流"
+    },
+    {
+      "name": "S1 点击卡片进入独立功能页（不再只有特卖）",
+      "ok": true,
+      "detail": "进入备货修改页"
+    },
+    {
+      "name": "S1 非法天数在界面被拒绝（提示 + 不启动）",
+      "ok": true,
+      "detail": "99 被拒绝"
+    },
+    {
+      "name": "S1 设置即时落盘，返回首页再进入仍保留",
+      "ok": true,
+      "detail": "天数 5 / 预售 / 排除保留"
+    },
+    {
+      "name": "S2 预检按范围与排除得出准确写集合，并列出不支持项",
+      "ok": true,
+      "detail": "手动 0 / 特卖 1 / 不支持 1"
+    },
+    {
+      "name": "S2 手动排除命中真实商品时计入手动",
+      "ok": true,
+      "detail": "手动排除 101 已生效"
+    },
+    {
+      "name": "S2 手动排除优先于特卖排除并计入手动",
+      "ok": true,
+      "detail": "手动优先"
+    },
+    {
+      "name": "S2 下架范围只取 status=8，在线范围只取 1",
+      "ok": true,
+      "detail": "下架 103 / 在线 101,102,105"
+    },
+    {
+      "name": "S2 字符串 status 的在线商品被纳入（不被误判下架）",
+      "ok": true,
+      "detail": "105 纳入，106 排除"
+    },
+    {
+      "name": "S2 商品列表读取失败时不写全店，给出可读原因",
+      "ok": true,
+      "detail": "失败不写全店"
+    },
+    {
+      "name": "S2 特卖排除调查失败时停在预检（不当成没有特卖）",
+      "ok": true,
+      "detail": "调查失败即停"
+    },
+    {
+      "name": "S3 逐项失败按商品归类，跳过不算成功",
+      "ok": true,
+      "detail": "{\"101\":\"success\",\"102\":\"success\",\"103\":\"skipped\",\"105\":\"failed\"}"
+    },
+    {
+      "name": "S3 实际写入请求与回读结果能对应",
+      "ok": true,
+      "detail": "成功 2 件，写请求 1 批"
+    },
+    {
+      "name": "S4 启动后关闭 popup，后台继续推进并完成",
+      "ok": true,
+      "detail": "关闭 popup 后完成，成功 3 件"
+    },
+    {
+      "name": "S4 重开 popup 可查到结果与逐商品状态",
+      "ok": true,
+      "detail": "重开可见结果"
+    },
+    {
+      "name": "S4 重复启动不会创建第二份任务",
+      "ok": true,
+      "detail": "首次：false，第二次：false"
+    },
+    {
+      "name": "S4 停止后不再发新写请求，已发项可解释",
+      "ok": true,
+      "detail": "状态 stopped，写请求 1 批，未执行 0 件（均带原因）"
+    },
+    {
+      "name": "S5 未勾选物流时零物流写请求",
+      "ok": true,
+      "detail": "物流写请求 0"
+    },
+    {
+      "name": "S5 勾选后按渠道记录原状态，关闭原启用渠道，完成后恢复",
+      "ok": true,
+      "detail": "渠道记录：[{\"channelId\":1,\"closed\":\"success\",\"originallyEnabled\":true,\"restored\":\"success\"},{\"channelId\":2,\"closed\":\"skipped\",\"originallyEnabled\":false,\"restored\":\"skipped\"},{\"channelId\":3,\"closed\":\"success\",\"originallyEnabled\":true,\"restored\":\"success\"}]"
+    },
+    {
+      "name": "S5 关闭失败时不继续批改，先恢复已关闭渠道",
+      "ok": true,
+      "detail": "状态 failed，未发商品写"
+    },
+    {
+      "name": "S5 恢复失败时保留待处理清单，不显示整体成功",
+      "ok": true,
+      "detail": "渠道 2 restored=failed"
+    },
+    {
+      "name": "S5 换店后不恢复到错店，待恢复状态可见",
+      "ok": true,
+      "detail": "换店被拒（当前店铺（9999）与任务店铺（7701）不一致，已停止所有写操作），界面 3 处提示，列出渠道 2"
+    },
+    {
+      "name": "S5 回到原店铺后可恢复，且不打开原先关闭的渠道",
+      "ok": true,
+      "detail": "恢复完成，无待处理渠道"
+    },
+    {
+      "name": "S6 计划写入后创建 shipping 专属 alarm，不碰特卖 alarm",
+      "ok": true,
+      "detail": "alarm 周期 2 分钟"
+    },
+    {
+      "name": "S6 关闭全部计划后 shipping alarm 被清理",
+      "ok": true,
+      "detail": "alarm 已清理"
+    },
+    {
+      "name": "S7 shipping 运行中时特卖写入口被拒绝（双向互斥）",
+      "ok": true,
+      "detail": "开卖：商品备货与物流正在执行商品写操作，请等它结束后再继续；修复：商品备货与物流正在执行商品写操作，请等它结束后再继续"
+    },
+    {
+      "name": "S7 shipping 运行中时重复启动被拒绝（唯一实例）",
+      "ok": true,
+      "detail": "已有备货修改任务在执行，请先等它结束"
+    },
+    {
+      "name": "S7 特卖写任务进行中时 shipping 启动被拒绝",
+      "ok": true,
+      "detail": "自动模式正在执行写操作，请等它结束或先停止自动模式"
+    },
+    {
+      "name": "S8 身份核实不到时预检与启动都停止",
+      "ok": true,
+      "detail": "无法核实当前店铺身份，请打开卖家中心页面后重试"
+    },
+    {
+      "name": "S8 非法天数在后台也被拒绝",
+      "ok": true,
+      "detail": "备货天数必须是 1–10 之间的整数"
+    },
+    {
+      "name": "S8 错误信息与 storage 中不含凭据原文",
+      "ok": true,
+      "detail": "凭据未落盘"
+    },
+    {
+      "name": "S8 未识别的店铺写请求为 0（全部走 stub）",
+      "ok": true,
+      "detail": "未 stub 写请求 0"
+    },
+    {
+      "name": "S9 特卖卡片仍在，原有导航未被破坏",
+      "ok": true,
+      "detail": "两张卡片均可进入"
+    },
+    {
+      "name": "S9 停止 shipping 不影响特卖的 storage 与 alarm",
+      "ok": true,
+      "detail": "特卖记录与 alarm 未被触碰"
+    },
+    {
+      "name": "S10 shipping 未写入特卖 store 的键",
+      "ok": true,
+      "detail": "shipping 自有键：_shippingDiagnostics, _shippingIdentity, _shippingPreview, _shippingSettings, _shippingStartError"
+    },
+    {
+      "name": "R1 UI 对部分活动读取失败 fail closed（不给目标确认）",
+      "ok": true,
+      "detail": "fail closed：特卖排除调查失败，已停止：特卖活动 9002 的商品读取失败：API 请求失败: HTTP 500: Internal Server Error"
+    },
+    {
+      "name": "R1 开跑前特卖调查失败：零商品写请求",
+      "ok": true,
+      "detail": "开跑前检查未通过，未发出任何商品写请求：特卖排除调查失败，已停止：特卖活动 9002 的商品读取失败：API 请求失败: HTTP 500: Internal Server Error"
+    },
+    {
+      "name": "R2 未知传输结果不重发（写请求只发一次）",
+      "ok": true,
+      "detail": "写请求 1 次；结果 {\"unknown\":0,\"failed\":4,\"success\":0}"
+    },
+    {
+      "name": "R3 计划保存时绑定店铺与账号归属",
+      "ok": true,
+      "detail": "ownerShopId=7701, ownerUserId=1"
+    },
+    {
+      "name": "R3 计划执行时换店：拒绝执行且零商品写",
+      "ok": true,
+      "detail": "当前店铺（9999）不是计划绑定的店铺（7701），已等待"
+    },
+    {
+      "name": "R4 物流关闭结果未知：界面保留恢复入口且不显示已全部恢复",
+      "ok": true,
+      "detail": "closed=unknown，恢复入口 1 个"
+    },
+    {
+      "name": "R4 回到原店铺后可按原对象恢复（未知关闭先回读确认）",
+      "ok": true,
+      "detail": "渠道 9 已恢复，打开请求 1 个"
+    },
+    {
+      "name": "R5 计划执行后写回真实终态（不是\"运行中\"）",
+      "ok": true,
+      "detail": "lastResult=completed, lastTaskId=ship-1792025253600-u3v3en, date=2026-10-16"
+    },
+    {
+      "name": "R5 过期的一次性计划保存被拒且不执行",
+      "ok": true,
+      "detail": "过期计划被拒绝"
+    },
+    {
+      "name": "R6 排除选择器读取真实商品列表，可搜索并加入排除",
+      "ok": true,
+      "detail": "排除列表：101"
+    },
+    {
+      "name": "R6 启动被拒原因通过权威存储显示",
+      "ok": true,
+      "detail": "已有备货修改任务在执行，请先等它结束"
+    },
+    {
+      "name": "R6 中断后可见结果、处理完物流可结束本轮并重新预检",
+      "ok": true,
+      "detail": "状态 stopped，未确认项保留 1 个"
+    },
+    {
+      "name": "R7 落盘与界面不含凭据原文",
+      "ok": true,
+      "detail": "storage 与证据均无凭据原文"
+    },
+    {
+      "name": "14.1 预览记录带已核实的店铺与账号",
+      "ok": true,
+      "detail": "requestId=prev-1792025285934-0qzpd8, shopId=7701, ownerUserId=1"
+    },
+    {
+      "name": "14.1 同店换账号后旧预览不能再启动（零商品写）",
+      "ok": true,
+      "detail": "这份预览是在另一个账号确认的，请重新预检后再开始"
+    },
+    {
+      "name": "14.1 换店后旧预览不能再启动（零商品写）",
+      "ok": true,
+      "detail": "这份预览是在店铺 7701 确认的，当前店铺是 9999，请重新预检"
+    },
+    {
+      "name": "14.1 缺少预览请求号 / 请求号不匹配均拒绝（零写）",
+      "ok": true,
+      "detail": "缺少预览请求号，无法确认这份目标是谁核实的，请重新预检 / 预览记录已过期或不存在，请重新预检后再开始"
+    },
+    {
+      "name": "14.1 原店原账号预览→启动保持可用",
+      "ok": true,
+      "detail": "正常完成，锚 shopId=7701"
+    },
+    {
+      "name": "14.1 界面提示需要重新预检（换账号后）",
+      "ok": true,
+      "detail": "界面已提示重新预检且禁用开始"
+    },
+    {
+      "name": "14.2 写前身份读取失败：零商品写且原因可见",
+      "ok": true,
+      "detail": "无法核实当前店铺身份，已停止所有写操作"
+    },
+    {
+      "name": "14.2 诊断记录已落盘且不含凭据",
+      "ok": true,
+      "detail": "诊断 2 条，最后一条 stage=first-batch access=not-checked reason=无法核实当前店铺身份"
+    },
+    {
+      "name": "14.3 启动后权限被撤：零商品写且原因可见",
+      "ok": true,
+      "detail": "当前权限已不再允许该操作，已停止所有写操作：stub 权限已撤回"
+    },
+    {
+      "name": "14.3 权限读取失败：零商品写（不当作放行）",
+      "ok": true,
+      "detail": "当前权限已不再允许该操作，已停止所有写操作：验证失败 (500)"
+    },
+    {
+      "name": "14.3 恢复物流时权限被撤：零渠道开启且待处理清单仍在",
+      "ok": true,
+      "detail": "恢复入口保留，待处理 1 个"
+    },
+    {
+      "name": "14.4 一项计划：由真实 alarm 触发并写回真实终态",
+      "ok": true,
+      "detail": "lastResult=completed taskId=ship-1792025314997-lhyeb9 写请求=1 批"
+    },
+    {
+      "name": "14.4 两项计划：同日到期按顺序各执行一次",
+      "ok": true,
+      "detail": "plan1=completed / plan2=completed，共 2 批写"
+    },
+    {
+      "name": "14.4 每日计划跨午夜：执行后日期推进到次日",
+      "ok": true,
+      "detail": "date=2026-10-16（今天 2026-10-15）lastResult=completed"
+    },
+    {
+      "name": "14.4 重复 alarm 不产生第二份任务",
+      "ok": true,
+      "detail": "taskId 保持 ship-1792025325970-az2yt9，写请求仍 1 批"
+    },
+    {
+      "name": "14.4 worker 中断后不重放：中断态等待且零新写",
+      "ok": true,
+      "detail": "计划等待（上次任务被中断，结果未确认，请先查看结果），未确认项保留"
+    },
+    {
+      "name": "14.4 两计划重叠：同一时刻只有一份任务在跑",
+      "ok": true,
+      "detail": "运行期间只有一份任务被占用"
+    },
+    {
+      "name": "17.1 预览记录锁定了参数与商品集合",
+      "ok": true,
+      "detail": "天数=7 范围=all 集合=4 个"
+    },
+    {
+      "name": "17.1 同一预览号改传其他天数：拒绝且零商品与物流写",
+      "ok": true,
+      "detail": "本次要执行的内容与预检确认的不一致（天数 7 → 9），已拒绝；请重新预检后再开始"
+    },
+    {
+      "name": "17.1 同一预览号夹带预览外商品：拒绝且零写",
+      "ok": true,
+      "detail": "本次要执行的内容与预检确认的不一致（多了 1 个预览外商品（如 999）），已拒绝；请重新预检后再开始"
+    },
+    {
+      "name": "17.1 同一预览号改范围或改排除：拒绝且零写",
+      "ok": true,
+      "detail": "范围：本次要执行的内容与预检确认的不一致（范围 all → online），已拒绝；请重新预检后再开始；排除：本次要执行的内容与预检确认的不一致（排除项 (空) → 101），已拒绝；请重新预检后再开始"
+    },
+    {
+      "name": "17.1 内容不一致会写脱敏诊断（含差异类型）",
+      "ok": true,
+      "detail": "差异类型 settings-days、items-extra、settings-range、settings-exclude"
+    },
+    {
+      "name": "17.1 界面提示内容已变并禁用开始（设置被外部改写后）",
+      "ok": true,
+      "detail": "界面提示内容已变并禁用开始"
+    },
+    {
+      "name": "17.1 匹配的内容照常执行（7 天正常流程保留）",
+      "ok": true,
+      "detail": "正常完成，写 1 批"
+    },
+    {
+      "name": "17.1 只减少已确认商品仍可执行（既有\"仅减少\"规则保留）",
+      "ok": true,
+      "detail": "仅减少照常执行，写 1 个"
+    },
+    {
+      "name": "17.1 冷打开重开弹窗后仍按记录核对（不混新旧设置）",
+      "ok": true,
+      "detail": "本次要执行的内容与预检确认的不一致（天数 7 → 5），已拒绝；请重新预检后再开始"
+    },
+    {
+      "name": "17.1 重新预检后即可执行（内容一致）",
+      "ok": true,
+      "detail": "重新预检后正常完成（5 天）"
+    },
+    {
+      "name": "17.2 正常路径：商品写与渠道写都用已核实的同一份凭据",
+      "ok": true,
+      "detail": "正常完成，渠道 9 已恢复；写 1 批"
+    },
+    {
+      "name": "17.2 发送前会话被换（核验读 A、发送前复查读到 B）：零渠道写且不报恢复完成",
+      "ok": true,
+      "detail": "未用未核实会话写；待恢复 1 个保留；诊断 stage=restore-channel"
+    },
+    {
+      "name": "17.2 商品写：核验读 A、发送前复查读到 B 时零商品写",
+      "ok": true,
+      "detail": "当前店铺（9999）与任务店铺（7701）不一致，已停止所有写操作"
+    },
+    {
+      "name": "17.2 同归属凭据刷新：恢复照常完成（不误判换店）",
+      "ok": true,
+      "detail": "同归属凭据刷新仍正常恢复"
+    },
+    {
+      "name": "20.1 预览不操作物流 + 启动传字符串 \"true\"：拒绝且零写",
+      "ok": true,
+      "detail": "「自动管理店铺物流」的值不合法（必须是 true/false，实际是 string），已拒绝；请重新预检后再开始"
+    },
+    {
+      "name": "20.1 预览不操作物流 + 启动传字符串 \"false\"：拒绝且零写",
+      "ok": true,
+      "detail": "「自动管理店铺物流」的值不合法（必须是 true/false，实际是 string），已拒绝；请重新预检后再开始"
+    },
+    {
+      "name": "20.1 类型不符写脱敏诊断（含原值类型与规范化值）",
+      "ok": true,
+      "detail": "blockedBy=logistics-flag-type rawType=string"
+    },
+    {
+      "name": "20.1 boolean false 预览 → 零渠道操作且任务参数为 false",
+      "ok": true,
+      "detail": "任务 toggleLogistics=false，渠道写 0"
+    },
+    {
+      "name": "20.1 boolean true 预览 → 按原快照关闭并恢复",
+      "ok": true,
+      "detail": "渠道 9 已关闭并恢复；渠道写 2 次"
+    },
+    {
+      "name": "20.1 执行参数与目标来自后台记录（不是消息对象）",
+      "ok": true,
+      "detail": "执行目标来自记录，写 1 批 / 天数 7"
+    },
+    {
+      "name": "20.2 Cookie 不变但后端账号切换：商品写零请求且不报成功",
+      "ok": true,
+      "detail": "发送前账号已变化（1 → 2），已停止该请求；诊断 stage=first-batch credentialChanged=false"
+    },
+    {
+      "name": "20.2 Cookie 不变但账号切换：恢复物流零渠道开启且不报完成",
+      "ok": true,
+      "detail": "零渠道开启；待恢复保留；诊断 blockedBy=account-changed credentialChanged=false"
+    },
+    {
+      "name": "20.2 店铺与账号都不变的刷新：恢复照常完成",
+      "ok": true,
+      "detail": "Cookie 轮换但归属不变：恢复照常完成"
+    },
+    {
+      "name": "23 刷新后新上下文权限被拒（商品写）：零后续写且理由指向权限",
+      "ok": true,
+      "detail": "当前权限已不再允许该操作，已停止所有写操作：stub 新凭据权限已撤回；诊断 blockedBy=access-denied；新凭据已核验"
+    },
+    {
+      "name": "23 刷新后新上下文权限读取抛错：零商品写且给脱敏原因",
+      "ok": true,
+      "detail": "当前权限已不再允许该操作，已停止所有写操作：无法连接后端服务: Failed to fetch"
+    },
+    {
+      "name": "23 刷新后新上下文权限被拒（物流恢复）：零渠道开启且保留义务、不报完成",
+      "ok": true,
+      "detail": "零渠道开启；待恢复保留；未报完成"
+    },
+    {
+      "name": "23 刷新分支自身会被执行并通过 current.credential 核验（撤销后零写）",
+      "ok": true,
+      "detail": "当前权限已不再允许该操作，已停止所有写操作：stub 新凭据权限已撤回；新凭据已核验且被拒"
+    },
+    {
+      "name": "23 刷新后新上下文仍允许：正常写并确认用的是新凭据",
+      "ok": true,
+      "detail": "正常完成；写 1 批；新凭据已核验"
+    },
+    {
+      "name": "23 刷新后新上下文仍允许（物流恢复）：正常恢复完成",
+      "ok": true,
+      "detail": "同归属刷新：恢复照常完成"
+    }
+  ],
+  "shopWrites": [],
+  "unstubbedWrites": [],
+  "summary": {
+    "extensionPath": "D:\\shopee_xm\\虾皮限时特卖-更新迭代\\.agent-tmp\\shipping-m02-20261014\\iso-output\\chrome-mv3",
+    "backendPort": 5789,
+    "passed": 94,
+    "failed": 0,
+    "shopWrites": {
+      "updateProductBatches": 0,
+      "channelToggles": 1
+    },
+    "unstubbedWrites": [],
+    "checks": [
+      {
+        "name": "S1 首页出现「商品备货与物流」真实卡片",
+        "ok": true,
+        "detail": "商品备货与物流"
+      },
+      {
+        "name": "S1 点击卡片进入独立功能页（不再只有特卖）",
+        "ok": true,
+        "detail": "进入备货修改页"
+      },
+      {
+        "name": "S1 非法天数在界面被拒绝（提示 + 不启动）",
+        "ok": true,
+        "detail": "99 被拒绝"
+      },
+      {
+        "name": "S1 设置即时落盘，返回首页再进入仍保留",
+        "ok": true,
+        "detail": "天数 5 / 预售 / 排除保留"
+      },
+      {
+        "name": "S2 预检按范围与排除得出准确写集合，并列出不支持项",
+        "ok": true,
+        "detail": "手动 0 / 特卖 1 / 不支持 1"
+      },
+      {
+        "name": "S2 手动排除命中真实商品时计入手动",
+        "ok": true,
+        "detail": "手动排除 101 已生效"
+      },
+      {
+        "name": "S2 手动排除优先于特卖排除并计入手动",
+        "ok": true,
+        "detail": "手动优先"
+      },
+      {
+        "name": "S2 下架范围只取 status=8，在线范围只取 1",
+        "ok": true,
+        "detail": "下架 103 / 在线 101,102,105"
+      },
+      {
+        "name": "S2 字符串 status 的在线商品被纳入（不被误判下架）",
+        "ok": true,
+        "detail": "105 纳入，106 排除"
+      },
+      {
+        "name": "S2 商品列表读取失败时不写全店，给出可读原因",
+        "ok": true,
+        "detail": "失败不写全店"
+      },
+      {
+        "name": "S2 特卖排除调查失败时停在预检（不当成没有特卖）",
+        "ok": true,
+        "detail": "调查失败即停"
+      },
+      {
+        "name": "S3 逐项失败按商品归类，跳过不算成功",
+        "ok": true,
+        "detail": "{\"101\":\"success\",\"102\":\"success\",\"103\":\"skipped\",\"105\":\"failed\"}"
+      },
+      {
+        "name": "S3 实际写入请求与回读结果能对应",
+        "ok": true,
+        "detail": "成功 2 件，写请求 1 批"
+      },
+      {
+        "name": "S4 启动后关闭 popup，后台继续推进并完成",
+        "ok": true,
+        "detail": "关闭 popup 后完成，成功 3 件"
+      },
+      {
+        "name": "S4 重开 popup 可查到结果与逐商品状态",
+        "ok": true,
+        "detail": "重开可见结果"
+      },
+      {
+        "name": "S4 重复启动不会创建第二份任务",
+        "ok": true,
+        "detail": "首次：false，第二次：false"
+      },
+      {
+        "name": "S4 停止后不再发新写请求，已发项可解释",
+        "ok": true,
+        "detail": "状态 stopped，写请求 1 批，未执行 0 件（均带原因）"
+      },
+      {
+        "name": "S5 未勾选物流时零物流写请求",
+        "ok": true,
+        "detail": "物流写请求 0"
+      },
+      {
+        "name": "S5 勾选后按渠道记录原状态，关闭原启用渠道，完成后恢复",
+        "ok": true,
+        "detail": "渠道记录：[{\"channelId\":1,\"closed\":\"success\",\"originallyEnabled\":true,\"restored\":\"success\"},{\"channelId\":2,\"closed\":\"skipped\",\"originallyEnabled\":false,\"restored\":\"skipped\"},{\"channelId\":3,\"closed\":\"success\",\"originallyEnabled\":true,\"restored\":\"success\"}]"
+      },
+      {
+        "name": "S5 关闭失败时不继续批改，先恢复已关闭渠道",
+        "ok": true,
+        "detail": "状态 failed，未发商品写"
+      },
+      {
+        "name": "S5 恢复失败时保留待处理清单，不显示整体成功",
+        "ok": true,
+        "detail": "渠道 2 restored=failed"
+      },
+      {
+        "name": "S5 换店后不恢复到错店，待恢复状态可见",
+        "ok": true,
+        "detail": "换店被拒（当前店铺（9999）与任务店铺（7701）不一致，已停止所有写操作），界面 3 处提示，列出渠道 2"
+      },
+      {
+        "name": "S5 回到原店铺后可恢复，且不打开原先关闭的渠道",
+        "ok": true,
+        "detail": "恢复完成，无待处理渠道"
+      },
+      {
+        "name": "S6 计划写入后创建 shipping 专属 alarm，不碰特卖 alarm",
+        "ok": true,
+        "detail": "alarm 周期 2 分钟"
+      },
+      {
+        "name": "S6 关闭全部计划后 shipping alarm 被清理",
+        "ok": true,
+        "detail": "alarm 已清理"
+      },
+      {
+        "name": "S7 shipping 运行中时特卖写入口被拒绝（双向互斥）",
+        "ok": true,
+        "detail": "开卖：商品备货与物流正在执行商品写操作，请等它结束后再继续；修复：商品备货与物流正在执行商品写操作，请等它结束后再继续"
+      },
+      {
+        "name": "S7 shipping 运行中时重复启动被拒绝（唯一实例）",
+        "ok": true,
+        "detail": "已有备货修改任务在执行，请先等它结束"
+      },
+      {
+        "name": "S7 特卖写任务进行中时 shipping 启动被拒绝",
+        "ok": true,
+        "detail": "自动模式正在执行写操作，请等它结束或先停止自动模式"
+      },
+      {
+        "name": "S8 身份核实不到时预检与启动都停止",
+        "ok": true,
+        "detail": "无法核实当前店铺身份，请打开卖家中心页面后重试"
+      },
+      {
+        "name": "S8 非法天数在后台也被拒绝",
+        "ok": true,
+        "detail": "备货天数必须是 1–10 之间的整数"
+      },
+      {
+        "name": "S8 错误信息与 storage 中不含凭据原文",
+        "ok": true,
+        "detail": "凭据未落盘"
+      },
+      {
+        "name": "S8 未识别的店铺写请求为 0（全部走 stub）",
+        "ok": true,
+        "detail": "未 stub 写请求 0"
+      },
+      {
+        "name": "S9 特卖卡片仍在，原有导航未被破坏",
+        "ok": true,
+        "detail": "两张卡片均可进入"
+      },
+      {
+        "name": "S9 停止 shipping 不影响特卖的 storage 与 alarm",
+        "ok": true,
+        "detail": "特卖记录与 alarm 未被触碰"
+      },
+      {
+        "name": "S10 shipping 未写入特卖 store 的键",
+        "ok": true,
+        "detail": "shipping 自有键：_shippingDiagnostics, _shippingIdentity, _shippingPreview, _shippingSettings, _shippingStartError"
+      },
+      {
+        "name": "R1 UI 对部分活动读取失败 fail closed（不给目标确认）",
+        "ok": true,
+        "detail": "fail closed：特卖排除调查失败，已停止：特卖活动 9002 的商品读取失败：API 请求失败: HTTP 500: Internal Server Error"
+      },
+      {
+        "name": "R1 开跑前特卖调查失败：零商品写请求",
+        "ok": true,
+        "detail": "开跑前检查未通过，未发出任何商品写请求：特卖排除调查失败，已停止：特卖活动 9002 的商品读取失败：API 请求失败: HTTP 500: Internal Server Error"
+      },
+      {
+        "name": "R2 未知传输结果不重发（写请求只发一次）",
+        "ok": true,
+        "detail": "写请求 1 次；结果 {\"unknown\":0,\"failed\":4,\"success\":0}"
+      },
+      {
+        "name": "R3 计划保存时绑定店铺与账号归属",
+        "ok": true,
+        "detail": "ownerShopId=7701, ownerUserId=1"
+      },
+      {
+        "name": "R3 计划执行时换店：拒绝执行且零商品写",
+        "ok": true,
+        "detail": "当前店铺（9999）不是计划绑定的店铺（7701），已等待"
+      },
+      {
+        "name": "R4 物流关闭结果未知：界面保留恢复入口且不显示已全部恢复",
+        "ok": true,
+        "detail": "closed=unknown，恢复入口 1 个"
+      },
+      {
+        "name": "R4 回到原店铺后可按原对象恢复（未知关闭先回读确认）",
+        "ok": true,
+        "detail": "渠道 9 已恢复，打开请求 1 个"
+      },
+      {
+        "name": "R5 计划执行后写回真实终态（不是\"运行中\"）",
+        "ok": true,
+        "detail": "lastResult=completed, lastTaskId=ship-1792025253600-u3v3en, date=2026-10-16"
+      },
+      {
+        "name": "R5 过期的一次性计划保存被拒且不执行",
+        "ok": true,
+        "detail": "过期计划被拒绝"
+      },
+      {
+        "name": "R6 排除选择器读取真实商品列表，可搜索并加入排除",
+        "ok": true,
+        "detail": "排除列表：101"
+      },
+      {
+        "name": "R6 启动被拒原因通过权威存储显示",
+        "ok": true,
+        "detail": "已有备货修改任务在执行，请先等它结束"
+      },
+      {
+        "name": "R6 中断后可见结果、处理完物流可结束本轮并重新预检",
+        "ok": true,
+        "detail": "状态 stopped，未确认项保留 1 个"
+      },
+      {
+        "name": "R7 落盘与界面不含凭据原文",
+        "ok": true,
+        "detail": "storage 与证据均无凭据原文"
+      },
+      {
+        "name": "14.1 预览记录带已核实的店铺与账号",
+        "ok": true,
+        "detail": "requestId=prev-1792025285934-0qzpd8, shopId=7701, ownerUserId=1"
+      },
+      {
+        "name": "14.1 同店换账号后旧预览不能再启动（零商品写）",
+        "ok": true,
+        "detail": "这份预览是在另一个账号确认的，请重新预检后再开始"
+      },
+      {
+        "name": "14.1 换店后旧预览不能再启动（零商品写）",
+        "ok": true,
+        "detail": "这份预览是在店铺 7701 确认的，当前店铺是 9999，请重新预检"
+      },
+      {
+        "name": "14.1 缺少预览请求号 / 请求号不匹配均拒绝（零写）",
+        "ok": true,
+        "detail": "缺少预览请求号，无法确认这份目标是谁核实的，请重新预检 / 预览记录已过期或不存在，请重新预检后再开始"
+      },
+      {
+        "name": "14.1 原店原账号预览→启动保持可用",
+        "ok": true,
+        "detail": "正常完成，锚 shopId=7701"
+      },
+      {
+        "name": "14.1 界面提示需要重新预检（换账号后）",
+        "ok": true,
+        "detail": "界面已提示重新预检且禁用开始"
+      },
+      {
+        "name": "14.2 写前身份读取失败：零商品写且原因可见",
+        "ok": true,
+        "detail": "无法核实当前店铺身份，已停止所有写操作"
+      },
+      {
+        "name": "14.2 诊断记录已落盘且不含凭据",
+        "ok": true,
+        "detail": "诊断 2 条，最后一条 stage=first-batch access=not-checked reason=无法核实当前店铺身份"
+      },
+      {
+        "name": "14.3 启动后权限被撤：零商品写且原因可见",
+        "ok": true,
+        "detail": "当前权限已不再允许该操作，已停止所有写操作：stub 权限已撤回"
+      },
+      {
+        "name": "14.3 权限读取失败：零商品写（不当作放行）",
+        "ok": true,
+        "detail": "当前权限已不再允许该操作，已停止所有写操作：验证失败 (500)"
+      },
+      {
+        "name": "14.3 恢复物流时权限被撤：零渠道开启且待处理清单仍在",
+        "ok": true,
+        "detail": "恢复入口保留，待处理 1 个"
+      },
+      {
+        "name": "14.4 一项计划：由真实 alarm 触发并写回真实终态",
+        "ok": true,
+        "detail": "lastResult=completed taskId=ship-1792025314997-lhyeb9 写请求=1 批"
+      },
+      {
+        "name": "14.4 两项计划：同日到期按顺序各执行一次",
+        "ok": true,
+        "detail": "plan1=completed / plan2=completed，共 2 批写"
+      },
+      {
+        "name": "14.4 每日计划跨午夜：执行后日期推进到次日",
+        "ok": true,
+        "detail": "date=2026-10-16（今天 2026-10-15）lastResult=completed"
+      },
+      {
+        "name": "14.4 重复 alarm 不产生第二份任务",
+        "ok": true,
+        "detail": "taskId 保持 ship-1792025325970-az2yt9，写请求仍 1 批"
+      },
+      {
+        "name": "14.4 worker 中断后不重放：中断态等待且零新写",
+        "ok": true,
+        "detail": "计划等待（上次任务被中断，结果未确认，请先查看结果），未确认项保留"
+      },
+      {
+        "name": "14.4 两计划重叠：同一时刻只有一份任务在跑",
+        "ok": true,
+        "detail": "运行期间只有一份任务被占用"
+      },
+      {
+        "name": "17.1 预览记录锁定了参数与商品集合",
+        "ok": true,
+        "detail": "天数=7 范围=all 集合=4 个"
+      },
+      {
+        "name": "17.1 同一预览号改传其他天数：拒绝且零商品与物流写",
+        "ok": true,
+        "detail": "本次要执行的内容与预检确认的不一致（天数 7 → 9），已拒绝；请重新预检后再开始"
+      },
+      {
+        "name": "17.1 同一预览号夹带预览外商品：拒绝且零写",
+        "ok": true,
+        "detail": "本次要执行的内容与预检确认的不一致（多了 1 个预览外商品（如 999）），已拒绝；请重新预检后再开始"
+      },
+      {
+        "name": "17.1 同一预览号改范围或改排除：拒绝且零写",
+        "ok": true,
+        "detail": "范围：本次要执行的内容与预检确认的不一致（范围 all → online），已拒绝；请重新预检后再开始；排除：本次要执行的内容与预检确认的不一致（排除项 (空) → 101），已拒绝；请重新预检后再开始"
+      },
+      {
+        "name": "17.1 内容不一致会写脱敏诊断（含差异类型）",
+        "ok": true,
+        "detail": "差异类型 settings-days、items-extra、settings-range、settings-exclude"
+      },
+      {
+        "name": "17.1 界面提示内容已变并禁用开始（设置被外部改写后）",
+        "ok": true,
+        "detail": "界面提示内容已变并禁用开始"
+      },
+      {
+        "name": "17.1 匹配的内容照常执行（7 天正常流程保留）",
+        "ok": true,
+        "detail": "正常完成，写 1 批"
+      },
+      {
+        "name": "17.1 只减少已确认商品仍可执行（既有\"仅减少\"规则保留）",
+        "ok": true,
+        "detail": "仅减少照常执行，写 1 个"
+      },
+      {
+        "name": "17.1 冷打开重开弹窗后仍按记录核对（不混新旧设置）",
+        "ok": true,
+        "detail": "本次要执行的内容与预检确认的不一致（天数 7 → 5），已拒绝；请重新预检后再开始"
+      },
+      {
+        "name": "17.1 重新预检后即可执行（内容一致）",
+        "ok": true,
+        "detail": "重新预检后正常完成（5 天）"
+      },
+      {
+        "name": "17.2 正常路径：商品写与渠道写都用已核实的同一份凭据",
+        "ok": true,
+        "detail": "正常完成，渠道 9 已恢复；写 1 批"
+      },
+      {
+        "name": "17.2 发送前会话被换（核验读 A、发送前复查读到 B）：零渠道写且不报恢复完成",
+        "ok": true,
+        "detail": "未用未核实会话写；待恢复 1 个保留；诊断 stage=restore-channel"
+      },
+      {
+        "name": "17.2 商品写：核验读 A、发送前复查读到 B 时零商品写",
+        "ok": true,
+        "detail": "当前店铺（9999）与任务店铺（7701）不一致，已停止所有写操作"
+      },
+      {
+        "name": "17.2 同归属凭据刷新：恢复照常完成（不误判换店）",
+        "ok": true,
+        "detail": "同归属凭据刷新仍正常恢复"
+      },
+      {
+        "name": "20.1 预览不操作物流 + 启动传字符串 \"true\"：拒绝且零写",
+        "ok": true,
+        "detail": "「自动管理店铺物流」的值不合法（必须是 true/false，实际是 string），已拒绝；请重新预检后再开始"
+      },
+      {
+        "name": "20.1 预览不操作物流 + 启动传字符串 \"false\"：拒绝且零写",
+        "ok": true,
+        "detail": "「自动管理店铺物流」的值不合法（必须是 true/false，实际是 string），已拒绝；请重新预检后再开始"
+      },
+      {
+        "name": "20.1 类型不符写脱敏诊断（含原值类型与规范化值）",
+        "ok": true,
+        "detail": "blockedBy=logistics-flag-type rawType=string"
+      },
+      {
+        "name": "20.1 boolean false 预览 → 零渠道操作且任务参数为 false",
+        "ok": true,
+        "detail": "任务 toggleLogistics=false，渠道写 0"
+      },
+      {
+        "name": "20.1 boolean true 预览 → 按原快照关闭并恢复",
+        "ok": true,
+        "detail": "渠道 9 已关闭并恢复；渠道写 2 次"
+      },
+      {
+        "name": "20.1 执行参数与目标来自后台记录（不是消息对象）",
+        "ok": true,
+        "detail": "执行目标来自记录，写 1 批 / 天数 7"
+      },
+      {
+        "name": "20.2 Cookie 不变但后端账号切换：商品写零请求且不报成功",
+        "ok": true,
+        "detail": "发送前账号已变化（1 → 2），已停止该请求；诊断 stage=first-batch credentialChanged=false"
+      },
+      {
+        "name": "20.2 Cookie 不变但账号切换：恢复物流零渠道开启且不报完成",
+        "ok": true,
+        "detail": "零渠道开启；待恢复保留；诊断 blockedBy=account-changed credentialChanged=false"
+      },
+      {
+        "name": "20.2 店铺与账号都不变的刷新：恢复照常完成",
+        "ok": true,
+        "detail": "Cookie 轮换但归属不变：恢复照常完成"
+      },
+      {
+        "name": "23 刷新后新上下文权限被拒（商品写）：零后续写且理由指向权限",
+        "ok": true,
+        "detail": "当前权限已不再允许该操作，已停止所有写操作：stub 新凭据权限已撤回；诊断 blockedBy=access-denied；新凭据已核验"
+      },
+      {
+        "name": "23 刷新后新上下文权限读取抛错：零商品写且给脱敏原因",
+        "ok": true,
+        "detail": "当前权限已不再允许该操作，已停止所有写操作：无法连接后端服务: Failed to fetch"
+      },
+      {
+        "name": "23 刷新后新上下文权限被拒（物流恢复）：零渠道开启且保留义务、不报完成",
+        "ok": true,
+        "detail": "零渠道开启；待恢复保留；未报完成"
+      },
+      {
+        "name": "23 刷新分支自身会被执行并通过 current.credential 核验（撤销后零写）",
+        "ok": true,
+        "detail": "当前权限已不再允许该操作，已停止所有写操作：stub 新凭据权限已撤回；新凭据已核验且被拒"
+      },
+      {
+        "name": "23 刷新后新上下文仍允许：正常写并确认用的是新凭据",
+        "ok": true,
+        "detail": "正常完成；写 1 批；新凭据已核验"
+      },
+      {
+        "name": "23 刷新后新上下文仍允许（物流恢复）：正常恢复完成",
+        "ok": true,
+        "detail": "同归属刷新：恢复照常完成"
+      }
+    ],
+    "hashes": {
+      "background": "e6541a9400d4e672",
+      "popup": "649b736e83a5495f",
+      "popupFile": "popup-DI8s-FoU.js"
+    }
+  }
+}

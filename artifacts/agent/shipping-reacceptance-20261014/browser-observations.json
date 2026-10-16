@@ -1,0 +1,459 @@
+{
+  "scope": "actual isolated static extension; synthetic identity/cookie; all HTTP intercepted; no backend service/DB/live store",
+  "package": ".agent-tmp\\shipping-m02-20261014\\iso-output\\chrome-mv3",
+  "backgroundSha256": "f79e85c0181981a272484fc6bd3cd3c419622c802042eeb5d38ab8b45d7801ca",
+  "results": [
+    {
+      "name": "actual homepage opens shipping interface",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "normal fixture preview contains one target",
+      "expected": 1,
+      "observed": 1,
+      "meetsContract": true
+    },
+    {
+      "name": "normal actual worker completes product write",
+      "expected": "completed",
+      "observed": "completed",
+      "meetsContract": true
+    },
+    {
+      "name": "actual request sets pre_order and days_to_ship",
+      "expected": {
+        "pre_order": true,
+        "days_to_ship": 7
+      },
+      "observed": {
+        "pre_order": true,
+        "days_to_ship": 7
+      },
+      "meetsContract": true
+    },
+    {
+      "name": "actual UI rejects partial activity exclusion",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "actual worker rejects failed execution exclusion check",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "unknown actual channel result exposes recovery button",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "unknown channel runtime observation",
+      "observed": {
+        "closed": "unknown",
+        "restoreAttempted": true,
+        "restoreButtonCount": 1
+      }
+    },
+    {
+      "name": "unknown closure recovers original channel through actual UI",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "actual worker does not rebind manually confirmed shop",
+      "expected": 0,
+      "observed": 1,
+      "meetsContract": false
+    },
+    {
+      "name": "actual preview and task shop observation",
+      "observed": {
+        "previewShopId": 77,
+        "taskShopId": 88
+      }
+    },
+    {
+      "name": "actual worker does not rebind confirmed preview to another backend user",
+      "expected": 0,
+      "observed": 1,
+      "meetsContract": false
+    },
+    {
+      "name": "actual preview and task user observation",
+      "observed": {
+        "userAtPreview": 1,
+        "taskOwnerUserId": 2,
+        "shopId": 77
+      }
+    }
+  ],
+  "requests": [
+    {
+      "path": "/portal/product/list/live/all",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/update_product/",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_item_id_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_item_id_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/settings/update_channel_toggle",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/settings/update_channel_toggle",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/settings/update_channel_toggle",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/update_product/",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/settings/update_channel_toggle",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/settings/update_channel_toggle",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/update_product/",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/settings/update_channel_toggle",
+      "method": "POST"
+    }
+  ],
+  "writes": [
+    {
+      "kind": "product",
+      "items": [
+        {
+          "id": 101,
+          "category_path": "1/2",
+          "pre_order": true,
+          "days_to_ship": 7
+        }
+      ]
+    },
+    {
+      "kind": "channel",
+      "channelId": 9,
+      "enabled": false
+    },
+    {
+      "kind": "channel",
+      "channelId": 9,
+      "enabled": true
+    },
+    {
+      "kind": "channel",
+      "channelId": 9,
+      "enabled": false
+    },
+    {
+      "kind": "product",
+      "items": [
+        {
+          "id": 101,
+          "category_path": "1/2",
+          "pre_order": true,
+          "days_to_ship": 7
+        }
+      ]
+    },
+    {
+      "kind": "channel",
+      "channelId": 9,
+      "enabled": true
+    },
+    {
+      "kind": "channel",
+      "channelId": 9,
+      "enabled": false
+    },
+    {
+      "kind": "product",
+      "items": [
+        {
+          "id": 101,
+          "category_path": "1/2",
+          "pre_order": true,
+          "days_to_ship": 7
+        }
+      ]
+    },
+    {
+      "kind": "channel",
+      "channelId": 9,
+      "enabled": true
+    }
+  ]
+}

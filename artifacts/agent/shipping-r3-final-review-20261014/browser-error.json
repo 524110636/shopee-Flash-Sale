@@ -1,0 +1,160 @@
+{
+  "message": "browserContext.waitForEvent: Timeout 20000ms exceeded while waiting for event \"serviceworker\"",
+  "stack": "browserContext.waitForEvent: Timeout 20000ms exceeded while waiting for event \"serviceworker\"\n    at D:\\shopee_xm\\虾皮限时特卖-更新迭代\\.agent-tmp\\shipping-r3-final-review-20261014\\browser_review.cjs:151:29",
+  "partialResults": [
+    {
+      "name": "actual homepage opens shipping interface",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "normal fixture preview contains one target",
+      "expected": 1,
+      "observed": 1,
+      "meetsContract": true
+    },
+    {
+      "name": "normal actual worker completes product write",
+      "expected": "completed",
+      "observed": "completed",
+      "meetsContract": true
+    },
+    {
+      "name": "actual request sets pre_order and days_to_ship",
+      "expected": {
+        "pre_order": true,
+        "days_to_ship": 7
+      },
+      "observed": {
+        "pre_order": true,
+        "days_to_ship": 7
+      },
+      "meetsContract": true
+    },
+    {
+      "name": "switching shop invalidates original preview with zero writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "same-shop account switch invalidates original preview with zero writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "actual HTTP 403 before submission prevents product writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "different valid days with original preview are rejected",
+      "expected": 0,
+      "observed": 1,
+      "meetsContract": false
+    },
+    {
+      "name": "extra product outside original preview is rejected",
+      "expected": 0,
+      "observed": 1,
+      "meetsContract": false
+    },
+    {
+      "name": "actual alarms execute two due plans once in order",
+      "expected": [
+        5,
+        7
+      ],
+      "observed": [
+        5,
+        7
+      ],
+      "meetsContract": true
+    },
+    {
+      "name": "duplicate alarm after same occurrences adds no writes",
+      "expected": 2,
+      "observed": 2,
+      "meetsContract": true
+    },
+    {
+      "name": "two-plan actual-alarm snapshot",
+      "observed": [
+        {
+          "date": "2026-10-14",
+          "days": 5,
+          "enabled": false,
+          "excludeIds": "",
+          "id": "plan1",
+          "lastError": null,
+          "lastResult": "completed",
+          "lastRunAt": 1791950400000,
+          "lastRunId": "plan1@2026-10-14@00:00",
+          "lastTaskId": "ship-1791950400000-q7as4w",
+          "loopDaily": false,
+          "missed": false,
+          "ownerShopId": 77,
+          "ownerUserId": 2,
+          "range": "all",
+          "time": "00:00",
+          "toggleLogistics": false,
+          "updatedAt": 1791950400000
+        },
+        {
+          "date": "2026-10-14",
+          "days": 7,
+          "enabled": false,
+          "excludeIds": "",
+          "id": "plan2",
+          "lastError": null,
+          "lastResult": "completed",
+          "lastRunAt": 1791950400000,
+          "lastRunId": "plan2@2026-10-14@00:01",
+          "lastTaskId": "ship-1791950400000-jnfs1s",
+          "loopDaily": false,
+          "missed": false,
+          "ownerShopId": 77,
+          "ownerUserId": 2,
+          "range": "all",
+          "time": "00:01",
+          "toggleLogistics": false,
+          "updatedAt": 1791950400000
+        }
+      ]
+    },
+    {
+      "name": "daily actual alarms across midnight run one occurrence per day",
+      "expected": 2,
+      "observed": 2,
+      "meetsContract": true
+    },
+    {
+      "name": "daily cross-midnight snapshot",
+      "observed": [
+        {
+          "date": "2026-10-16",
+          "days": 6,
+          "enabled": true,
+          "excludeIds": "",
+          "id": "plan1",
+          "lastError": null,
+          "lastResult": "completed",
+          "lastRunAt": 1791993720000,
+          "lastRunId": "plan1@2026-10-15@00:01",
+          "lastTaskId": "ship-1791993720000-csg1vu",
+          "loopDaily": true,
+          "missed": false,
+          "ownerShopId": 77,
+          "ownerUserId": 2,
+          "range": "all",
+          "time": "00:01",
+          "toggleLogistics": false,
+          "updatedAt": 1791993720000
+        }
+      ]
+    }
+  ]
+}

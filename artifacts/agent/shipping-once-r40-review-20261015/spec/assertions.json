@@ -1,0 +1,63 @@
+{
+  "method": "Actual source module chain, synthetic browser storage / API. Process-boundary cases use two Node processes, not MV3.",
+  "checks": [
+    {
+      "name": "R2 125 products continue after five minutes",
+      "passed": true
+    },
+    {
+      "name": "R2 final checkpoint crossing sends no spot request",
+      "passed": true
+    },
+    {
+      "name": "R2 first request after start window sends zero writes",
+      "passed": true
+    },
+    {
+      "name": "R2 no new spot batches at restore deadline",
+      "passed": true
+    },
+    {
+      "name": "R3 temporary-access-linked resumes after validation recovers",
+      "passed": true
+    },
+    {
+      "name": "R3 temporary-access-throw resumes after validation recovers",
+      "passed": true
+    },
+    {
+      "name": "R3 separate process at claimed-before-task boundary resumes",
+      "passed": true
+    },
+    {
+      "name": "R3 separate process after restore applied performs readback only",
+      "passed": true
+    },
+    {
+      "name": "R5 spot logistics repair preserves original restoration",
+      "passed": true
+    },
+    {
+      "name": "R5 restore logistics repair closes group",
+      "passed": true
+    },
+    {
+      "name": "R5 failed spot non-obligation no longer prevents closure",
+      "passed": true
+    },
+    {
+      "name": "R4 conflict and unavailable detail remain unwritten",
+      "passed": true
+    },
+    {
+      "name": "R4 already-target and still-one controls",
+      "passed": true
+    }
+  ],
+  "sources": {
+    "features/shipping/background.ts": "0a04fd639d231dc3a7eb82f8cc2092453468756bdc2a5c8aa19053db121929d8",
+    "features/shipping/group.ts": "c3a08b4fcb98787963f8d9e22c27c4bb970a1179bb2cda14310b11981b397042",
+    "features/shipping/group-rules.ts": "22a6a9cb92ed8ec574c01b4aa41e47163b69aafe42f4bbfdea0bc4b858d48181",
+    "features/shipping/runner.ts": "cde06bb242543ee4e7c8f4d703e43849019adbe6e9a69a601042ab3eb06261dc"
+  }
+}

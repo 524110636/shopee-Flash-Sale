@@ -1,0 +1,124 @@
+[
+  {
+    "name": "direct_setOwner_clears_cross_shop",
+    "pass": true,
+    "observed": {
+      "pickCount": 0,
+      "excludeIds": ""
+    }
+  },
+  {
+    "name": "same_owner_reuse_preserves_configuration_and_clears_dates",
+    "pass": true,
+    "observed": {
+      "regularDays": 8,
+      "startDate": "",
+      "startTime": "16:00",
+      "restoreDate": "",
+      "restoreTime": "18:00",
+      "excludeIds": "111",
+      "range": "all",
+      "toggleLogistics": false
+    }
+  },
+  {
+    "name": "direct_setOwner_null_clears_selection_and_rejects_reuse",
+    "pass": true,
+    "observed": {
+      "pickCount": 0,
+      "excludeIds": "",
+      "errorPresent": true
+    }
+  },
+  {
+    "name": "refreshOwner_cross_shop_clears_selection",
+    "pass": true,
+    "observed": {
+      "currentShop": 202,
+      "cachedShop": null,
+      "excludeIds": ""
+    }
+  },
+  {
+    "name": "refreshOwner_null_clears_selection",
+    "pass": true,
+    "observed": {
+      "currentUser": null,
+      "pickCount": 0,
+      "excludeIds": ""
+    }
+  },
+  {
+    "name": "saveGroup_rejects_cross_shop_selected_draft",
+    "pass": true,
+    "observed": {
+      "saveResult": {
+        "success": false,
+        "error": "保存前核实到的店铺／账号与设置排除商品时不同，请确认当前店铺后重新设置排除商品并再次保存"
+      }
+    }
+  },
+  {
+    "name": "terminal_sync_has_only_lastFinished",
+    "pass": true,
+    "observed": {
+      "active": null,
+      "lastFinishedPhase": "done"
+    }
+  },
+  {
+    "name": "same_owner_save_preserves_configuration",
+    "pass": true,
+    "observed": {
+      "saveResult": {
+        "success": true
+      },
+      "excludeIds": "111",
+      "shopId": 101
+    }
+  },
+  {
+    "name": "null_account_save_rejected",
+    "pass": true,
+    "observed": {
+      "saveResult": {
+        "success": false,
+        "error": "保存前核实到的店铺／账号与设置排除商品时不同，请确认当前店铺后重新设置排除商品并再次保存"
+      },
+      "submitted": false
+    }
+  },
+  {
+    "name": "late_A_list_rejected_after_switch_to_B",
+    "pass": true,
+    "observed": {
+      "currentShop": 202,
+      "loadedShop": null,
+      "productIds": []
+    }
+  },
+  {
+    "name": "late_account_1_list_rejected_after_account_2_switch",
+    "pass": false,
+    "observed": {
+      "currentShop": 101,
+      "currentUser": 2,
+      "loadedShop": 101,
+      "productIds": [
+        "111"
+      ]
+    }
+  },
+  {
+    "name": "old_account_candidates_cannot_be_saved_as_new_account_group",
+    "pass": false,
+    "observed": {
+      "modalBelongsToCurrent": true,
+      "saveResult": {
+        "success": true
+      },
+      "submittedExcludeIds": "111",
+      "persistedOwnerUserId": 2
+    }
+  }
+]

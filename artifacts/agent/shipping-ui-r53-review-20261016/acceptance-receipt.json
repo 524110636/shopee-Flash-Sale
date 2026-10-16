@@ -1,0 +1,21 @@
+{
+  "productAndCandidateInputsUnchanged": true,
+  "unchangedSnapshotFiles": 27,
+  "planningFilesUpdated": [
+    ".claude/tasks/2026-10-14-08-商品备货物流与定时修改-任务书.md",
+    "PROJECT_STATUS.md",
+    ".claude/tasks/2026-10-14-07-全功能迁移书.md"
+  ],
+  "nativeChecksPassed": 7,
+  "nativeChecksTotal": 9,
+  "specObservationsPassed": 17,
+  "specObservationsTotal": 21,
+  "distinctReworkPaths": 3,
+  "sameBrowserNativeReopen": "Unverified: control tool failed to open popup after close; no product diagnosis inferred.",
+  "ownBrowserProfilesRemoved": true,
+  "realShopOrProductionWrites": false,
+  "servicesStartedOrStopped": false,
+  "userDailyExtensionReloaded": false,
+  "temporaryBytes": 134875,
+  "evidenceBytesExcludingReceipt": 62307
+}

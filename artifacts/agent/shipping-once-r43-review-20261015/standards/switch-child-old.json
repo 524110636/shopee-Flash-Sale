@@ -1,0 +1,8 @@
+﻿{
+    "scenario":  "child-old",
+    "mode":  "original source switch; all process/network/record side effects mocked",
+    "launchRecord":  null,
+    "instanceRecord":  null,
+    "launchRemoved":  true,
+    "realStopCalls":  0
+}

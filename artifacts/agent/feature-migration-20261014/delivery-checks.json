@@ -1,0 +1,9 @@
+{
+  "documents": 6,
+  "local_links_checked": 67,
+  "product_files_unchanged": 76,
+  "reference_files_unchanged": 12,
+  "failures": [],
+  "scope": "static documents and source hashes; no product tests or live API",
+  "temporary_scripts_cleanup": "all survey scripts removed; closeout.py removed after this check"
+}

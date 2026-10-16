@@ -1,0 +1,7 @@
+{
+  "command": "npx vitest run tests/unit/shipping-exclude-modal.test.ts tests/unit/shipping-store-isolation.test.ts tests/unit/shipping-rules.test.ts",
+  "filesPassed": 3,
+  "testsPassed": 78,
+  "failed": 0,
+  "exitCode": 0
+}

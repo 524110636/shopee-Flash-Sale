@@ -1,0 +1,12 @@
+{
+  "utf8Documents": 3,
+  "localLinks": 52,
+  "sourceHashMatches": 8,
+  "packageHashMatch": true,
+  "modulePass": 17,
+  "moduleFail": 4,
+  "browserPass": 8,
+  "browserFail": 2,
+  "evidenceBytes": 88712,
+  "retainedTemporaryBytes": 20968941
+}

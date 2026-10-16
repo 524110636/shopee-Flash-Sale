@@ -1,0 +1,179 @@
+{
+  "scope": "independent isolated execution of actual modules; no browser/server/store API/network requests",
+  "sourceHashes": {
+    "api.ts": "f99cb1d874b61d48f2b8ab1e436dc36aeefb157b25718e5ffa172386f8c64e42",
+    "runner.ts": "f50b622b8967944fe67fc3225c2042532776f5187d5bcae90e3f834ce5f52f4e",
+    "background.ts": "639312f3b8423de2f94c67ea5b3751a0d6af3c38bd7ac51d198df32f08ca3b47",
+    "scheduler.ts": "3659af1f6bcff7eb38c7cde98aafcb585146bc8b738a85e306fc3fd357b3bb1b",
+    "rules.ts": "00d1a2d0150378e3b96d046266b522fe0e38437ec7ec8d348cda264d4917823f",
+    "store.ts": "29cab66334840e021a74b03c1d19907780d06678b68f2b6ff4c316792342bfe9",
+    "task.ts": "56ab7ea9a6716fe9bde7ce6a6630ed8d99e420ab5f85897d3b2a65a2b126ad38",
+    "types.ts": "7a9ab91e8db45789e321d50eff91103f7863eabea9b52a7a2a53b9598d36bbf0"
+  },
+  "observations": [
+    {
+      "name": "missing per-item result code is not confirmed as success",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "partial flash-sale exclusion must fail closed",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "flash-sale list continuation is read",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "execution preflight failure sends zero product writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "unknown transport result is not blindly resent",
+      "expected": 1,
+      "observed": 1,
+      "meetsContract": true
+    },
+    {
+      "name": "changed backend account sends zero product writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "unknown channel closure retains a restore obligation",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "unknown channel closure cannot be declared fully restored",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "fresh SKU-level change is excluded before writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "missing SKU-mode information is resolved before preview",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "SKU-level detail is excluded from preview",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "non-hot range without ranking data is blocked",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "persisted diagnostic removes credential values",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "identity read exception at submission prevents product writes",
+      "expected": 0,
+      "observed": 1,
+      "meetsContract": false
+    },
+    {
+      "name": "identity read exception observation",
+      "observed": {
+        "identityReads": 2,
+        "status": "completed"
+      }
+    },
+    {
+      "name": "requested logistics list failure stops all product writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "logistics preview and run semantics",
+      "observed": {
+        "previewOk": true,
+        "previewError": "物流渠道读取失败，无法确认本次影响范围（本次不会自动关闭物流）",
+        "runStatus": "failed"
+      },
+      "note": "UI claims no interruption, but execution fails closed; wording mismatch only"
+    },
+    {
+      "name": "additional daily start-date observation",
+      "observed": "2026-10-14",
+      "note": "not used as a blocker; daily UI disables date and this is outside the frozen matrix"
+    },
+    {
+      "name": "unbound legacy plan sends zero product writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "bound plan result reaches actual completed state",
+      "expected": "completed",
+      "observed": "completed",
+      "meetsContract": true
+    },
+    {
+      "name": "plan preserves original owner shop",
+      "expected": 88,
+      "observed": 88,
+      "meetsContract": true
+    },
+    {
+      "name": "preview owner shop cannot be rebound at manual start",
+      "expected": 0,
+      "observed": 1,
+      "meetsContract": false
+    },
+    {
+      "name": "manual preview and task owner observation",
+      "observed": {
+        "previewShopId": 88,
+        "started": true,
+        "taskShopId": 99
+      }
+    },
+    {
+      "name": "revoked backend permission prevents product submission",
+      "expected": 0,
+      "observed": 1,
+      "meetsContract": false
+    },
+    {
+      "name": "permission validation call count before writes",
+      "observed": 1
+    },
+    {
+      "name": "revoked backend permission prevents logistics restore write",
+      "expected": 0,
+      "observed": 1,
+      "meetsContract": false
+    },
+    {
+      "name": "restore server permission validation calls",
+      "observed": 0
+    }
+  ],
+  "contractFailures": 4
+}

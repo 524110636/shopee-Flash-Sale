@@ -1,0 +1,18 @@
+﻿{
+    "scenario":  "child-valid",
+    "mode":  "original source switch; all process/network/record side effects mocked",
+    "launchRecord":  null,
+    "instanceRecord":  {
+                           "source":  "derived-from-this-launch",
+                           "workDir":  "D:\\shopee_xm\\虾皮限时特卖-更新迭代\\.agent-tmp\\shipping-once-r43-review-20261015\\standards",
+                           "startedAt":  "2026-10-15T22:00:00.0000000",
+                           "creationDate":  "2026-10-15T22:00:02.0000000",
+                           "dbPath":  "D:\\shopee_xm\\虾皮限时特卖-更新迭代\\.agent-tmp\\shipping-once-r43-review-20261015\\standards\\data\\fixture.db",
+                           "port":  5791,
+                           "backendDir":  "C:\\fixture\\expected\\backend",
+                           "pid":  800,
+                           "launchPid":  999
+                       },
+    "launchRemoved":  true,
+    "realStopCalls":  0
+}

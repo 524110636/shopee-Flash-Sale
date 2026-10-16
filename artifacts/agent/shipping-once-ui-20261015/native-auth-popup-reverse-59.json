@@ -1,0 +1,95 @@
+{
+  "label": "reverse-59",
+  "steps": [
+    "login ok, token 268 chars",
+    "injected backendAuth: ok",
+    "removed _shippingPlans: removed",
+    "openPopup: ok",
+    "enter shipping: clicked",
+    "_shippingPlans after cold open: null",
+    "open exclude: clicked"
+  ],
+  "metrics": {
+    "before": {
+      "innerWidth": 500,
+      "innerHeight": 500,
+      "docClientWidth": 500,
+      "docScrollWidth": 500,
+      "bodyScrollWidth": 500,
+      "rootClass": "",
+      "rootClientWidth": 500,
+      "sizedFound": true,
+      "sizedClass": "w-[500px] min-w-[500px] min-h-[500px] max-h-[600px] overflow-y-auto bg-background",
+      "sizedClientWidth": 500,
+      "sizedOffsetWidth": 500,
+      "sizedMaxWidth": "none",
+      "sizedComputedWidth": "500px",
+      "maxWidth": "none",
+      "bodyText": "限时特卖助手\n未连接\n管理\n店铺运营\n限时特卖\n\n创建或复制限时特卖活动，也可用自动循环按轮数／天数持续抢占场次。\n\n商品备货与物流\n\n一次安排完成成对切换：到点把参与商品改为现货 1 天，随后按你选的常规备货天数（2–10 天）恢复；可选"
+    },
+    "shippingPage": {
+      "innerWidth": 500,
+      "innerHeight": 600,
+      "docClientWidth": 500,
+      "docScrollWidth": 500,
+      "bodyScrollWidth": 500,
+      "rootClass": "",
+      "rootClientWidth": 500,
+      "sizedFound": true,
+      "sizedClass": "w-[500px] min-w-[500px] min-h-[500px] max-h-[600px] overflow-y-auto bg-background",
+      "sizedClientWidth": 485,
+      "sizedOffsetWidth": 500,
+      "sizedMaxWidth": "none",
+      "sizedComputedWidth": "500px",
+      "maxWidth": "none",
+      "bodyText": "全部功能\n限时特卖助手\n未连接\n管理\niso-admin@shipping-once.local\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\n????\n使用建议 · 优先安排在周末\n\n建议尽量在周末使用，避免安排在其他时段。执行期间"
+    },
+    "blankUserPlans": {
+      "hasLegacyCard": true,
+      "hasUnboundHint": true,
+      "hasResaveHint": true,
+      "hasPlan1": true,
+      "hasPlan2": true
+    },
+    "excludeDialog": {
+      "innerWidth": 500,
+      "docClientWidth": 500,
+      "docScrollWidth": 500,
+      "dialogPresent": true,
+      "dialogRect": {
+        "x": 40,
+        "width": 420,
+        "right": 460
+      },
+      "dialogFitsViewport": true
+    },
+    "afterReopen": {
+      "attempted": true,
+      "ok": true,
+      "metrics": {
+        "innerWidth": 500,
+        "innerHeight": 500,
+        "sizedOffsetWidth": 500,
+        "docScrollWidth": 500,
+        "docClientWidth": 500,
+        "bodyTextHead": "限时特卖助手\n未连接\n管理\n店铺运营\n限时特卖\n\n创建或复制限时特卖活动，也可用自动循环按轮数／天数持续抢占场次。\n\n商品备货与物流\n\n一次安排完成成对切换：到点把参与商品改为现货 1 天，随后按你选的常规备货天数（2–10 天）恢复；可选",
+        "blankUserPlans": {
+          "hasLegacyCard": false,
+          "hasUnboundHint": false,
+          "hasResaveHint": false
+        }
+      },
+      "error": null,
+      "closedOldTarget": true,
+      "openResult": "ok"
+    }
+  },
+  "verdict": "NARROW/CLIPPED",
+  "extensionId": "pgnemiifhpihjjphafeienacddicleej",
+  "blankUserOk": false,
+  "clipped": false,
+  "tooNarrow": false,
+  "sizedNarrow": false,
+  "reopenCollapsed": false,
+  "blankUserFailed": true
+}

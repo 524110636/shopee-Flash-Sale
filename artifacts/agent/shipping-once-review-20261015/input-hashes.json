@@ -1,0 +1,10 @@
+{
+  "features/shipping/group.ts": "2c2206d0842a9862cab9f9d79daae44d5ebbd779cd771dbd41509cc344f95817",
+  "features/shipping/group-rules.ts": "dcc26622c44dc0b76bb4560d96f6794803a06d00c520a0b25521ab5fe85d0cfc",
+  "features/shipping/background.ts": "a7648a041c84f64fef75a37149e8867ed78df19302bff27c9c993702120a0105",
+  "features/shipping/runner.ts": "549cb9e1077e8c4d1d5edfae9ea4520fcef33d2b56efd65ef32bd5bb05a248bd",
+  "features/shipping/store.ts": "fea97f0e3777a6cb65aa586b30e078180ffc394d7153829acfce38dec000bb66",
+  "components/product/shipping/ShippingSchedulePanel.tsx": "d191383b2af9990fc954193a2ba82342e1169a3cd1f7f895289432fdd91ff30d",
+  "components/product/shipping/ShippingExcludeModal.tsx": "12d9cbefea5a680692dc99fadbf425f5344452637c220073e838a2f46fff722f",
+  ".agent-tmp/shipping-once-ui-20261015/iso-output/chrome-mv3/background.js": "e740545901aeffcd29ee97f2d59be719a8f5cc26e78f69651816797390a99f96"
+}

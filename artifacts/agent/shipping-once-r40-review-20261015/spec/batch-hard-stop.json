@@ -1,0 +1,3404 @@
+{
+  "mode": "batch-hard-stop",
+  "after": {
+    "_shippingGroups": {
+      "active": null,
+      "lastFinished": {
+        "groupId": "g",
+        "revision": 7,
+        "executionMode": "once",
+        "ownerShopId": 1,
+        "ownerUserId": 1,
+        "schedule": {
+          "startAt": 1792555200000,
+          "restoreAt": 1792558800000,
+          "spotDays": 1,
+          "regularDays": 8
+        },
+        "config": {
+          "range": "all",
+          "excludeIds": "",
+          "toggleLogistics": false
+        },
+        "phase": "done",
+        "claimedStages": [
+          "spot",
+          "restore"
+        ],
+        "spotTaskId": "ship-1792555440000-w2tf1i",
+        "restoreTaskId": "ship-1792558800000-hr7yv3",
+        "reconciledTaskIds": [],
+        "confirmedSpotItemIds": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "20",
+          "21",
+          "22",
+          "23",
+          "24",
+          "25",
+          "26",
+          "27",
+          "28",
+          "29",
+          "30",
+          "31",
+          "32",
+          "33",
+          "34",
+          "35",
+          "36",
+          "37",
+          "38",
+          "39",
+          "40",
+          "41",
+          "42",
+          "43",
+          "44",
+          "45",
+          "46",
+          "47",
+          "48",
+          "49",
+          "50",
+          "51",
+          "52",
+          "53",
+          "54",
+          "55",
+          "56",
+          "57",
+          "58",
+          "59",
+          "60",
+          "61",
+          "62",
+          "63",
+          "64",
+          "65",
+          "66",
+          "67",
+          "68",
+          "69",
+          "70",
+          "71",
+          "72",
+          "73",
+          "74",
+          "75",
+          "76",
+          "77",
+          "78",
+          "79",
+          "80",
+          "81",
+          "82",
+          "83",
+          "84",
+          "85",
+          "86",
+          "87",
+          "88",
+          "89",
+          "90",
+          "91",
+          "92",
+          "93",
+          "94",
+          "95",
+          "96",
+          "97",
+          "98",
+          "99",
+          "100"
+        ],
+        "items": [
+          {
+            "itemId": "1",
+            "name": "P1",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "2",
+            "name": "P2",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "3",
+            "name": "P3",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "4",
+            "name": "P4",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "5",
+            "name": "P5",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "6",
+            "name": "P6",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "7",
+            "name": "P7",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "8",
+            "name": "P8",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "9",
+            "name": "P9",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "10",
+            "name": "P10",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "11",
+            "name": "P11",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "12",
+            "name": "P12",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "13",
+            "name": "P13",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "14",
+            "name": "P14",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "15",
+            "name": "P15",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "16",
+            "name": "P16",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "17",
+            "name": "P17",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "18",
+            "name": "P18",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "19",
+            "name": "P19",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "20",
+            "name": "P20",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "21",
+            "name": "P21",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "22",
+            "name": "P22",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "23",
+            "name": "P23",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "24",
+            "name": "P24",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "25",
+            "name": "P25",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "26",
+            "name": "P26",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "27",
+            "name": "P27",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "28",
+            "name": "P28",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "29",
+            "name": "P29",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "30",
+            "name": "P30",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "31",
+            "name": "P31",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "32",
+            "name": "P32",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "33",
+            "name": "P33",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "34",
+            "name": "P34",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "35",
+            "name": "P35",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "36",
+            "name": "P36",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "37",
+            "name": "P37",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "38",
+            "name": "P38",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "39",
+            "name": "P39",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "40",
+            "name": "P40",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "41",
+            "name": "P41",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "42",
+            "name": "P42",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "43",
+            "name": "P43",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "44",
+            "name": "P44",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "45",
+            "name": "P45",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "46",
+            "name": "P46",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "47",
+            "name": "P47",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "48",
+            "name": "P48",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "49",
+            "name": "P49",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "50",
+            "name": "P50",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "51",
+            "name": "P51",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "52",
+            "name": "P52",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "53",
+            "name": "P53",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "54",
+            "name": "P54",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "55",
+            "name": "P55",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "56",
+            "name": "P56",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "57",
+            "name": "P57",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "58",
+            "name": "P58",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "59",
+            "name": "P59",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "60",
+            "name": "P60",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "61",
+            "name": "P61",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "62",
+            "name": "P62",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "63",
+            "name": "P63",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "64",
+            "name": "P64",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "65",
+            "name": "P65",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "66",
+            "name": "P66",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "67",
+            "name": "P67",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "68",
+            "name": "P68",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "69",
+            "name": "P69",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "70",
+            "name": "P70",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "71",
+            "name": "P71",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "72",
+            "name": "P72",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "73",
+            "name": "P73",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "74",
+            "name": "P74",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "75",
+            "name": "P75",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "76",
+            "name": "P76",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "77",
+            "name": "P77",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "78",
+            "name": "P78",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "79",
+            "name": "P79",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "80",
+            "name": "P80",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "81",
+            "name": "P81",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "82",
+            "name": "P82",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "83",
+            "name": "P83",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "84",
+            "name": "P84",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "85",
+            "name": "P85",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "86",
+            "name": "P86",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "87",
+            "name": "P87",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "88",
+            "name": "P88",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "89",
+            "name": "P89",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "90",
+            "name": "P90",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "91",
+            "name": "P91",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "92",
+            "name": "P92",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "93",
+            "name": "P93",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "94",
+            "name": "P94",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "95",
+            "name": "P95",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "96",
+            "name": "P96",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "97",
+            "name": "P97",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "98",
+            "name": "P98",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "99",
+            "name": "P99",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "100",
+            "name": "P100",
+            "spot": "success",
+            "restore": "success"
+          },
+          {
+            "itemId": "101",
+            "name": "P101",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "102",
+            "name": "P102",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "103",
+            "name": "P103",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "104",
+            "name": "P104",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "105",
+            "name": "P105",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "106",
+            "name": "P106",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "107",
+            "name": "P107",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "108",
+            "name": "P108",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "109",
+            "name": "P109",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "110",
+            "name": "P110",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "111",
+            "name": "P111",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "112",
+            "name": "P112",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "113",
+            "name": "P113",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "114",
+            "name": "P114",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "115",
+            "name": "P115",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "116",
+            "name": "P116",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "117",
+            "name": "P117",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "118",
+            "name": "P118",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "119",
+            "name": "P119",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "120",
+            "name": "P120",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "121",
+            "name": "P121",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "122",
+            "name": "P122",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "123",
+            "name": "P123",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "124",
+            "name": "P124",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          },
+          {
+            "itemId": "125",
+            "name": "P125",
+            "spot": "pending",
+            "restore": "pending",
+            "reason": "已到单次安排的截止时刻，未发出写请求"
+          }
+        ],
+        "pendingItemIds": [],
+        "message": "商品已恢复常规备货，物流收尾已完成，这一组结束",
+        "error": null,
+        "createdAt": 1792555199000,
+        "updatedAt": 1792558800000,
+        "finishedAt": 1792558800000
+      },
+      "updatedAt": 1792558800000
+    },
+    "_shippingTask": {
+      "taskId": "ship-1792558800000-hr7yv3",
+      "requestId": "g:restore:6",
+      "shopId": 1,
+      "ownerUserId": 1,
+      "source": "group",
+      "groupId": "g",
+      "groupPhase": "restore",
+      "mode": "preorder",
+      "days": 8,
+      "range": "all",
+      "excludeIds": [],
+      "status": "completed",
+      "phase": "completed",
+      "total": 100,
+      "processed": 100,
+      "items": [
+        {
+          "itemId": "1",
+          "name": "P1",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "2",
+          "name": "P2",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "3",
+          "name": "P3",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "4",
+          "name": "P4",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "5",
+          "name": "P5",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "6",
+          "name": "P6",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "7",
+          "name": "P7",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "8",
+          "name": "P8",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "9",
+          "name": "P9",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "10",
+          "name": "P10",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "11",
+          "name": "P11",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "12",
+          "name": "P12",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "13",
+          "name": "P13",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "14",
+          "name": "P14",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "15",
+          "name": "P15",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "16",
+          "name": "P16",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "17",
+          "name": "P17",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "18",
+          "name": "P18",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "19",
+          "name": "P19",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "20",
+          "name": "P20",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "21",
+          "name": "P21",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "22",
+          "name": "P22",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "23",
+          "name": "P23",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "24",
+          "name": "P24",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "25",
+          "name": "P25",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "26",
+          "name": "P26",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "27",
+          "name": "P27",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "28",
+          "name": "P28",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "29",
+          "name": "P29",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "30",
+          "name": "P30",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "31",
+          "name": "P31",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "32",
+          "name": "P32",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "33",
+          "name": "P33",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "34",
+          "name": "P34",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "35",
+          "name": "P35",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "36",
+          "name": "P36",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "37",
+          "name": "P37",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "38",
+          "name": "P38",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "39",
+          "name": "P39",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "40",
+          "name": "P40",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "41",
+          "name": "P41",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "42",
+          "name": "P42",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "43",
+          "name": "P43",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "44",
+          "name": "P44",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "45",
+          "name": "P45",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "46",
+          "name": "P46",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "47",
+          "name": "P47",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "48",
+          "name": "P48",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "49",
+          "name": "P49",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "50",
+          "name": "P50",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "51",
+          "name": "P51",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "52",
+          "name": "P52",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "53",
+          "name": "P53",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "54",
+          "name": "P54",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "55",
+          "name": "P55",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "56",
+          "name": "P56",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "57",
+          "name": "P57",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "58",
+          "name": "P58",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "59",
+          "name": "P59",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "60",
+          "name": "P60",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "61",
+          "name": "P61",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "62",
+          "name": "P62",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "63",
+          "name": "P63",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "64",
+          "name": "P64",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "65",
+          "name": "P65",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "66",
+          "name": "P66",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "67",
+          "name": "P67",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "68",
+          "name": "P68",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "69",
+          "name": "P69",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "70",
+          "name": "P70",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "71",
+          "name": "P71",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "72",
+          "name": "P72",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "73",
+          "name": "P73",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "74",
+          "name": "P74",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "75",
+          "name": "P75",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "76",
+          "name": "P76",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "77",
+          "name": "P77",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "78",
+          "name": "P78",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "79",
+          "name": "P79",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "80",
+          "name": "P80",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "81",
+          "name": "P81",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "82",
+          "name": "P82",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "83",
+          "name": "P83",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "84",
+          "name": "P84",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "85",
+          "name": "P85",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "86",
+          "name": "P86",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "87",
+          "name": "P87",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "88",
+          "name": "P88",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "89",
+          "name": "P89",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "90",
+          "name": "P90",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "91",
+          "name": "P91",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "92",
+          "name": "P92",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "93",
+          "name": "P93",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "94",
+          "name": "P94",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "95",
+          "name": "P95",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "96",
+          "name": "P96",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "97",
+          "name": "P97",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "98",
+          "name": "P98",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "99",
+          "name": "P99",
+          "days": 8,
+          "status": "success"
+        },
+        {
+          "itemId": "100",
+          "name": "P100",
+          "days": 8,
+          "status": "success"
+        }
+      ],
+      "logistics": {
+        "requested": false,
+        "closeAttempted": false,
+        "closeCompleted": false,
+        "restoreAttempted": false,
+        "restoreCompleted": false,
+        "records": []
+      },
+      "checkpoints": [
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "1",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "51",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "2",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "52",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "3",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "53",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "4",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "54",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "5",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "55",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "6",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "56",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "7",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "57",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "8",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "58",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "9",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "59",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "10",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "60",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "11",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "61",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "12",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "62",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "13",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "63",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "14",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "64",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "15",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "65",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "16",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "66",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "17",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "67",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "18",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "68",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "19",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "69",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "20",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "70",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "21",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "71",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "22",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "72",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "23",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "73",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "24",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "74",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "25",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "75",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "26",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "76",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "27",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "77",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "28",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "78",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "29",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "79",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "30",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "80",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "31",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "81",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "32",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "82",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "33",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "83",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "34",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "84",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "35",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "85",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "36",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "86",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "37",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "87",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "38",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "88",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "39",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "89",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "40",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "90",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "41",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "91",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "42",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "92",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "43",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "93",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "44",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "94",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "45",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "95",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "46",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "96",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "47",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "97",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "48",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "98",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "49",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "99",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "50",
+          "at": 1792558800000
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "100",
+          "at": 1792558800000
+        }
+      ],
+      "message": "任务完成",
+      "error": null,
+      "startedAt": 1792558800000,
+      "updatedAt": 1792558800000,
+      "stopRequested": false,
+      "finishedAt": 1792558800000
+    },
+    "_shippingDiagnostics": [
+      {
+        "stage": "verify-current-days",
+        "taskId": "ship-1792558800000-hr7yv3",
+        "groupPhase": "restore",
+        "detail": "详情读取=100 次; 分类={}; 仍需恢复=100[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,…共100]",
+        "reason": "",
+        "at": 1792558800000
+      }
+    ]
+  },
+  "days": 8,
+  "channel": true,
+  "detailReads": 100,
+  "validationCalls": 106,
+  "writes": [
+    {
+      "kind": "product",
+      "body": [
+        {
+          "id": 1,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 2,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 3,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 4,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 5,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 6,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 7,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 8,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 9,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 10,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 11,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 12,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 13,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 14,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 15,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 16,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 17,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 18,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 19,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 20,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 21,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 22,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 23,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 24,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 25,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 26,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 27,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 28,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 29,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 30,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 31,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 32,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 33,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 34,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 35,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 36,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 37,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 38,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 39,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 40,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 41,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 42,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 43,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 44,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 45,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 46,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 47,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 48,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 49,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 50,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        }
+      ],
+      "at": 1792555440000
+    },
+    {
+      "kind": "product",
+      "body": [
+        {
+          "id": 51,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 52,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 53,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 54,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 55,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 56,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 57,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 58,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 59,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 60,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 61,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 62,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 63,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 64,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 65,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 66,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 67,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 68,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 69,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 70,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 71,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 72,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 73,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 74,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 75,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 76,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 77,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 78,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 79,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 80,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 81,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 82,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 83,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 84,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 85,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 86,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 87,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 88,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 89,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 90,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 91,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 92,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 93,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 94,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 95,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 96,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 97,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 98,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 99,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        },
+        {
+          "id": 100,
+          "category_path": "a/b",
+          "pre_order": false,
+          "days_to_ship": 1
+        }
+      ],
+      "at": 1792555440000
+    },
+    {
+      "kind": "product",
+      "body": [
+        {
+          "id": 1,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 2,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 3,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 4,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 5,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 6,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 7,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 8,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 9,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 10,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 11,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 12,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 13,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 14,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 15,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 16,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 17,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 18,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 19,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 20,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 21,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 22,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 23,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 24,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 25,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 26,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 27,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 28,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 29,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 30,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 31,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 32,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 33,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 34,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 35,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 36,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 37,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 38,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 39,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 40,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 41,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 42,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 43,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 44,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 45,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 46,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 47,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 48,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 49,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 50,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        }
+      ],
+      "at": 1792558800000
+    },
+    {
+      "kind": "product",
+      "body": [
+        {
+          "id": 51,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 52,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 53,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 54,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 55,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 56,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 57,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 58,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 59,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 60,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 61,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 62,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 63,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 64,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 65,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 66,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 67,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 68,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 69,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 70,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 71,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 72,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 73,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 74,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 75,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 76,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 77,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 78,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 79,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 80,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 81,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 82,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 83,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 84,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 85,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 86,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 87,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 88,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 89,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 90,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 91,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 92,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 93,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 94,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 95,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 96,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 97,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 98,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 99,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        },
+        {
+          "id": 100,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        }
+      ],
+      "at": 1792558800000
+    }
+  ],
+  "logs": [
+    "[shipping-group] g 阶段=scheduled 决定=start-spot 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：started-spot",
+    "[shipping] 任务结束：completed 成功 100 / 失败 0 / 待核对 0",
+    "[shipping-group] g 阶段=awaiting-restore 决定=start-restore 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：started-restore",
+    "[shipping] 任务结束：completed 成功 100 / 失败 0 / 待核对 0",
+    "[shipping] 单次安排补检：idle"
+  ]
+}

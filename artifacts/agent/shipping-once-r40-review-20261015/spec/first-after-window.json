@@ -1,0 +1,48 @@
+{
+  "mode": "first-after-window",
+  "after": {
+    "_shippingGroups": {
+      "active": {
+        "groupId": "g",
+        "revision": 2,
+        "executionMode": "once",
+        "ownerShopId": 1,
+        "ownerUserId": 1,
+        "schedule": {
+          "startAt": 1792555200000,
+          "restoreAt": 1792558800000,
+          "spotDays": 1,
+          "regularDays": 8
+        },
+        "config": {
+          "range": "all",
+          "excludeIds": "",
+          "toggleLogistics": false
+        },
+        "phase": "missed",
+        "claimedStages": [],
+        "spotTaskId": null,
+        "restoreTaskId": null,
+        "reconciledTaskIds": [],
+        "confirmedSpotItemIds": [],
+        "items": [],
+        "pendingItemIds": [],
+        "message": "已错过开始时间窗口，本次未修改任何商品；请重新确认日期后再安排",
+        "error": null,
+        "createdAt": 1792555199000,
+        "updatedAt": 1792555560000
+      },
+      "lastFinished": null,
+      "updatedAt": 1792555560000
+    }
+  },
+  "days": 5,
+  "channel": true,
+  "detailReads": 0,
+  "validationCalls": 0,
+  "writes": [],
+  "logs": [
+    "[shipping-group] g 阶段=scheduled 决定=mark-missed 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：mark-missed"
+  ]
+}

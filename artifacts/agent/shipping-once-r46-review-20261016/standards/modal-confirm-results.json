@@ -1,0 +1,50 @@
+[
+  {
+    "name": "invalidation_101_2_must_reject_confirmation",
+    "pass": false,
+    "observed": {
+      "confirmed": [
+        []
+      ],
+      "noticeBefore": true,
+      "excludeIds": ""
+    }
+  },
+  {
+    "name": "invalidation_202_1_must_reject_confirmation",
+    "pass": false,
+    "observed": {
+      "confirmed": [
+        []
+      ],
+      "noticeBefore": true,
+      "excludeIds": ""
+    }
+  },
+  {
+    "name": "same_owner_confirmation_preserved",
+    "pass": true,
+    "observed": [
+      [
+        "111"
+      ]
+    ]
+  },
+  {
+    "name": "escape_does_not_submit",
+    "pass": true,
+    "observed": {
+      "confirmed": [],
+      "closed": 1
+    }
+  },
+  {
+    "name": "fresh_selection_after_invalidation_preserved",
+    "pass": true,
+    "observed": [
+      [
+        "222"
+      ]
+    ]
+  }
+]

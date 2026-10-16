@@ -1,0 +1,730 @@
+{
+  "method": "Actual background / runner / API source, synthetic browser storage and HTTP responses. Restore request interruption used two separate Node processes, not real MV3.",
+  "cases": [
+    {
+      "name": "batch-five-minute.json",
+      "phase": "awaiting-restore",
+      "pending": [],
+      "confirmed": 100,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "2",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "3",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "4",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "5",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "6",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "7",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "8",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "9",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "10",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "11",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "12",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "13",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "14",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "15",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "16",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "17",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "18",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "19",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "20",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "21",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "22",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "23",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "24",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "25",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "26",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "27",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "28",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "29",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "30",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "31",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "32",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "33",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "34",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "35",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "36",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "37",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "38",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "39",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "40",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "41",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "42",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "43",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "44",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "45",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "46",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "47",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "48",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "49",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "50",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "51",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "52",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "53",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "54",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "55",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "56",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "57",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "58",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "59",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "60",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "61",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "62",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "63",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "64",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "65",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "66",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "67",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "68",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "69",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "70",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "71",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "72",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "73",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "74",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "75",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "76",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "77",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "78",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "79",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "80",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "81",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "82",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "83",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "84",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "85",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "86",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "87",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "88",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "89",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "90",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "91",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "92",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "93",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "94",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "95",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "96",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "97",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "98",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "99",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "100",
+          "spot": "success",
+          "restore": "pending"
+        }
+      ],
+      "detailReads": 0,
+      "productWrites": [
+        {
+          "at": 1792555440000,
+          "n": 50,
+          "days": 1
+        },
+        {
+          "at": 1792555560000,
+          "n": 50,
+          "days": 1
+        }
+      ],
+      "groupError": null,
+      "taskStatus": "completed"
+    },
+    {
+      "name": "checkpoint-late.json",
+      "phase": "done",
+      "pending": [],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "success"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [
+        {
+          "at": 1792558800000,
+          "n": 1,
+          "days": 1
+        },
+        {
+          "at": 1792558800000,
+          "n": 1,
+          "days": 8
+        }
+      ],
+      "groupError": null,
+      "taskStatus": "completed"
+    },
+    {
+      "name": "logistics-retry.json",
+      "phase": "needs-attention",
+      "pending": [],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "success"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [
+        {
+          "at": 1792558800001,
+          "n": 1,
+          "days": 8
+        }
+      ],
+      "restoreResult": {
+        "success": true,
+        "completed": true
+      },
+      "groupError": "有 1 个渠道尚未确认恢复，本组不能报完成，请先恢复物流",
+      "taskStatus": "failed"
+    },
+    {
+      "name": "partial-spot-failure.json",
+      "phase": "needs-attention",
+      "pending": [],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "2",
+          "spot": "failed",
+          "restore": "pending"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [
+        {
+          "at": 1792558800001,
+          "n": 1,
+          "days": 8
+        }
+      ],
+      "groupError": "有 0 个商品未确认恢复到常规天数，需你确认后再处理",
+      "taskStatus": "completed"
+    },
+    {
+      "name": "r4-already-target.json",
+      "phase": "done",
+      "pending": [],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "success"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [],
+      "groupError": null,
+      "taskStatus": "completed"
+    },
+    {
+      "name": "r4-conflict.json",
+      "phase": "needs-attention",
+      "pending": [
+        "1"
+      ],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "unknown"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [],
+      "groupError": "有 1 个商品未确认恢复到常规天数，需你确认后再处理",
+      "taskStatus": "completed"
+    },
+    {
+      "name": "r4-detail-fail.json",
+      "phase": "needs-attention",
+      "pending": [
+        "1"
+      ],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "unknown"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [],
+      "groupError": "有 1 个商品未确认恢复到常规天数，需你确认后再处理",
+      "taskStatus": "completed"
+    },
+    {
+      "name": "r4-still-one.json",
+      "phase": "done",
+      "pending": [],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "success"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [
+        {
+          "at": 1792558800001,
+          "n": 1,
+          "days": 8
+        }
+      ],
+      "groupError": null,
+      "taskStatus": "completed"
+    },
+    {
+      "name": "restore-resume.json",
+      "phase": "needs-attention",
+      "pending": [
+        "1"
+      ],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "pending"
+        }
+      ],
+      "detailReads": 0,
+      "productWrites": [],
+      "groupError": "恢复阶段被中断，结果不明，需先核实实际备货天数",
+      "taskStatus": "interrupted"
+    },
+    {
+      "name": "temporary-access.json",
+      "phase": "needs-attention",
+      "pending": [],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "pending"
+        }
+      ],
+      "detailReads": 0,
+      "productWrites": [],
+      "groupError": "temporary backend unavailable"
+    }
+  ],
+  "sources": {
+    "features/shipping/background.ts": "d5825768dd54ee20628deac85ec87e4c50a2eecf4e0cc9285582c827e5feb7fd",
+    "features/shipping/group.ts": "fcca91b75c012dcf27a8683b477c105a50e0d918dd96ca14bc5e1250f01e5e96",
+    "features/shipping/group-rules.ts": "1f5aeb4a6c8114af96a4da99ff74ddcc7e8e1bb9fed9fe0186c642a67b4b5ece",
+    "features/shipping/runner.ts": "6fabb0ff7b9212efd4f5869f9d3827a57634a722cd4d5ef1e8eb0bacd2d16b5d"
+  }
+}

@@ -1,0 +1,491 @@
+{
+  "message": "locator.check: Error: strict mode violation: getByLabel('自动管理物流', { exact: true }) resolved to 2 elements:\n    1) <input type=\"checkbox\"/> aka getByRole('checkbox', { name: '自动管理物流' }).first()\n    2) <input type=\"checkbox\"/> aka getByRole('checkbox', { name: '自动管理物流' }).nth(1)\n\nCall log:\n\u001b[2m  - waiting for getByLabel('自动管理物流', { exact: true })\u001b[22m\n",
+  "stack": "locator.check: Error: strict mode violation: getByLabel('自动管理物流', { exact: true }) resolved to 2 elements:\n    1) <input type=\"checkbox\"/> aka getByRole('checkbox', { name: '自动管理物流' }).first()\n    2) <input type=\"checkbox\"/> aka getByRole('checkbox', { name: '自动管理物流' }).nth(1)\n\nCall log:\n\u001b[2m  - waiting for getByLabel('自动管理物流', { exact: true })\u001b[22m\n\n    at D:\\shopee_xm\\虾皮限时特卖-更新迭代\\artifacts\\agent\\shipping-access-review-20261015\\browser_review.cjs:184:74",
+  "partialResults": [
+    {
+      "name": "actual homepage opens shipping interface",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "normal fixture preview contains one target",
+      "expected": 1,
+      "observed": 1,
+      "meetsContract": true
+    },
+    {
+      "name": "normal actual worker completes product write",
+      "expected": "completed",
+      "observed": "completed",
+      "meetsContract": true
+    },
+    {
+      "name": "actual request sets pre_order and days_to_ship",
+      "expected": {
+        "pre_order": true,
+        "days_to_ship": 7
+      },
+      "observed": {
+        "pre_order": true,
+        "days_to_ship": 7
+      },
+      "meetsContract": true
+    },
+    {
+      "name": "switching shop invalidates original preview with zero writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "same-shop account switch invalidates original preview with zero writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "actual HTTP 403 before submission prevents product writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "different valid days with original preview are rejected",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "extra product outside original preview is rejected",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "runtime logistics string cannot turn confirmed false into channel writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "runtime logistics actual worker observation",
+      "observed": {
+        "channelWrites": []
+      }
+    },
+    {
+      "name": "same seller Cookie with backend user changed before send prevents product writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "account switch at validation window",
+      "observed": {
+        "taskOwnerUserId": 2,
+        "currentBackendUser": 3,
+        "taskStatus": "failed",
+        "diagnostics": [
+          {
+            "access": "denied",
+            "actualShopId": 77,
+            "actualUserId": 2,
+            "at": 1792026718173,
+            "blockedBy": "access-denied",
+            "contextChange": "blocked-write",
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "fixture permission revoked",
+            "stage": "first-batch",
+            "taskId": "ship-1792026718154-1wjdno",
+            "writeSent": false
+          },
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 2,
+            "at": 1792026718311,
+            "blockedBy": "settings-mismatch",
+            "contentDiffs": [
+              {
+                "detail": "天数 7 → 3",
+                "kind": "settings-days"
+              }
+            ],
+            "contentValues": [
+              {
+                "field": "days",
+                "normalized": "3",
+                "rawType": "number"
+              },
+              {
+                "field": "range",
+                "normalized": "all",
+                "rawType": "string"
+              },
+              {
+                "field": "excludeIds",
+                "normalized": "",
+                "rawType": "string"
+              },
+              {
+                "field": "toggleLogistics",
+                "normalized": "false",
+                "rawType": "boolean"
+              }
+            ],
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "确认内容与预览不一致：天数 7 → 3",
+            "requestId": "review-0.12314645916724842",
+            "stage": "start-content-check",
+            "writeSent": false
+          },
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 2,
+            "at": 1792026718385,
+            "blockedBy": "settings-mismatch",
+            "contentDiffs": [
+              {
+                "detail": "多了 1 个预览外商品（如 202）",
+                "kind": "items-extra"
+              }
+            ],
+            "contentValues": [
+              {
+                "field": "days",
+                "normalized": "7",
+                "rawType": "number"
+              },
+              {
+                "field": "range",
+                "normalized": "all",
+                "rawType": "string"
+              },
+              {
+                "field": "excludeIds",
+                "normalized": "",
+                "rawType": "string"
+              },
+              {
+                "field": "toggleLogistics",
+                "normalized": "false",
+                "rawType": "boolean"
+              }
+            ],
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "确认内容与预览不一致：多了 1 个预览外商品（如 202）",
+            "requestId": "review-0.9836272216372778",
+            "stage": "start-content-check",
+            "writeSent": false
+          },
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 2,
+            "at": 1792026718465,
+            "blockedBy": "logistics-flag-type",
+            "contentValues": [
+              {
+                "field": "days",
+                "normalized": "7",
+                "rawType": "number"
+              },
+              {
+                "field": "range",
+                "normalized": "all",
+                "rawType": "string"
+              },
+              {
+                "field": "excludeIds",
+                "normalized": "",
+                "rawType": "string"
+              },
+              {
+                "field": "toggleLogistics",
+                "normalized": "(非boolean)",
+                "rawType": "string"
+              }
+            ],
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "「自动管理店铺物流」不是 boolean（实际 string），已拒绝",
+            "requestId": "review-0.43568345200802017",
+            "stage": "start-logistics-flag-type",
+            "writeSent": false
+          },
+          {
+            "access": "not-checked",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792026718576,
+            "blockedBy": "account-changed",
+            "contextChange": "blocked-write",
+            "credentialChanged": false,
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "发送前账号已变化（2 → 3），已停止该请求",
+            "stage": "first-batch",
+            "taskId": "ship-1792026718556-d5d8w8",
+            "writeSent": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "product denied cookie really rotated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product denied refresh verification reached",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product denied fresh context validated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product denied actual expected write",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "product denied zero business writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "product denied runtime matrix",
+      "observed": {
+        "actuallyRotated": true,
+        "validationCalls": [
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "fresh",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          }
+        ],
+        "sent": [],
+        "taskStatus": "failed",
+        "restoreCompleted": false,
+        "diagnostics": [
+          {
+            "access": "denied",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792026718838,
+            "blockedBy": "access-denied",
+            "contextChange": "blocked-write",
+            "credentialChanged": true,
+            "expectedShopId": 77,
+            "expectedUserId": 3,
+            "reason": "刷新后的上下文已无权限：fixture permission revoked",
+            "stage": "first-batch",
+            "taskId": "ship-1792026718748-ohehlp",
+            "writeSent": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "product throw cookie really rotated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product throw refresh verification reached",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product throw fresh context validated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product throw actual expected write",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "product throw zero business writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "product throw runtime matrix",
+      "observed": {
+        "actuallyRotated": true,
+        "validationCalls": [
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "fresh",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          }
+        ],
+        "sent": [],
+        "taskStatus": "failed",
+        "restoreCompleted": false,
+        "diagnostics": [
+          {
+            "access": "denied",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792026719070,
+            "blockedBy": "access-denied",
+            "contextChange": "blocked-write",
+            "credentialChanged": true,
+            "expectedShopId": 77,
+            "expectedUserId": 3,
+            "reason": "刷新后的上下文已无权限：无法连接后端服务: fixture refreshed access network unavailable",
+            "stage": "first-batch",
+            "taskId": "ship-1792026719011-50owzc",
+            "writeSent": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "product allowed cookie really rotated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product allowed refresh verification reached",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product allowed fresh context validated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product allowed actual expected write",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product allowed runtime matrix",
+      "observed": {
+        "actuallyRotated": true,
+        "validationCalls": [
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "fresh",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          }
+        ],
+        "sent": [
+          {
+            "kind": "product",
+            "items": [
+              {
+                "id": 101,
+                "category_path": "1/2",
+                "pre_order": true,
+                "days_to_ship": 7
+              }
+            ]
+          }
+        ],
+        "taskStatus": "completed",
+        "restoreCompleted": false,
+        "diagnostics": [
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792026719298,
+            "contextChange": "same-owner-refresh",
+            "credentialChanged": true,
+            "expectedShopId": 77,
+            "expectedUserId": 3,
+            "reason": "仅凭据刷新，归属未变且新上下文权限已核验通过",
+            "stage": "first-batch",
+            "taskId": "ship-1792026719240-k0lz4x",
+            "writeSent": false
+          }
+        ]
+      }
+    }
+  ]
+}

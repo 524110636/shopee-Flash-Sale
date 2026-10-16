@@ -1,0 +1,1660 @@
+{
+  "scope": "actual static MV3 and synthetic fixtures; all HTTP intercepted; no backend/DB/live store",
+  "package": ".agent-tmp\\shipping-m02-20261014\\iso-output\\chrome-mv3",
+  "backgroundSha256": "e6541a9400d4e672520cfb7602dc88ccea49e69ba75d821c679d2dc86b1c91cf",
+  "results": [
+    {
+      "name": "actual homepage opens shipping interface",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "normal fixture preview contains one target",
+      "expected": 1,
+      "observed": 1,
+      "meetsContract": true
+    },
+    {
+      "name": "normal actual worker completes product write",
+      "expected": "completed",
+      "observed": "completed",
+      "meetsContract": true
+    },
+    {
+      "name": "actual request sets pre_order and days_to_ship",
+      "expected": {
+        "pre_order": true,
+        "days_to_ship": 7
+      },
+      "observed": {
+        "pre_order": true,
+        "days_to_ship": 7
+      },
+      "meetsContract": true
+    },
+    {
+      "name": "switching shop invalidates original preview with zero writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "same-shop account switch invalidates original preview with zero writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "actual HTTP 403 before submission prevents product writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "different valid days with original preview are rejected",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "extra product outside original preview is rejected",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "runtime logistics string cannot turn confirmed false into channel writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "runtime logistics actual worker observation",
+      "observed": {
+        "channelWrites": []
+      }
+    },
+    {
+      "name": "same seller Cookie with backend user changed before send prevents product writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "account switch at validation window",
+      "observed": {
+        "taskOwnerUserId": 2,
+        "currentBackendUser": 3,
+        "taskStatus": "failed",
+        "diagnostics": [
+          {
+            "access": "denied",
+            "actualShopId": 77,
+            "actualUserId": 2,
+            "at": 1792026852770,
+            "blockedBy": "access-denied",
+            "contextChange": "blocked-write",
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "fixture permission revoked",
+            "stage": "first-batch",
+            "taskId": "ship-1792026852745-it713r",
+            "writeSent": false
+          },
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 2,
+            "at": 1792026852918,
+            "blockedBy": "settings-mismatch",
+            "contentDiffs": [
+              {
+                "detail": "天数 7 → 3",
+                "kind": "settings-days"
+              }
+            ],
+            "contentValues": [
+              {
+                "field": "days",
+                "normalized": "3",
+                "rawType": "number"
+              },
+              {
+                "field": "range",
+                "normalized": "all",
+                "rawType": "string"
+              },
+              {
+                "field": "excludeIds",
+                "normalized": "",
+                "rawType": "string"
+              },
+              {
+                "field": "toggleLogistics",
+                "normalized": "false",
+                "rawType": "boolean"
+              }
+            ],
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "确认内容与预览不一致：天数 7 → 3",
+            "requestId": "review-0.47301878044872925",
+            "stage": "start-content-check",
+            "writeSent": false
+          },
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 2,
+            "at": 1792026853016,
+            "blockedBy": "settings-mismatch",
+            "contentDiffs": [
+              {
+                "detail": "多了 1 个预览外商品（如 202）",
+                "kind": "items-extra"
+              }
+            ],
+            "contentValues": [
+              {
+                "field": "days",
+                "normalized": "7",
+                "rawType": "number"
+              },
+              {
+                "field": "range",
+                "normalized": "all",
+                "rawType": "string"
+              },
+              {
+                "field": "excludeIds",
+                "normalized": "",
+                "rawType": "string"
+              },
+              {
+                "field": "toggleLogistics",
+                "normalized": "false",
+                "rawType": "boolean"
+              }
+            ],
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "确认内容与预览不一致：多了 1 个预览外商品（如 202）",
+            "requestId": "review-0.9623840731864619",
+            "stage": "start-content-check",
+            "writeSent": false
+          },
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 2,
+            "at": 1792026853275,
+            "blockedBy": "logistics-flag-type",
+            "contentValues": [
+              {
+                "field": "days",
+                "normalized": "7",
+                "rawType": "number"
+              },
+              {
+                "field": "range",
+                "normalized": "all",
+                "rawType": "string"
+              },
+              {
+                "field": "excludeIds",
+                "normalized": "",
+                "rawType": "string"
+              },
+              {
+                "field": "toggleLogistics",
+                "normalized": "(非boolean)",
+                "rawType": "string"
+              }
+            ],
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "「自动管理店铺物流」不是 boolean（实际 string），已拒绝",
+            "requestId": "review-0.1381618340561248",
+            "stage": "start-logistics-flag-type",
+            "writeSent": false
+          },
+          {
+            "access": "not-checked",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792026853563,
+            "blockedBy": "account-changed",
+            "contextChange": "blocked-write",
+            "credentialChanged": false,
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "发送前账号已变化（2 → 3），已停止该请求",
+            "stage": "first-batch",
+            "taskId": "ship-1792026853518-1k2b4y",
+            "writeSent": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "product denied cookie really rotated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product denied refresh verification reached",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product denied fresh context validated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product denied actual expected write",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "product denied zero business writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "product denied runtime matrix",
+      "observed": {
+        "actuallyRotated": true,
+        "validationCalls": [
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "fresh",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          }
+        ],
+        "sent": [],
+        "taskStatus": "failed",
+        "restoreCompleted": false,
+        "diagnostics": [
+          {
+            "access": "denied",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792026853837,
+            "blockedBy": "access-denied",
+            "contextChange": "blocked-write",
+            "credentialChanged": true,
+            "expectedShopId": 77,
+            "expectedUserId": 3,
+            "reason": "刷新后的上下文已无权限：fixture permission revoked",
+            "stage": "first-batch",
+            "taskId": "ship-1792026853718-mtcita",
+            "writeSent": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "product throw cookie really rotated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product throw refresh verification reached",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product throw fresh context validated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product throw actual expected write",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "product throw zero business writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "product throw runtime matrix",
+      "observed": {
+        "actuallyRotated": true,
+        "validationCalls": [
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "fresh",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          }
+        ],
+        "sent": [],
+        "taskStatus": "failed",
+        "restoreCompleted": false,
+        "diagnostics": [
+          {
+            "access": "denied",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792026854123,
+            "blockedBy": "access-denied",
+            "contextChange": "blocked-write",
+            "credentialChanged": true,
+            "expectedShopId": 77,
+            "expectedUserId": 3,
+            "reason": "刷新后的上下文已无权限：无法连接后端服务: fixture refreshed access network unavailable",
+            "stage": "first-batch",
+            "taskId": "ship-1792026854013-xl1aal",
+            "writeSent": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "product allowed cookie really rotated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product allowed refresh verification reached",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product allowed fresh context validated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product allowed actual expected write",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "product allowed runtime matrix",
+      "observed": {
+        "actuallyRotated": true,
+        "validationCalls": [
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "fresh",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          }
+        ],
+        "sent": [
+          {
+            "kind": "product",
+            "items": [
+              {
+                "id": 101,
+                "category_path": "1/2",
+                "pre_order": true,
+                "days_to_ship": 7
+              }
+            ]
+          }
+        ],
+        "taskStatus": "completed",
+        "restoreCompleted": false,
+        "diagnostics": [
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792026854353,
+            "contextChange": "same-owner-refresh",
+            "credentialChanged": true,
+            "expectedShopId": 77,
+            "expectedUserId": 3,
+            "reason": "仅凭据刷新，归属未变且新上下文权限已核验通过",
+            "stage": "first-batch",
+            "taskId": "ship-1792026854283-fj2drc",
+            "writeSent": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "close denied cookie really rotated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "close denied refresh verification reached",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "close denied fresh context validated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "close denied actual expected write",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "close denied zero business writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "close denied runtime matrix",
+      "observed": {
+        "actuallyRotated": true,
+        "validationCalls": [
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "fresh",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          }
+        ],
+        "sent": [],
+        "taskStatus": "failed",
+        "restoreCompleted": false,
+        "diagnostics": [
+          {
+            "access": "denied",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792026854625,
+            "blockedBy": "access-denied",
+            "contextChange": "blocked-write",
+            "credentialChanged": true,
+            "expectedShopId": 77,
+            "expectedUserId": 3,
+            "reason": "刷新后的上下文已无权限：fixture permission revoked",
+            "stage": "close-channel",
+            "taskId": "ship-1792026854564-k69p6d",
+            "writeSent": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "close throw cookie really rotated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "close throw refresh verification reached",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "close throw fresh context validated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "close throw actual expected write",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "close throw zero business writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "close throw runtime matrix",
+      "observed": {
+        "actuallyRotated": true,
+        "validationCalls": [
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "fresh",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          }
+        ],
+        "sent": [],
+        "taskStatus": "failed",
+        "restoreCompleted": false,
+        "diagnostics": [
+          {
+            "access": "denied",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792026854902,
+            "blockedBy": "access-denied",
+            "contextChange": "blocked-write",
+            "credentialChanged": true,
+            "expectedShopId": 77,
+            "expectedUserId": 3,
+            "reason": "刷新后的上下文已无权限：无法连接后端服务: fixture refreshed access network unavailable",
+            "stage": "close-channel",
+            "taskId": "ship-1792026854839-cobiju",
+            "writeSent": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "close allowed cookie really rotated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "close allowed refresh verification reached",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "close allowed fresh context validated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "close allowed actual expected write",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "close allowed runtime matrix",
+      "observed": {
+        "actuallyRotated": true,
+        "validationCalls": [
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "fresh",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "fresh",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "fresh",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          }
+        ],
+        "sent": [
+          {
+            "kind": "channel",
+            "channelId": 9,
+            "enabled": false
+          },
+          {
+            "kind": "product",
+            "items": [
+              {
+                "id": 101,
+                "category_path": "1/2",
+                "pre_order": true,
+                "days_to_ship": 7
+              }
+            ]
+          },
+          {
+            "kind": "channel",
+            "channelId": 9,
+            "enabled": true
+          }
+        ],
+        "taskStatus": "completed",
+        "restoreCompleted": true,
+        "diagnostics": [
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792026855163,
+            "contextChange": "same-owner-refresh",
+            "credentialChanged": true,
+            "expectedShopId": 77,
+            "expectedUserId": 3,
+            "reason": "仅凭据刷新，归属未变且新上下文权限已核验通过",
+            "stage": "close-channel",
+            "taskId": "ship-1792026855101-9df5ig",
+            "writeSent": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "restore denied cookie really rotated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "restore denied refresh verification reached",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "restore denied fresh context validated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "restore denied actual expected write",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "restore denied zero business writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "restore denied completed only on allowed",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "restore denied retains obligation",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "restore denied runtime matrix",
+      "observed": {
+        "actuallyRotated": true,
+        "validationCalls": [
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "fresh",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          }
+        ],
+        "sent": [],
+        "taskStatus": "failed",
+        "restoreCompleted": false,
+        "diagnostics": [
+          {
+            "access": "denied",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792026855316,
+            "blockedBy": "access-denied",
+            "contextChange": "blocked-write",
+            "credentialChanged": true,
+            "expectedShopId": 77,
+            "expectedUserId": 3,
+            "reason": "刷新后的上下文已无权限：fixture permission revoked",
+            "stage": "restore-channel",
+            "taskId": "review-restore-matrix-1792026855257",
+            "writeSent": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "restore throw cookie really rotated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "restore throw refresh verification reached",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "restore throw fresh context validated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "restore throw actual expected write",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "restore throw zero business writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "restore throw completed only on allowed",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "restore throw retains obligation",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "restore throw runtime matrix",
+      "observed": {
+        "actuallyRotated": true,
+        "validationCalls": [
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "fresh",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          }
+        ],
+        "sent": [],
+        "taskStatus": "failed",
+        "restoreCompleted": false,
+        "diagnostics": [
+          {
+            "access": "denied",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792026855395,
+            "blockedBy": "access-denied",
+            "contextChange": "blocked-write",
+            "credentialChanged": true,
+            "expectedShopId": 77,
+            "expectedUserId": 3,
+            "reason": "刷新后的上下文已无权限：无法连接后端服务: fixture refreshed access network unavailable",
+            "stage": "restore-channel",
+            "taskId": "review-restore-matrix-1792026855333",
+            "writeSent": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "restore allowed cookie really rotated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "restore allowed refresh verification reached",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "restore allowed fresh context validated",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "restore allowed actual expected write",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "restore allowed completed only on allowed",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "restore allowed runtime matrix",
+      "observed": {
+        "actuallyRotated": true,
+        "validationCalls": [
+          {
+            "credentialTag": "old",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          },
+          {
+            "credentialTag": "fresh",
+            "keys": [
+              "spcCds",
+              "action",
+              "shopId"
+            ]
+          }
+        ],
+        "sent": [
+          {
+            "kind": "channel",
+            "channelId": 9,
+            "enabled": true
+          }
+        ],
+        "taskStatus": "failed",
+        "restoreCompleted": true,
+        "diagnostics": [
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792026855473,
+            "contextChange": "same-owner-refresh",
+            "credentialChanged": true,
+            "expectedShopId": 77,
+            "expectedUserId": 3,
+            "reason": "仅凭据刷新，归属未变且新上下文权限已核验通过",
+            "stage": "restore-channel",
+            "taskId": "review-restore-matrix-1792026855412",
+            "writeSent": false
+          }
+        ]
+      }
+    }
+  ],
+  "requests": [
+    {
+      "path": "/portal/product/list/live/all",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/update_product/",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/update_product/",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/settings/update_channel_toggle",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/update_product/",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/settings/update_channel_toggle",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/settings/update_channel_toggle",
+      "method": "POST"
+    }
+  ],
+  "writes": [
+    {
+      "kind": "product",
+      "items": [
+        {
+          "id": 101,
+          "category_path": "1/2",
+          "pre_order": true,
+          "days_to_ship": 7
+        }
+      ]
+    },
+    {
+      "kind": "product",
+      "items": [
+        {
+          "id": 101,
+          "category_path": "1/2",
+          "pre_order": true,
+          "days_to_ship": 7
+        }
+      ]
+    },
+    {
+      "kind": "channel",
+      "channelId": 9,
+      "enabled": false
+    },
+    {
+      "kind": "product",
+      "items": [
+        {
+          "id": 101,
+          "category_path": "1/2",
+          "pre_order": true,
+          "days_to_ship": 7
+        }
+      ]
+    },
+    {
+      "kind": "channel",
+      "channelId": 9,
+      "enabled": true
+    },
+    {
+      "kind": "channel",
+      "channelId": 9,
+      "enabled": true
+    }
+  ]
+}

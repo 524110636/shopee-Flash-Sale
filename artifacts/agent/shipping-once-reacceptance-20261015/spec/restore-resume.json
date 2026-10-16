@@ -1,0 +1,193 @@
+{
+  "mode": "restore-resume",
+  "before": {
+    "_shippingGroups": {
+      "active": {
+        "groupId": "g",
+        "revision": 3,
+        "executionMode": "once",
+        "ownerShopId": 1,
+        "ownerUserId": 1,
+        "schedule": {
+          "startAt": 1792555200000,
+          "restoreAt": 1792558800000,
+          "spotDays": 1,
+          "regularDays": 8
+        },
+        "config": {
+          "range": "all",
+          "excludeIds": "",
+          "toggleLogistics": false
+        },
+        "phase": "restoring",
+        "claimedStages": [
+          "spot",
+          "restore"
+        ],
+        "spotTaskId": null,
+        "restoreTaskId": "ship-1792558800001-bjx7m5",
+        "confirmedSpotItemIds": [
+          "1"
+        ],
+        "items": [
+          {
+            "itemId": "1",
+            "name": "P1",
+            "spot": "success",
+            "restore": "pending"
+          }
+        ],
+        "pendingItemIds": [],
+        "message": "正在恢复常规备货天数",
+        "error": null,
+        "createdAt": 1792555199000,
+        "updatedAt": 1792558800001
+      },
+      "lastFinished": null,
+      "updatedAt": 1792558800001
+    },
+    "_shippingTask": {
+      "taskId": "ship-1792558800001-bjx7m5",
+      "requestId": "g:restore:3",
+      "shopId": 1,
+      "ownerUserId": 1,
+      "source": "group",
+      "groupId": "g",
+      "groupPhase": "restore",
+      "mode": "preorder",
+      "days": 8,
+      "range": "all",
+      "excludeIds": [],
+      "status": "running",
+      "phase": "writing",
+      "total": 1,
+      "processed": 0,
+      "items": [],
+      "logistics": {
+        "requested": false,
+        "closeAttempted": false,
+        "closeCompleted": false,
+        "restoreAttempted": false,
+        "restoreCompleted": false,
+        "records": []
+      },
+      "checkpoints": [
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "1",
+          "at": 1792558800001
+        }
+      ],
+      "message": "开始修改 1 个商品的备货天数",
+      "error": null,
+      "startedAt": 1792558800001,
+      "updatedAt": 1792558800001,
+      "stopRequested": false
+    }
+  },
+  "reconciled": true,
+  "after": {
+    "_shippingGroups": {
+      "active": {
+        "groupId": "g",
+        "revision": 7,
+        "executionMode": "once",
+        "ownerShopId": 1,
+        "ownerUserId": 1,
+        "schedule": {
+          "startAt": 1792555200000,
+          "restoreAt": 1792558800000,
+          "spotDays": 1,
+          "regularDays": 8
+        },
+        "config": {
+          "range": "all",
+          "excludeIds": "",
+          "toggleLogistics": false
+        },
+        "phase": "needs-attention",
+        "claimedStages": [
+          "spot",
+          "restore"
+        ],
+        "spotTaskId": null,
+        "restoreTaskId": "ship-1792558800001-bjx7m5",
+        "confirmedSpotItemIds": [
+          "1"
+        ],
+        "items": [
+          {
+            "itemId": "1",
+            "name": "P1",
+            "spot": "success",
+            "restore": "pending"
+          }
+        ],
+        "pendingItemIds": [
+          "1"
+        ],
+        "message": "恢复阶段被中断，结果不明，需先核实实际备货天数",
+        "error": "恢复阶段被中断，结果不明，需先核实实际备货天数",
+        "createdAt": 1792555199000,
+        "updatedAt": 1792562400000
+      },
+      "lastFinished": null,
+      "updatedAt": 1792562400000
+    },
+    "_shippingTask": {
+      "taskId": "ship-1792558800001-bjx7m5",
+      "requestId": "g:restore:3",
+      "shopId": 1,
+      "ownerUserId": 1,
+      "source": "group",
+      "groupId": "g",
+      "groupPhase": "restore",
+      "mode": "preorder",
+      "days": 8,
+      "range": "all",
+      "excludeIds": [],
+      "status": "interrupted",
+      "phase": "interrupted",
+      "total": 1,
+      "processed": 0,
+      "items": [],
+      "logistics": {
+        "requested": false,
+        "closeAttempted": false,
+        "closeCompleted": false,
+        "restoreAttempted": false,
+        "restoreCompleted": false,
+        "records": []
+      },
+      "checkpoints": [
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "1",
+          "at": 1792558800001
+        }
+      ],
+      "message": "执行者已中断，已完成 0 个商品；未确认的写请求不会被自动重放",
+      "error": null,
+      "startedAt": 1792558800001,
+      "updatedAt": 1792562400000,
+      "stopRequested": false,
+      "finishedAt": 1792562400000
+    }
+  },
+  "days": 8,
+  "channel": true,
+  "detailReads": 0,
+  "validationCalls": 0,
+  "writes": [],
+  "logs": [
+    "[shipping-group] g 已从关联任务接回（restoring → needs-attention），不重放未确认写",
+    "[shipping-group] g 阶段=needs-attention 决定=needs-attention 原因=恢复阶段被中断，结果不明，需先核实实际备货天数 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：needs-attention（恢复阶段被中断，结果不明，需先核实实际备货天数）",
+    "[shipping-group] g 阶段=needs-attention 决定=needs-attention 原因=恢复阶段被中断，结果不明，需先核实实际备货天数 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：needs-attention（恢复阶段被中断，结果不明，需先核实实际备货天数）",
+    "[shipping-group] g 阶段=needs-attention 决定=needs-attention 原因=恢复阶段被中断，结果不明，需先核实实际备货天数 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：needs-attention（恢复阶段被中断，结果不明，需先核实实际备货天数）"
+  ]
+}

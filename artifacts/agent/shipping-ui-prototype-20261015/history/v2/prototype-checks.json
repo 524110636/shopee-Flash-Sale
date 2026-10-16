@@ -1,0 +1,163 @@
+{
+  "scope": "standalone offline UI discussion artifact; no product implementation, backend or store operations",
+  "checks": [
+    {
+      "name": "dropdown includes every day 2 through 10",
+      "passed": true
+    },
+    {
+      "name": "days 2 updates restore and confirmation",
+      "passed": true
+    },
+    {
+      "name": "days 10 updates restore and confirmation",
+      "passed": true
+    },
+    {
+      "name": "500px has no horizontal scrolling",
+      "passed": true
+    },
+    {
+      "name": "390px has no horizontal scrolling",
+      "passed": true
+    },
+    {
+      "name": "weekday follows user-selected date",
+      "passed": true
+    },
+    {
+      "name": "cross-day is clearly labeled",
+      "passed": true
+    },
+    {
+      "name": "daily preview updates",
+      "passed": true
+    },
+    {
+      "name": "restore before start is prevented",
+      "passed": true
+    },
+    {
+      "name": "logistics choice has clear summary",
+      "passed": true
+    },
+    {
+      "name": "weekend guidance is visible in main flow",
+      "passed": true
+    },
+    {
+      "name": "approved offline policy is explained",
+      "passed": true
+    },
+    {
+      "name": "main flow holds only an exclusion summary and button",
+      "passed": true
+    },
+    {
+      "name": "secondary modal starts closed",
+      "passed": true
+    },
+    {
+      "name": "button opens a secondary native modal",
+      "passed": true
+    },
+    {
+      "name": "modal is outside first-level fieldset",
+      "passed": true
+    },
+    {
+      "name": "product ID search narrows visible rows",
+      "passed": true
+    },
+    {
+      "name": "selection survives clearing search",
+      "passed": true
+    },
+    {
+      "name": "ID sort works",
+      "passed": true
+    },
+    {
+      "name": "sales descending ranks highest first",
+      "passed": true
+    },
+    {
+      "name": "top5 uses full list and keeps manual selection",
+      "passed": true
+    },
+    {
+      "name": "top10 additive selection is deduplicated",
+      "passed": true
+    },
+    {
+      "name": "unknown sales are not silently ranked as zero",
+      "passed": true
+    },
+    {
+      "name": "modal fits 500px width",
+      "passed": true
+    },
+    {
+      "name": "modal fits 390px width",
+      "passed": true
+    },
+    {
+      "name": "confirm commits count and closes dialog",
+      "passed": true
+    },
+    {
+      "name": "main confirmation acknowledges excluded products",
+      "passed": true
+    },
+    {
+      "name": "cancel discards draft changes",
+      "passed": true
+    },
+    {
+      "name": "reopen preserves committed selections",
+      "passed": true
+    },
+    {
+      "name": "escape closes modal without altering choices",
+      "passed": true
+    },
+    {
+      "name": "empty confirmation clears exclusions",
+      "passed": true
+    },
+    {
+      "name": "enable is explicitly a UI demonstration",
+      "passed": true
+    },
+    {
+      "name": "settings cannot silently change after demo enabling",
+      "passed": true
+    },
+    {
+      "name": "no fake execution record is created",
+      "passed": true
+    },
+    {
+      "name": "pause returns to editable settings",
+      "passed": true
+    },
+    {
+      "name": "secondary tab states its design boundary",
+      "passed": true
+    },
+    {
+      "name": "can return to main cycle panel",
+      "passed": true
+    },
+    {
+      "name": "prototype makes no network requests",
+      "passed": true
+    },
+    {
+      "name": "prototype has no script errors",
+      "passed": true
+    }
+  ],
+  "network": [],
+  "errors": []
+}

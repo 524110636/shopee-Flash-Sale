@@ -1,0 +1,275 @@
+{
+  "scope": "actual isolated static extension; synthetic identity/cookie; all HTTP intercepted; no backend service/DB/live store",
+  "package": ".agent-tmp\\shipping-m02-20261014\\iso-output\\chrome-mv3",
+  "backgroundSha256": "a626f07bad6b7aa95663bd2b4fc3bdf4ac0d39ba21a92aa5c3879daacb99bb0d",
+  "results": [
+    {
+      "name": "actual homepage opens shipping interface",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "normal fixture preview contains one target",
+      "expected": 1,
+      "observed": 1,
+      "meetsContract": true
+    },
+    {
+      "name": "normal actual worker completes product write",
+      "expected": "completed",
+      "observed": "completed",
+      "meetsContract": true
+    },
+    {
+      "name": "actual request sets pre_order and days_to_ship",
+      "expected": {
+        "pre_order": true,
+        "days_to_ship": 7
+      },
+      "observed": {
+        "pre_order": true,
+        "days_to_ship": 7
+      },
+      "meetsContract": true
+    },
+    {
+      "name": "actual UI rejects partial activity exclusion",
+      "expected": false,
+      "observed": true,
+      "meetsContract": false
+    },
+    {
+      "name": "partial exclusion sends no writes",
+      "expected": 0,
+      "observed": 1,
+      "meetsContract": false
+    },
+    {
+      "name": "actual worker rejects failed execution exclusion check",
+      "expected": 0,
+      "observed": 1,
+      "meetsContract": false
+    },
+    {
+      "name": "unknown actual channel result exposes recovery button",
+      "expected": true,
+      "observed": false,
+      "meetsContract": false
+    },
+    {
+      "name": "unknown channel runtime observation",
+      "observed": {
+        "closed": "unknown",
+        "restoreAttempted": false,
+        "restoreButtonCount": 0
+      }
+    }
+  ],
+  "requests": [
+    {
+      "path": "/portal/product/list/live/all",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/update_product/",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_item_id_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_item_id_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_item_id_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_item_id_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/update_product/",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/update_product/",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/settings/update_channel_toggle",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    }
+  ],
+  "writes": [
+    {
+      "kind": "product",
+      "items": [
+        {
+          "id": 101,
+          "category_path": "1/2",
+          "pre_order": true,
+          "days_to_ship": 7
+        }
+      ]
+    },
+    {
+      "kind": "product",
+      "items": [
+        {
+          "id": 101,
+          "category_path": "1/2",
+          "pre_order": true,
+          "days_to_ship": 7
+        }
+      ]
+    },
+    {
+      "kind": "product",
+      "items": [
+        {
+          "id": 101,
+          "category_path": "1/2",
+          "pre_order": true,
+          "days_to_ship": 7
+        }
+      ]
+    },
+    {
+      "kind": "channel",
+      "channelId": 9,
+      "enabled": false
+    }
+  ]
+}

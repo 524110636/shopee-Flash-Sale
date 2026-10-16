@@ -1,0 +1,38 @@
+{
+  "conclusion": "independent acceptance passed; no developer rework; user simulated UI experience pending section52; real shop not tested",
+  "actualMV3UI": {
+    "total": 3,
+    "passed": 3
+  },
+  "specStoreModal": {
+    "total": 20,
+    "passed": 20
+  },
+  "standardsModal": {
+    "total": 7,
+    "passed": 7
+  },
+  "units": {
+    "command": "npx vitest run tests/unit/shipping-exclude-modal.test.ts tests/unit/shipping-store-isolation.test.ts tests/unit/shipping-rules.test.ts",
+    "filesPassed": 3,
+    "testsPassed": 78,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "manualEntry": {
+    "passed": true,
+    "rows": 12,
+    "confirmedExcluded": 1,
+    "realShopeeRequests": 0,
+    "backendPort": 5791
+  },
+  "manualCmdSmokePassed": true,
+  "profilesRemoved": true,
+  "coreAndLauncherHashesUnchanged": 6,
+  "productSourcesAndPackageUnchanged": true,
+  "oldEvidenceWritten": false,
+  "realShopeeRequests": 0,
+  "servicesStartedOrStopped": false,
+  "temporaryBytes": 1263015,
+  "evidenceBytesExcludingReceipt": 141409
+}

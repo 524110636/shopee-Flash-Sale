@@ -1,0 +1,120 @@
+{
+  "scope": "independent isolated execution of actual modules; no browser/server/store API/network requests",
+  "sourceHashes": {
+    "api.ts": "470abbc638a6ae1cf6b10ea058abe0291eb613b0846d8a04eb8052924fd1caf9",
+    "runner.ts": "be3ca3e5e92c568e51eceadd575eefe98b8bf30c69485a9f5f390d3389ef4fd8",
+    "background.ts": "25165fe236bb7b5b5e15e1809f5caa170c47fb8c4642d87482805ed024d29f5f",
+    "scheduler.ts": "2c83bf765da797143da4f43e025fe8987614abee58399f5763421a211254fdbd",
+    "rules.ts": "00d1a2d0150378e3b96d046266b522fe0e38437ec7ec8d348cda264d4917823f",
+    "store.ts": "694e4c0a7c4e02e1f8cdf5216b29386a589d8a50ec4b7f220a0f96a7803afa97",
+    "task.ts": "f2c9bbbf08a92c24cbfd0ca6cb71b68d7580857338127e1297ac842fa0abcf34",
+    "types.ts": "ba9e820e8dd6c003d11240d4ca96d549d3a8a3efded70c2ce4566829a39225af"
+  },
+  "observations": [
+    {
+      "name": "missing per-item result code is not confirmed as success",
+      "expected": false,
+      "observed": true,
+      "meetsContract": false
+    },
+    {
+      "name": "partial flash-sale exclusion must fail closed",
+      "expected": false,
+      "observed": true,
+      "meetsContract": false
+    },
+    {
+      "name": "flash-sale list continuation is read",
+      "expected": true,
+      "observed": false,
+      "meetsContract": false
+    },
+    {
+      "name": "execution preflight failure sends zero product writes",
+      "expected": 0,
+      "observed": 1,
+      "meetsContract": false
+    },
+    {
+      "name": "unknown transport result is not blindly resent",
+      "expected": 1,
+      "observed": 5,
+      "meetsContract": false
+    },
+    {
+      "name": "changed backend account sends zero product writes",
+      "expected": 0,
+      "observed": 1,
+      "meetsContract": false
+    },
+    {
+      "name": "unknown channel closure retains a restore obligation",
+      "expected": true,
+      "observed": false,
+      "meetsContract": false
+    },
+    {
+      "name": "unknown channel closure cannot be declared fully restored",
+      "expected": false,
+      "observed": true,
+      "meetsContract": false
+    },
+    {
+      "name": "fresh SKU-level change is excluded before writes",
+      "expected": 0,
+      "observed": 1,
+      "meetsContract": false
+    },
+    {
+      "name": "missing SKU-mode information is resolved before preview",
+      "expected": true,
+      "observed": false,
+      "meetsContract": false
+    },
+    {
+      "name": "SKU-level detail is excluded from preview",
+      "expected": 0,
+      "observed": 1,
+      "meetsContract": false
+    },
+    {
+      "name": "non-hot range without ranking data is blocked",
+      "expected": false,
+      "observed": true,
+      "meetsContract": false
+    },
+    {
+      "name": "persisted diagnostic removes credential values",
+      "expected": false,
+      "observed": true,
+      "meetsContract": false
+    },
+    {
+      "name": "additional daily start-date observation",
+      "observed": "2026-10-14",
+      "note": "not used as a blocker; daily UI disables date and this is outside the frozen matrix"
+    },
+    {
+      "name": "plan persists an owner shop before execution",
+      "expected": true,
+      "observed": false,
+      "meetsContract": false
+    },
+    {
+      "name": "plan result reaches actual completed state",
+      "expected": "completed",
+      "observed": "running",
+      "meetsContract": false
+    },
+    {
+      "name": "plan runtime identity observation",
+      "observed": {
+        "taskShopId": 88,
+        "taskOwnerUserId": 2,
+        "productWriteCount": 1
+      },
+      "note": "plan has no saved owner; task binds to current trigger identity"
+    }
+  ],
+  "contractFailures": 15
+}

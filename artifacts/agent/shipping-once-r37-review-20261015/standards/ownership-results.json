@@ -1,0 +1,33 @@
+{
+  "mode": "read-only source inspection and safe CMD metadata fixtures; original start/stop scripts never executed",
+  "startFixture": {
+    "observed": [
+      "PROCESS_FILTER=ProcessId=!OCCPID!",
+      "REJECTED_OWN_METADATA"
+    ],
+    "sourceLines": [
+      15,
+      33,
+      35
+    ],
+    "reason": "setlocal does not enable delayed expansion"
+  },
+  "stopFixture": {
+    "observed": "ACCEPTED_UNRELATED_METADATA",
+    "sourceLines": [
+      44,
+      52,
+      61
+    ],
+    "candidate": "node C:\\unrelated\\backend\\src\\index.ts --database C:\\unrelated\\data\\shipping-once.db"
+  },
+  "readOnlyCurrent5791": {
+    "pid": 27084,
+    "created": "2026-10-15T15:09:55.033355+08:00",
+    "hasDbMarker": false,
+    "hasBackendMarker": true,
+    "hasExactWorkspace": true,
+    "effect": "current own backend would be rejected by stop script DB-name predicate"
+  },
+  "creationTimeCheck": "CREATED is read and displayed but never compared with a saved identity; OWN_DB is displayed but full path is not compared"
+}

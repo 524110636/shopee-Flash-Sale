@@ -1,0 +1,130 @@
+[
+  {
+    "name": "fresh_blank_defaults_at_call_time",
+    "pass": true,
+    "observed": {
+      "regularDays": 7,
+      "startDate": "2026-10-16",
+      "startTime": "23:30",
+      "restoreDate": "2026-10-17",
+      "restoreTime": "01:30",
+      "restoreDateTouched": false,
+      "excludeIds": "",
+      "range": "all",
+      "toggleLogistics": false
+    }
+  },
+  {
+    "name": "default_restore_follows_selected_start_year_boundary",
+    "pass": true,
+    "observed": {
+      "regularDays": 7,
+      "startDate": "2026-12-31",
+      "startTime": "23:30",
+      "restoreDate": "2027-01-01",
+      "restoreTime": "01:30",
+      "restoreDateTouched": false,
+      "excludeIds": "",
+      "range": "all",
+      "toggleLogistics": false
+    }
+  },
+  {
+    "name": "editing_only_restore_time_keeps_untouched_date_linked",
+    "pass": false,
+    "observed": {
+      "regularDays": 7,
+      "startDate": "2026-10-21",
+      "startTime": "23:30",
+      "restoreDate": "2026-10-17",
+      "restoreTime": "04:15",
+      "restoreDateTouched": true,
+      "excludeIds": "",
+      "range": "all",
+      "toggleLogistics": false
+    }
+  },
+  {
+    "name": "edited_restore_and_same_owner_refresh_preserved",
+    "pass": true,
+    "observed": {
+      "regularDays": 7,
+      "startDate": "2027-02-01",
+      "startTime": "23:30",
+      "restoreDate": "2027-01-04",
+      "restoreTime": "04:15",
+      "restoreDateTouched": true,
+      "excludeIds": "",
+      "range": "all",
+      "toggleLogistics": false
+    }
+  },
+  {
+    "name": "mount_sync_before_seed_retains_reuse_blank_dates",
+    "pass": true,
+    "observed": {
+      "regularDays": 8,
+      "startDate": "",
+      "startTime": "22:00",
+      "restoreDate": "",
+      "restoreTime": "03:45",
+      "excludeIds": "111",
+      "range": "all",
+      "toggleLogistics": true,
+      "restoreDateTouched": false
+    }
+  },
+  {
+    "name": "explicit_reuse_overrides_defaults_but_does_not_auto_date",
+    "pass": true,
+    "observed": {
+      "regularDays": 8,
+      "startDate": "",
+      "startTime": "22:00",
+      "restoreDate": "",
+      "restoreTime": "03:45",
+      "excludeIds": "111",
+      "range": "all",
+      "toggleLogistics": true,
+      "restoreDateTouched": false
+    }
+  },
+  {
+    "name": "reused_time_preserved_when_start_date_confirmed",
+    "pass": true,
+    "observed": {
+      "regularDays": 8,
+      "startDate": "2026-11-01",
+      "startTime": "22:00",
+      "restoreDate": "2026-11-02",
+      "restoreTime": "03:45",
+      "excludeIds": "111",
+      "range": "all",
+      "toggleLogistics": true,
+      "restoreDateTouched": false
+    }
+  },
+  {
+    "name": "active_authoritative_group_not_overwritten",
+    "pass": true,
+    "observed": {
+      "activeSchedule": {
+        "startAt": 1791640800000,
+        "restoreAt": 1791661500000,
+        "spotDays": 1,
+        "regularDays": 8
+      },
+      "formDraft": {
+        "regularDays": 7,
+        "startDate": "2026-10-16",
+        "startTime": "23:30",
+        "restoreDate": "2026-10-17",
+        "restoreTime": "01:30",
+        "restoreDateTouched": false,
+        "excludeIds": "",
+        "range": "all",
+        "toggleLogistics": false
+      }
+    }
+  }
+]

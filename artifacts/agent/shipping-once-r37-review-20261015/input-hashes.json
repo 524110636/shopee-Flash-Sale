@@ -1,0 +1,15 @@
+{
+  "features/shipping/group.ts": "6788e0088b62f84d7724825419dadc7dfe12d25a6f7c088c84a9fdb7cb8552a0",
+  "features/shipping/group-rules.ts": "e0467605859feaaf773942e8929afa46309aac7ae16c40edf9ee9d6dbd9e9bd4",
+  "features/shipping/background.ts": "e1b3d5a83372f6a6ef60724a5b871944b13b1987c4ebbe9d063d6ed8c8157b08",
+  "features/shipping/runner.ts": "499f4baf0d9c857e80eeec8dac8dccb7e61fcce9d85fceafda331fdf09f895f1",
+  "features/shipping/store.ts": "a902bfa548c56192f84fab2392f9ac97c380a3e9d08aa979c64c4ecc6cc31cc7",
+  "components/product/shipping/ShippingSchedulePanel.tsx": "6e6f924cfd85666d08f40286c852deb16429429d0e4e9fefd4dd6cf00fbd4f20",
+  "components/product/shipping/ShippingExcludeModal.tsx": "4b73d4425a50990417100d63cfeee597bc90552ebc57911ae422b15216f174f3",
+  ".agent-tmp/shipping-once-ui-20261015/iso-output/chrome-mv3/background.js": "368d8109f1322a94bf7af6bc1908631dd2b2b21f8654b52a1a3be3b2e9f926ac",
+  "features/shipping/runner-deps.ts": "f4849383d975ff9bd073a1f34cebd8cf296cb7bfa77d3d99423fb6991e34aa22",
+  "features/shipping/rules.ts": "099d409ec63b3016f52f8e717fa2e60bd24353ca9a9e685ebe2092b12e463ee4",
+  "features/shipping/types.ts": "edf799830a65e6c72640ee5210fe89e279ee6097a4d72081612cdac29b3baeeb",
+  "components/product/shipping/ShippingWorkPage.tsx": "b13485dc604ce120aa0d91c7324263bf7c43afefc7568cd0fa3ed5ce64f53e10",
+  ".agent-tmp/shipping-once-ui-20261015/iso-output/chrome-mv3/chunks/popup-D2NiSHxi.js": "cf5bdfbfa0e86ca3c06ce3de977232659f52a4a47baa8da4bd6b216ee4e8571f"
+}

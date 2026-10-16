@@ -1,0 +1,13 @@
+{
+  "before": {
+    "currentShop": 202,
+    "cachedProductId": "111",
+    "excludedIds": "111"
+  },
+  "saveResult": {
+    "success": true
+  },
+  "submittedExcludeIds": "111",
+  "persistedShop": 202,
+  "evidence": "Shop A selection survives switch and is submitted in new Shop B group."
+}

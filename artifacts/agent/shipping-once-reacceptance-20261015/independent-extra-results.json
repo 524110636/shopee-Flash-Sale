@@ -1,0 +1,54 @@
+{
+  "scope": "actual static MV3, local backend; all shop HTTP fixtures",
+  "extensionPath": "D:\\shopee_xm\\虾皮限时特卖-更新迭代\\.agent-tmp\\shipping-once-ui-20261015\\iso-output\\chrome-mv3",
+  "observations": [
+    {
+      "id": "partial-scope-completion",
+      "expected": "all 100 obligations restored; never-sent 25 must not block completion",
+      "actual": {
+        "phase": "done",
+        "pending": [],
+        "confirmed": 100,
+        "restored": 100,
+        "neverSent": 0,
+        "message": "商品已恢复常规备货，物流收尾已完成，这一组结束"
+      },
+      "passed": true
+    },
+    {
+      "id": "temporary-backend-recovery",
+      "expected": "once access works again, verify and restore without replaying spot",
+      "actual": {
+        "deniedPhase": "needs-attention",
+        "afterPhase": "needs-attention",
+        "actualDays": 1,
+        "productWrites": 0
+      },
+      "passed": false
+    },
+    {
+      "id": "restore-browser-crash",
+      "expected": "read back restored 100 and restore remaining 25; no repeated spot",
+      "actual": {
+        "beforePhase": "restoring",
+        "beforeTaskPhase": "writing",
+        "afterGroupPhase": "needs-attention",
+        "afterTaskStatus": "interrupted",
+        "stillOne": 25,
+        "atEight": 100,
+        "writes": [
+          {
+            "days": 8,
+            "count": 50
+          },
+          {
+            "days": 8,
+            "count": 50
+          }
+        ]
+      },
+      "passed": false
+    }
+  ],
+  "profileRemoved": true
+}

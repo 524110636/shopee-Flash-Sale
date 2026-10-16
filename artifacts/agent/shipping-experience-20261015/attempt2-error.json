@@ -1,0 +1,56 @@
+{
+  "message": "Timeout actual local fixture binding",
+  "stack": "Error: Timeout actual local fixture binding\n    at waitFor (D:\\shopee_xm\\虾皮限时特卖-更新迭代\\.agent-tmp\\shipping-experience-20261015\\verify-connection.cjs:10:186)\n    at async D:\\shopee_xm\\虾皮限时特卖-更新迭代\\.agent-tmp\\shipping-experience-20261015\\verify-connection.cjs:42:2",
+  "results": [
+    {
+      "name": "health responds from actual backend",
+      "pass": true
+    },
+    {
+      "name": "fresh profile path",
+      "pass": true
+    },
+    {
+      "name": "UI login uses seeded local test admin",
+      "pass": true
+    }
+  ],
+  "requests": [
+    {
+      "side": "intercepted-vendor-fixture",
+      "path": "/portal/product/list/live/all",
+      "method": "GET"
+    },
+    {
+      "side": "actual-local-backend",
+      "path": "/api/auth/login",
+      "method": "POST"
+    },
+    {
+      "side": "actual-local-backend",
+      "path": "/api/stores",
+      "method": "GET"
+    },
+    {
+      "side": "actual-local-backend",
+      "path": "/api/extension/popup-policy",
+      "method": "GET"
+    },
+    {
+      "side": "intercepted-vendor-fixture",
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "side": "actual-local-backend",
+      "path": "/api/stores/bind",
+      "method": "POST"
+    },
+    {
+      "side": "actual-local-backend",
+      "path": "/api/stores",
+      "method": "GET"
+    }
+  ],
+  "debug": {}
+}

@@ -1,0 +1,72 @@
+{
+  "features/shipping/api.ts": {
+    "changed": false,
+    "sha256": "f99cb1d874b61d48f2b8ab1e436dc36aeefb157b25718e5ffa172386f8c64e42"
+  },
+  "features/shipping/background.ts": {
+    "changed": false,
+    "sha256": "0a04fd639d231dc3a7eb82f8cc2092453468756bdc2a5c8aa19053db121929d8"
+  },
+  "features/shipping/group-rules.ts": {
+    "changed": false,
+    "sha256": "22a6a9cb92ed8ec574c01b4aa41e47163b69aafe42f4bbfdea0bc4b858d48181"
+  },
+  "features/shipping/group.ts": {
+    "changed": false,
+    "sha256": "c3a08b4fcb98787963f8d9e22c27c4bb970a1179bb2cda14310b11981b397042"
+  },
+  "features/shipping/rules.ts": {
+    "changed": false,
+    "sha256": "8f30d9152099df6206ded6692a0dbc28dde3f684ace26a4a91e08d6df8da92eb"
+  },
+  "features/shipping/runner-deps.ts": {
+    "changed": false,
+    "sha256": "f4849383d975ff9bd073a1f34cebd8cf296cb7bfa77d3d99423fb6991e34aa22"
+  },
+  "features/shipping/runner.ts": {
+    "changed": false,
+    "sha256": "cde06bb242543ee4e7c8f4d703e43849019adbe6e9a69a601042ab3eb06261dc"
+  },
+  "features/shipping/scheduler.ts": {
+    "changed": false,
+    "sha256": "3659af1f6bcff7eb38c7cde98aafcb585146bc8b738a85e306fc3fd357b3bb1b"
+  },
+  "features/shipping/store.ts": {
+    "changed": true,
+    "sha256": "ceb220d813674816c223dd316effd2edfbdc85e1dd96bcd839f59f92594d4896"
+  },
+  "features/shipping/task.ts": {
+    "changed": false,
+    "sha256": "8e33e56bc5b74b4b33eaffe561655d52620d069e9193d5bf765254941374b2b8"
+  },
+  "features/shipping/types.ts": {
+    "changed": false,
+    "sha256": "edf799830a65e6c72640ee5210fe89e279ee6097a4d72081612cdac29b3baeeb"
+  },
+  "components/product/shipping/ShippingExcludeModal.tsx": {
+    "changed": false,
+    "sha256": "16c4325b9abfb4ba54c1f27c3c70aba12b951efa867bcb132ecf8537af09beef"
+  },
+  "components/product/shipping/ShippingSchedulePanel.tsx": {
+    "changed": false,
+    "sha256": "129e2edfb1ceb15ce64817c400481bae5dc679cd6ad022382271989c24913f36"
+  },
+  "components/product/shipping/ShippingWorkPage.tsx": {
+    "changed": true,
+    "sha256": "6bef7663e0f0c3059345da80d5bb107427f648d0ca02045b1ab12dd5f7d40efb"
+  },
+  "entrypoints/popup/App.tsx": {
+    "changed": false,
+    "sha256": "497e11571d1fcd5e8e3aa86f20000cf71f2c1d7f5743236ddcfaf6f2c28c8992"
+  },
+  "components/product/feature-catalog.ts": {
+    "changed": false,
+    "sha256": "d1efbc44557fdb69708322bbe2a452c1a0699f7dcb33e248d952fd881994385a"
+  },
+  ".agent-tmp/shipping-once-ui-20261015/iso-output/chrome-mv3/background.js": {
+    "changed": false
+  },
+  ".agent-tmp/shipping-once-ui-20261015/iso-env.ps1": {
+    "changed": false
+  }
+}

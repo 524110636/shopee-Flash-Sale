@@ -1,0 +1,11 @@
+﻿{
+    "scope":  "read-only process/listener/source identity check; no service actions",
+    "actualPid":  40980,
+    "recordedPid":  40980,
+    "source":  "derived-from-this-launch",
+    "launchPid":  66148,
+    "creationMatches":  true,
+    "launchInParentChain":  true,
+    "chainHasExactDbReference":  true,
+    "recordWorkDirMatches":  true
+}

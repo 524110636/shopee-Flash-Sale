@@ -1,0 +1,336 @@
+{
+  "mode": "logistics-retry",
+  "failedState": {
+    "_shippingGroups": {
+      "active": {
+        "groupId": "g",
+        "revision": 5,
+        "executionMode": "once",
+        "ownerShopId": 1,
+        "ownerUserId": 1,
+        "schedule": {
+          "startAt": 1792555200000,
+          "restoreAt": 1792558800000,
+          "spotDays": 1,
+          "regularDays": 8
+        },
+        "config": {
+          "range": "all",
+          "excludeIds": "",
+          "toggleLogistics": true
+        },
+        "phase": "needs-attention",
+        "claimedStages": [
+          "spot",
+          "restore"
+        ],
+        "spotTaskId": null,
+        "restoreTaskId": "ship-1792558800001-2o8g60",
+        "confirmedSpotItemIds": [
+          "1"
+        ],
+        "items": [
+          {
+            "itemId": "1",
+            "name": "P1",
+            "spot": "success",
+            "restore": "success"
+          }
+        ],
+        "pendingItemIds": [],
+        "message": "有 1 个渠道尚未确认恢复，本组不能报完成，请先恢复物流",
+        "error": "有 1 个渠道尚未确认恢复，本组不能报完成，请先恢复物流",
+        "createdAt": 1792555199000,
+        "updatedAt": 1792558800001
+      },
+      "lastFinished": null,
+      "updatedAt": 1792558800001
+    },
+    "_shippingTask": {
+      "taskId": "ship-1792558800001-2o8g60",
+      "requestId": "g:restore:3",
+      "shopId": 1,
+      "ownerUserId": 1,
+      "source": "group",
+      "groupId": "g",
+      "groupPhase": "restore",
+      "mode": "preorder",
+      "days": 8,
+      "range": "all",
+      "excludeIds": [],
+      "status": "failed",
+      "phase": "failed",
+      "total": 1,
+      "processed": 1,
+      "items": [
+        {
+          "itemId": "1",
+          "name": "P1",
+          "days": 8,
+          "status": "success"
+        }
+      ],
+      "logistics": {
+        "requested": true,
+        "closeAttempted": true,
+        "closeCompleted": true,
+        "restoreAttempted": true,
+        "restoreCompleted": false,
+        "records": [
+          {
+            "channelId": 30001,
+            "originallyEnabled": true,
+            "closed": "success",
+            "restored": "failed",
+            "error": "fixture restore failure"
+          }
+        ]
+      },
+      "checkpoints": [
+        {
+          "step": "close-channel",
+          "writeSent": true,
+          "target": "30001",
+          "at": 1792558800001
+        },
+        {
+          "step": "close-channel",
+          "writeSent": true,
+          "target": "30001",
+          "outcome": "success",
+          "at": 1792558800001
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "1",
+          "at": 1792558800001
+        },
+        {
+          "step": "restore-channel",
+          "writeSent": true,
+          "target": "30001",
+          "at": 1792558800001
+        },
+        {
+          "step": "restore-channel",
+          "writeSent": true,
+          "target": "30001",
+          "outcome": "unknown",
+          "at": 1792558800001
+        }
+      ],
+      "message": "部分物流渠道未确认恢复，请查看待处理清单",
+      "error": "部分物流渠道未确认恢复，请查看待处理清单",
+      "startedAt": 1792558800001,
+      "updatedAt": 1792558800001,
+      "stopRequested": false,
+      "finishedAt": 1792558800001
+    }
+  },
+  "restoreResult": {
+    "success": true,
+    "completed": true
+  },
+  "after": {
+    "_shippingGroups": {
+      "active": {
+        "groupId": "g",
+        "revision": 8,
+        "executionMode": "once",
+        "ownerShopId": 1,
+        "ownerUserId": 1,
+        "schedule": {
+          "startAt": 1792555200000,
+          "restoreAt": 1792558800000,
+          "spotDays": 1,
+          "regularDays": 8
+        },
+        "config": {
+          "range": "all",
+          "excludeIds": "",
+          "toggleLogistics": true
+        },
+        "phase": "needs-attention",
+        "claimedStages": [
+          "spot",
+          "restore"
+        ],
+        "spotTaskId": null,
+        "restoreTaskId": "ship-1792558800001-2o8g60",
+        "confirmedSpotItemIds": [
+          "1"
+        ],
+        "items": [
+          {
+            "itemId": "1",
+            "name": "P1",
+            "spot": "success",
+            "restore": "success"
+          }
+        ],
+        "pendingItemIds": [],
+        "message": "有 1 个渠道尚未确认恢复，本组不能报完成，请先恢复物流",
+        "error": "有 1 个渠道尚未确认恢复，本组不能报完成，请先恢复物流",
+        "createdAt": 1792555199000,
+        "updatedAt": 1792558800001
+      },
+      "lastFinished": null,
+      "updatedAt": 1792558800001
+    },
+    "_shippingTask": {
+      "taskId": "ship-1792558800001-2o8g60",
+      "requestId": "g:restore:3",
+      "shopId": 1,
+      "ownerUserId": 1,
+      "source": "group",
+      "groupId": "g",
+      "groupPhase": "restore",
+      "mode": "preorder",
+      "days": 8,
+      "range": "all",
+      "excludeIds": [],
+      "status": "failed",
+      "phase": "failed",
+      "total": 1,
+      "processed": 1,
+      "items": [
+        {
+          "itemId": "1",
+          "name": "P1",
+          "days": 8,
+          "status": "success"
+        }
+      ],
+      "logistics": {
+        "requested": true,
+        "closeAttempted": true,
+        "closeCompleted": true,
+        "restoreAttempted": true,
+        "restoreCompleted": true,
+        "records": [
+          {
+            "channelId": 30001,
+            "originallyEnabled": true,
+            "closed": "success",
+            "restored": "success"
+          }
+        ]
+      },
+      "checkpoints": [
+        {
+          "step": "close-channel",
+          "writeSent": true,
+          "target": "30001",
+          "at": 1792558800001
+        },
+        {
+          "step": "close-channel",
+          "writeSent": true,
+          "target": "30001",
+          "outcome": "success",
+          "at": 1792558800001
+        },
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "1",
+          "at": 1792558800001
+        },
+        {
+          "step": "restore-channel",
+          "writeSent": true,
+          "target": "30001",
+          "at": 1792558800001
+        },
+        {
+          "step": "restore-channel",
+          "writeSent": true,
+          "target": "30001",
+          "outcome": "unknown",
+          "at": 1792558800001
+        },
+        {
+          "step": "restore-channel",
+          "writeSent": true,
+          "target": "30001",
+          "at": 1792558800001
+        },
+        {
+          "step": "restore-channel",
+          "writeSent": true,
+          "target": "30001",
+          "outcome": "success",
+          "at": 1792558800001
+        }
+      ],
+      "message": "物流渠道已全部恢复",
+      "error": "部分物流渠道未确认恢复，请查看待处理清单",
+      "startedAt": 1792558800001,
+      "updatedAt": 1792558800001,
+      "stopRequested": false,
+      "finishedAt": 1792558800001
+    }
+  },
+  "days": 8,
+  "channel": true,
+  "detailReads": 1,
+  "validationCalls": 7,
+  "writes": [
+    {
+      "kind": "channel",
+      "body": {
+        "command": "set_enable",
+        "enabled": false,
+        "channel_id": 30001,
+        "proceed_with_mass_toggle_on_item_channels": false
+      },
+      "at": 1792558800001
+    },
+    {
+      "kind": "product",
+      "body": [
+        {
+          "id": 1,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        }
+      ],
+      "at": 1792558800001
+    },
+    {
+      "kind": "channel",
+      "body": {
+        "command": "set_enable",
+        "enabled": true,
+        "channel_id": 30001,
+        "proceed_with_mass_toggle_on_item_channels": false
+      },
+      "at": 1792558800001
+    },
+    {
+      "kind": "channel",
+      "body": {
+        "command": "set_enable",
+        "enabled": true,
+        "channel_id": 30001,
+        "proceed_with_mass_toggle_on_item_channels": false
+      },
+      "at": 1792558800001
+    }
+  ],
+  "logs": [
+    "[shipping-group] g 阶段=awaiting-restore 决定=start-restore 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：started-restore",
+    "[shipping] 任务结束：failed 成功 1 / 失败 0 / 待核对 0",
+    "[shipping-group] g 阶段=needs-attention 决定=needs-attention 原因=有 1 个渠道尚未确认恢复，本组不能报完成，请先恢复物流 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：needs-attention（有 1 个渠道尚未确认恢复，本组不能报完成，请先恢复物流）",
+    "[shipping-group] g 阶段=needs-attention 决定=needs-attention 原因=有 1 个渠道尚未确认恢复，本组不能报完成，请先恢复物流 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：needs-attention（有 1 个渠道尚未确认恢复，本组不能报完成，请先恢复物流）",
+    "[shipping-group] g 阶段=needs-attention 决定=needs-attention 原因=有 1 个渠道尚未确认恢复，本组不能报完成，请先恢复物流 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：needs-attention（有 1 个渠道尚未确认恢复，本组不能报完成，请先恢复物流）",
+    "[shipping-group] g 阶段=needs-attention 决定=needs-attention 原因=有 1 个渠道尚未确认恢复，本组不能报完成，请先恢复物流 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：needs-attention（有 1 个渠道尚未确认恢复，本组不能报完成，请先恢复物流）"
+  ]
+}

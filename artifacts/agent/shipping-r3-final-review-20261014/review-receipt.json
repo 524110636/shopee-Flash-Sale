@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-14",
+  "decision": "not accepted; two remaining requirements in task 08 section 17; original section14 and schedule evidence accepted in specified isolated scope",
+  "regression": {
+    "files": 8,
+    "passed": 265,
+    "exitCode": 0,
+    "durationSeconds": 13.37,
+    "command": "npx vitest run tests/unit/shipping-api.test.ts tests/unit/shipping-rules.test.ts tests/unit/shipping-task.test.ts tests/unit/shipping-runner.test.ts tests/unit/feature-navigation.test.ts tests/unit/one-day-repair-task.test.ts tests/unit/one-day-repair-runner.test.ts tests/unit/popup-policy-host.test.ts"
+  },
+  "module": {
+    "passed": 21,
+    "failed": 3
+  },
+  "actualMV3": {
+    "passed": 10,
+    "failed": 2
+  },
+  "physicalBrowserRestart": {
+    "checksPassed": 4,
+    "distinctLifecycleChecks": 3,
+    "failed": 0
+  },
+  "scope": "synthetic credentials and intercepted fixture APIs only; no live store/backend/DB; no product source edits, package rebuild or deployment by Codex",
+  "packageHash": "799cb6b55a0dc53f983690f9d2eb4d9d0a04f7c0c815877144f8f2913b9fa996",
+  "sharedBackgroundHash": "f0bdde18fb23d058a8c79b7a7f079302b0aa4d292a299ed58d3bc59042a49850",
+  "sharedBackgroundUnchangedSincePreviousReview": true,
+  "documents": {
+    ".claude\\tasks\\2026-10-14-08-商品备货物流与定时修改-任务书.md": "b85f854e44a8ee7edd70ee109bd9a3668e9aa690ca9e6da56af6d73c38cda09f",
+    "PROJECT_STATUS.md": "5893052a1e4016de1d8891682fcf996cd2088700d53d7305a0154a60ab9914ca",
+    ".claude\\tasks\\2026-10-14-07-全功能迁移书.md": "b05b51b33da4ed3de8f965e9657c85e551630a958f1604a23ead33f6652dfdec"
+  },
+  "profiles": [
+    {
+      "name": "profile",
+      "bytes": 10619899
+    },
+    {
+      "name": "profile-browser-restart",
+      "bytes": 10607839
+    },
+    {
+      "name": "profile-lifecycle",
+      "bytes": 10610013
+    }
+  ],
+  "cleanup": "automatic approval rejected recursive cleanup: blocked by policy; browsers exited, verified zero active processes/links; retained, no workaround",
+  "retainedTemporaryBytes": 31927581
+}

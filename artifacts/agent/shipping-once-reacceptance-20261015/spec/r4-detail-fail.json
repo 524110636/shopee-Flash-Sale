@@ -1,0 +1,106 @@
+{
+  "mode": "r4-detail-fail",
+  "after": {
+    "_shippingGroups": {
+      "active": {
+        "groupId": "g",
+        "revision": 5,
+        "executionMode": "once",
+        "ownerShopId": 1,
+        "ownerUserId": 1,
+        "schedule": {
+          "startAt": 1792555200000,
+          "restoreAt": 1792558800000,
+          "spotDays": 1,
+          "regularDays": 8
+        },
+        "config": {
+          "range": "all",
+          "excludeIds": "",
+          "toggleLogistics": false
+        },
+        "phase": "needs-attention",
+        "claimedStages": [
+          "spot",
+          "restore"
+        ],
+        "spotTaskId": null,
+        "restoreTaskId": "ship-1792558800001-vezlog",
+        "confirmedSpotItemIds": [
+          "1"
+        ],
+        "items": [
+          {
+            "itemId": "1",
+            "name": "P1",
+            "spot": "success",
+            "restore": "unknown",
+            "reason": "恢复前无法确认当前备货天数，未发出写请求"
+          }
+        ],
+        "pendingItemIds": [
+          "1"
+        ],
+        "message": "有 1 个商品未确认恢复到常规天数，需你确认后再处理",
+        "error": "有 1 个商品未确认恢复到常规天数，需你确认后再处理",
+        "createdAt": 1792555199000,
+        "updatedAt": 1792558800001
+      },
+      "lastFinished": null,
+      "updatedAt": 1792558800001
+    },
+    "_shippingTask": {
+      "taskId": "ship-1792558800001-vezlog",
+      "requestId": "g:restore:3",
+      "shopId": 1,
+      "ownerUserId": 1,
+      "source": "group",
+      "groupId": "g",
+      "groupPhase": "restore",
+      "mode": "preorder",
+      "days": 8,
+      "range": "all",
+      "excludeIds": [],
+      "status": "completed",
+      "phase": "done",
+      "total": 1,
+      "processed": 0,
+      "items": [
+        {
+          "itemId": "1",
+          "name": "P1",
+          "days": 8,
+          "status": "unknown",
+          "reason": "恢复前无法确认当前备货天数，未发出写请求"
+        }
+      ],
+      "logistics": {
+        "requested": false,
+        "closeAttempted": false,
+        "closeCompleted": false,
+        "restoreAttempted": false,
+        "restoreCompleted": false,
+        "records": []
+      },
+      "checkpoints": [],
+      "message": "恢复前核实：没有商品需要修改（已是目标天数或无法确认）",
+      "error": null,
+      "startedAt": 1792558800001,
+      "updatedAt": 1792558800001,
+      "stopRequested": false,
+      "finishedAt": 1792558800001
+    }
+  },
+  "days": 1,
+  "channel": true,
+  "detailReads": 1,
+  "validationCalls": 2,
+  "writes": [],
+  "logs": [
+    "[shipping-group] g 阶段=awaiting-restore 决定=start-restore 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：started-restore",
+    "[shipping] 任务结束：completed 成功 0 / 失败 0 / 待核对 1",
+    "[shipping-group] g 阶段=needs-attention 决定=needs-attention 原因=有 1 个商品未确认恢复到常规天数，需你确认后再处理 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：needs-attention（有 1 个商品未确认恢复到常规天数，需你确认后再处理）"
+  ]
+}

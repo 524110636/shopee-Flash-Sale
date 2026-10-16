@@ -1,0 +1,10 @@
+{
+  "documents": 4,
+  "links_checked": 51,
+  "utf8": "passed",
+  "product_sources_unchanged": 76,
+  "task_bytes": 23027,
+  "scope": "planning only; no product tests/runtime/real store requests",
+  "temporary_script_bytes": 33277,
+  "cleanup": "scripts removed by exact native file paths after this step"
+}

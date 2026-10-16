@@ -1,0 +1,29 @@
+{
+  "conclusion": "not accepted; Spec passed; Standards R7 P2 and R8 P1 remain; section43 only",
+  "actualMV3": {
+    "total": 13,
+    "passed": 13
+  },
+  "sourceSpec": {
+    "total": 13,
+    "passed": 13
+  },
+  "store": {
+    "total": 12,
+    "passed": 10,
+    "failedSameRoot": 2
+  },
+  "units": {
+    "command": "npx vitest run tests/unit/shipping-group.test.ts tests/unit/shipping-rules.test.ts tests/unit/shipping-task.test.ts tests/unit/shipping-runner.test.ts tests/unit/shipping-api.test.ts tests/unit/shipping-store-isolation.test.ts tests/unit/feature-navigation.test.ts tests/unit/one-day-repair-task.test.ts tests/unit/one-day-repair-runner.test.ts tests/unit/popup-policy-host.test.ts",
+    "filesPassed": 10,
+    "testsPassed": 393,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "profilesRemoved": true,
+  "productSourcesAndPackageUnchanged": true,
+  "realShopeeRequests": 0,
+  "servicesStartedOrStopped": false,
+  "temporaryBytes": 172034,
+  "evidenceBytesExcludingReceipt": 404829
+}

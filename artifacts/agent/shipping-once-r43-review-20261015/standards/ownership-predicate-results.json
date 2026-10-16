@@ -1,0 +1,67 @@
+﻿[
+    {
+        "name":  "foreign-listener",
+        "accepted":  false,
+        "pass":  true
+    },
+    {
+        "name":  "correct-descendant",
+        "accepted":  true,
+        "pass":  true
+    },
+    {
+        "name":  "missing-launch",
+        "accepted":  false,
+        "pass":  true
+    },
+    {
+        "name":  "no-db-chain",
+        "accepted":  false,
+        "pass":  true
+    },
+    {
+        "name":  "listener-before-launch",
+        "accepted":  false,
+        "pass":  true
+    },
+    {
+        "name":  "correct-record",
+        "accepted":  true,
+        "pass":  true
+    },
+    {
+        "name":  "wrong-pid",
+        "accepted":  false,
+        "pass":  true
+    },
+    {
+        "name":  "wrong-db",
+        "accepted":  false,
+        "pass":  true
+    },
+    {
+        "name":  "wrong-work-dir",
+        "accepted":  false,
+        "pass":  true
+    },
+    {
+        "name":  "wrong-creation",
+        "accepted":  false,
+        "pass":  true
+    },
+    {
+        "name":  "missing",
+        "accepted":  false,
+        "pass":  true
+    },
+    {
+        "name":  "no-source",
+        "accepted":  false,
+        "pass":  true
+    },
+    {
+        "name":  "bad-source",
+        "accepted":  false,
+        "pass":  true
+    }
+]

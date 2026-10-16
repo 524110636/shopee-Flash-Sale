@@ -1,0 +1,1638 @@
+{
+  "method": "Actual background / runner / API source, synthetic browser storage and HTTP responses. Restore request interruption used two separate Node processes, not real MV3.",
+  "cases": [
+    {
+      "name": "assertions.json"
+    },
+    {
+      "name": "batch-five-minute.json",
+      "phase": "awaiting-restore",
+      "pending": [],
+      "confirmed": 125,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "2",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "3",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "4",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "5",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "6",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "7",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "8",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "9",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "10",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "11",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "12",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "13",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "14",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "15",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "16",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "17",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "18",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "19",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "20",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "21",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "22",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "23",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "24",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "25",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "26",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "27",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "28",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "29",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "30",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "31",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "32",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "33",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "34",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "35",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "36",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "37",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "38",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "39",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "40",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "41",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "42",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "43",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "44",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "45",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "46",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "47",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "48",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "49",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "50",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "51",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "52",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "53",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "54",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "55",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "56",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "57",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "58",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "59",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "60",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "61",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "62",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "63",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "64",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "65",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "66",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "67",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "68",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "69",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "70",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "71",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "72",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "73",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "74",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "75",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "76",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "77",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "78",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "79",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "80",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "81",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "82",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "83",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "84",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "85",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "86",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "87",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "88",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "89",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "90",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "91",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "92",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "93",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "94",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "95",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "96",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "97",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "98",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "99",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "100",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "101",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "102",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "103",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "104",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "105",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "106",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "107",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "108",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "109",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "110",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "111",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "112",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "113",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "114",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "115",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "116",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "117",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "118",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "119",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "120",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "121",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "122",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "123",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "124",
+          "spot": "success",
+          "restore": "pending"
+        },
+        {
+          "id": "125",
+          "spot": "success",
+          "restore": "pending"
+        }
+      ],
+      "detailReads": 0,
+      "productWrites": [
+        {
+          "at": 1792555440000,
+          "n": 50,
+          "days": 1
+        },
+        {
+          "at": 1792555560000,
+          "n": 50,
+          "days": 1
+        },
+        {
+          "at": 1792555560000,
+          "n": 25,
+          "days": 1
+        }
+      ],
+      "groupError": null,
+      "taskStatus": "completed"
+    },
+    {
+      "name": "batch-hard-stop.json",
+      "phase": "done",
+      "pending": [],
+      "confirmed": 100,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "2",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "3",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "4",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "5",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "6",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "7",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "8",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "9",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "10",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "11",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "12",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "13",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "14",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "15",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "16",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "17",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "18",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "19",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "20",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "21",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "22",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "23",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "24",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "25",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "26",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "27",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "28",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "29",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "30",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "31",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "32",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "33",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "34",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "35",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "36",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "37",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "38",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "39",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "40",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "41",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "42",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "43",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "44",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "45",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "46",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "47",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "48",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "49",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "50",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "51",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "52",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "53",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "54",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "55",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "56",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "57",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "58",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "59",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "60",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "61",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "62",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "63",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "64",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "65",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "66",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "67",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "68",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "69",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "70",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "71",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "72",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "73",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "74",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "75",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "76",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "77",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "78",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "79",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "80",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "81",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "82",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "83",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "84",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "85",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "86",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "87",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "88",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "89",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "90",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "91",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "92",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "93",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "94",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "95",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "96",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "97",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "98",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "99",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "100",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "101",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "102",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "103",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "104",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "105",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "106",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "107",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "108",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "109",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "110",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "111",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "112",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "113",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "114",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "115",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "116",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "117",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "118",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "119",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "120",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "121",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "122",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "123",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "124",
+          "spot": "pending",
+          "restore": "pending"
+        },
+        {
+          "id": "125",
+          "spot": "pending",
+          "restore": "pending"
+        }
+      ],
+      "detailReads": 100,
+      "productWrites": [
+        {
+          "at": 1792555440000,
+          "n": 50,
+          "days": 1
+        },
+        {
+          "at": 1792555440000,
+          "n": 50,
+          "days": 1
+        },
+        {
+          "at": 1792558800000,
+          "n": 50,
+          "days": 8
+        },
+        {
+          "at": 1792558800000,
+          "n": 50,
+          "days": 8
+        }
+      ],
+      "groupError": null,
+      "taskStatus": "completed"
+    },
+    {
+      "name": "checkpoint-late.json",
+      "phase": "done",
+      "pending": [],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "success"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [
+        {
+          "at": 1792558800000,
+          "n": 1,
+          "days": 8
+        }
+      ],
+      "groupError": null,
+      "taskStatus": "completed"
+    },
+    {
+      "name": "claim-resume.json",
+      "phase": "done",
+      "pending": [],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "success"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [
+        {
+          "at": 1792562400000,
+          "n": 1,
+          "days": 8
+        }
+      ],
+      "groupError": null,
+      "taskStatus": "completed"
+    },
+    {
+      "name": "first-after-window.json",
+      "phase": "missed",
+      "pending": [],
+      "confirmed": 0,
+      "items": [],
+      "detailReads": 0,
+      "productWrites": [],
+      "groupError": null
+    },
+    {
+      "name": "logistics-retry.json",
+      "phase": "done",
+      "pending": [],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "success"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [
+        {
+          "at": 1792558800001,
+          "n": 1,
+          "days": 8
+        }
+      ],
+      "restoreResult": {
+        "success": true,
+        "completed": true
+      },
+      "groupError": null,
+      "taskStatus": "failed"
+    },
+    {
+      "name": "partial-spot-failure.json",
+      "phase": "done",
+      "pending": [],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "success"
+        },
+        {
+          "id": "2",
+          "spot": "failed",
+          "restore": "pending"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [
+        {
+          "at": 1792558800001,
+          "n": 1,
+          "days": 8
+        }
+      ],
+      "groupError": null,
+      "taskStatus": "completed"
+    },
+    {
+      "name": "r4-already-target.json",
+      "phase": "done",
+      "pending": [],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "success"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [],
+      "groupError": null,
+      "taskStatus": "completed"
+    },
+    {
+      "name": "r4-conflict.json",
+      "phase": "needs-attention",
+      "pending": [
+        "1"
+      ],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "unknown"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [],
+      "groupError": "有 1 个商品未确认恢复到常规天数，需你确认后再处理",
+      "taskStatus": "completed"
+    },
+    {
+      "name": "r4-detail-fail.json",
+      "phase": "needs-attention",
+      "pending": [
+        "1"
+      ],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "unknown"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [],
+      "groupError": "有 1 个商品未确认恢复到常规天数，需你确认后再处理",
+      "taskStatus": "completed"
+    },
+    {
+      "name": "r4-still-one.json",
+      "phase": "done",
+      "pending": [],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "success"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [
+        {
+          "at": 1792558800001,
+          "n": 1,
+          "days": 8
+        }
+      ],
+      "groupError": null,
+      "taskStatus": "completed"
+    },
+    {
+      "name": "restore-resume.json",
+      "phase": "done",
+      "pending": [],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "success"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [],
+      "groupError": null,
+      "taskStatus": "completed"
+    },
+    {
+      "name": "spot-logistics-full.json",
+      "phase": "done",
+      "pending": [],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "success"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [
+        {
+          "at": 1792555440000,
+          "n": 1,
+          "days": 1
+        },
+        {
+          "at": 1792558800001,
+          "n": 1,
+          "days": 8
+        }
+      ],
+      "restoreResult": {
+        "success": true,
+        "completed": true
+      },
+      "groupError": null,
+      "taskStatus": "completed"
+    },
+    {
+      "name": "spot-logistics-retry.json",
+      "phase": "awaiting-restore",
+      "pending": [
+        "1"
+      ],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "pending"
+        }
+      ],
+      "detailReads": 0,
+      "productWrites": [
+        {
+          "at": 1792555440000,
+          "n": 1,
+          "days": 1
+        }
+      ],
+      "restoreResult": {
+        "success": true,
+        "completed": true
+      },
+      "groupError": null,
+      "taskStatus": "failed"
+    },
+    {
+      "name": "temporary-access-linked.json",
+      "phase": "done",
+      "pending": [],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "success"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [
+        {
+          "at": 1792558800001,
+          "n": 1,
+          "days": 8
+        }
+      ],
+      "groupError": null,
+      "taskStatus": "completed"
+    },
+    {
+      "name": "temporary-access-throw.json",
+      "phase": "done",
+      "pending": [],
+      "confirmed": 1,
+      "items": [
+        {
+          "id": "1",
+          "spot": "success",
+          "restore": "success"
+        }
+      ],
+      "detailReads": 1,
+      "productWrites": [
+        {
+          "at": 1792558800001,
+          "n": 1,
+          "days": 8
+        }
+      ],
+      "groupError": null,
+      "taskStatus": "completed"
+    }
+  ],
+  "sources": {
+    "features/shipping/background.ts": "0a04fd639d231dc3a7eb82f8cc2092453468756bdc2a5c8aa19053db121929d8",
+    "features/shipping/group.ts": "c3a08b4fcb98787963f8d9e22c27c4bb970a1179bb2cda14310b11981b397042",
+    "features/shipping/group-rules.ts": "22a6a9cb92ed8ec574c01b4aa41e47163b69aafe42f4bbfdea0bc4b858d48181",
+    "features/shipping/runner.ts": "cde06bb242543ee4e7c8f4d703e43849019adbe6e9a69a601042ab3eb06261dc"
+  }
+}

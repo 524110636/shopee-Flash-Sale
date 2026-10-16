@@ -1,0 +1,3617 @@
+{
+  "scope": [
+    "entrypoints",
+    "components",
+    "backend/src",
+    "admin-web/src"
+  ],
+  "method": "TypeScript AST static imports; import-clause typeOnly only; no runtime/test/build execution",
+  "files": [
+    {
+      "path": "entrypoints/background.ts",
+      "bytes": 161459,
+      "lines": 3507,
+      "sha256": "5b5b532f5bfbbf944e305ee7306e3513ec550fc0ee59b12bacaebcfa3ea9a96e",
+      "imports": [
+        {
+          "specifier": "wxt/utils/define-background",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "./popup/types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        },
+        {
+          "specifier": "./popup/one-day-sku-task",
+          "target": "entrypoints/popup/one-day-sku-task.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./popup/one-day-sku-runner",
+          "target": "entrypoints/popup/one-day-sku-runner.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "handleHeartbeat",
+          "start": 356,
+          "end": 402,
+          "lines": 47
+        },
+        {
+          "name": "injectedFetch",
+          "start": 431,
+          "end": 484,
+          "lines": 54
+        },
+        {
+          "name": "startOneDayRepairInner",
+          "start": 760,
+          "end": 848,
+          "lines": 89
+        },
+        {
+          "name": "runRepairInBackground",
+          "start": 909,
+          "end": 1038,
+          "lines": 130
+        },
+        {
+          "name": "(anonymous)",
+          "start": 953,
+          "end": 1028,
+          "lines": 76
+        },
+        {
+          "name": "runEnableLoop",
+          "start": 1042,
+          "end": 1389,
+          "lines": 348
+        },
+        {
+          "name": "executeScheduledCopyFlow",
+          "start": 1394,
+          "end": 1506,
+          "lines": 113
+        },
+        {
+          "name": "scheduleNextRound",
+          "start": 1619,
+          "end": 1786,
+          "lines": 168
+        },
+        {
+          "name": "handleAutoModeCreate",
+          "start": 1804,
+          "end": 1942,
+          "lines": 139
+        },
+        {
+          "name": "handleAutoModeEnable",
+          "start": 1944,
+          "end": 2141,
+          "lines": 198
+        },
+        {
+          "name": "main",
+          "start": 2184,
+          "end": 3505,
+          "lines": 1322
+        },
+        {
+          "name": "(anonymous)",
+          "start": 2216,
+          "end": 3259,
+          "lines": 1044
+        },
+        {
+          "name": "(anonymous)",
+          "start": 3262,
+          "end": 3504,
+          "lines": 243
+        }
+      ],
+      "exports": [],
+      "importedBy": []
+    },
+    {
+      "path": "entrypoints/content.ts",
+      "bytes": 33888,
+      "lines": 1047,
+      "sha256": "1bf939b0b5deb28a54f4646f7e33fa9f2e986042b82571b50220e5c0c63a8b5e",
+      "imports": [
+        {
+          "specifier": "wxt/utils/define-content-script",
+          "target": null,
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "buildProgressSection",
+          "start": 49,
+          "end": 177,
+          "lines": 129
+        },
+        {
+          "name": "showComplete",
+          "start": 253,
+          "end": 322,
+          "lines": 70
+        },
+        {
+          "name": "createCopyUI",
+          "start": 337,
+          "end": 444,
+          "lines": 108
+        },
+        {
+          "name": "toggleCopyMinimize",
+          "start": 460,
+          "end": 510,
+          "lines": 51
+        },
+        {
+          "name": "showCopyCountdown",
+          "start": 532,
+          "end": 578,
+          "lines": 47
+        },
+        {
+          "name": "createPanel",
+          "start": 655,
+          "end": 748,
+          "lines": 94
+        },
+        {
+          "name": "renderAutoSection",
+          "start": 857,
+          "end": 930,
+          "lines": 74
+        },
+        {
+          "name": "main",
+          "start": 944,
+          "end": 1045,
+          "lines": 102
+        }
+      ],
+      "exports": [],
+      "importedBy": []
+    },
+    {
+      "path": "entrypoints/popup/api.ts",
+      "bytes": 2059,
+      "lines": 64,
+      "sha256": "0824851ec26ad19ef92fe15d1bd016bbea20f74be461303945153dce0876219d",
+      "imports": [
+        {
+          "specifier": "./types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [],
+      "exports": [
+        "FetchProductsOptions",
+        "fetchProducts"
+      ],
+      "importedBy": []
+    },
+    {
+      "path": "entrypoints/popup/App.tsx",
+      "bytes": 112062,
+      "lines": 2096,
+      "sha256": "adf0a3f0619f324071367cd87ddb7fcf12d5ba53f871ba8b6747aa94d8d421e8",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/card",
+          "target": "components/ui/card.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/separator",
+          "target": "components/ui/separator.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/SpcStatus",
+          "target": "components/product/SpcStatus.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/button",
+          "target": "components/ui/button.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/ProductList",
+          "target": "components/product/ProductList.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/TemplateManager",
+          "target": "components/product/TemplateManager.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/CopyConfirmPanel",
+          "target": "components/product/CopyConfirmPanel.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/CopyResultPanel",
+          "target": "components/product/CopyResultPanel.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/AutoModePanel",
+          "target": "components/product/AutoModePanel.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/FirstUseModal",
+          "target": "components/product/FirstUseModal.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/FirstUseWarningModal",
+          "target": "components/product/FirstUseWarningModal.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/SkuTable",
+          "target": "components/product/SkuTable.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/AuthPanel",
+          "target": "components/product/AuthPanel.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/StoreStatus",
+          "target": "components/product/StoreStatus.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/UndiscountedSkuModal",
+          "target": "components/product/UndiscountedSkuModal.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/ScheduledTaskCard",
+          "target": "components/product/ScheduledTaskCard.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/FeatureHome",
+          "target": "components/product/FeatureHome.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/feature-catalog",
+          "target": "components/product/feature-catalog.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/task-summary",
+          "target": "components/product/task-summary.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/one-day-sku-task",
+          "target": "entrypoints/popup/one-day-sku-task.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./store",
+          "target": "entrypoints/popup/store.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./PopupPolicyHost",
+          "target": "entrypoints/popup/PopupPolicyHost.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        },
+        {
+          "specifier": "./backend-api",
+          "target": "entrypoints/popup/backend-api.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "App",
+          "start": 54,
+          "end": 2095,
+          "lines": 2042
+        },
+        {
+          "name": "(anonymous)",
+          "start": 965,
+          "end": 1031,
+          "lines": 67
+        },
+        {
+          "name": "(anonymous)",
+          "start": 1313,
+          "end": 1359,
+          "lines": 47
+        }
+      ],
+      "exports": [
+        "App"
+      ],
+      "importedBy": [
+        "entrypoints/popup/main.tsx"
+      ]
+    },
+    {
+      "path": "entrypoints/popup/backend-api.ts",
+      "bytes": 9478,
+      "lines": 279,
+      "sha256": "d4a0a4c65c333233ed7822dabb2119e4e3f114c8d1587d6fc159b9ebee1b3a5e",
+      "imports": [
+        {
+          "specifier": "./types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "request",
+          "start": 157,
+          "end": 202,
+          "lines": 46
+        }
+      ],
+      "exports": [
+        "getBaseUrl",
+        "setBaseUrl",
+        "getAuthUser",
+        "getToken",
+        "isLoggedIn",
+        "isAdmin",
+        "onAuthReady",
+        "canUseAutoMode",
+        "loadAuthFromStorage",
+        "saveAuthToStorage",
+        "clearAuth",
+        "register",
+        "verify",
+        "login",
+        "checkAdmin",
+        "bindStore",
+        "getStores",
+        "unbindStore",
+        "validateShopAccess",
+        "consumeTrial",
+        "reportEvent",
+        "getAnalyticsSummary",
+        "healthCheck"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx",
+        "entrypoints/popup/popup-views.ts",
+        "entrypoints/popup/store.ts",
+        "components/product/AuthPanel.tsx"
+      ]
+    },
+    {
+      "path": "entrypoints/popup/main.tsx",
+      "bytes": 576,
+      "lines": 14,
+      "sha256": "d4cdcb24d23d1d3580fd0e9397086ebadb9e055c81a4de07bf3e287c2f0cdbcd",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "react-dom/client",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "./App",
+          "target": "entrypoints/popup/App.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./style.css",
+          "target": null,
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [],
+      "importedBy": []
+    },
+    {
+      "path": "entrypoints/popup/one-day-sku-runner.ts",
+      "bytes": 30577,
+      "lines": 689,
+      "sha256": "de838ad28cecf81e1ccccd352f8c80c5fe2a473fd47169faca45743add61778a",
+      "imports": [
+        {
+          "specifier": "./one-day-sku",
+          "target": "entrypoints/popup/one-day-sku.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./one-day-sku-task",
+          "target": "entrypoints/popup/one-day-sku-task.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "repairOneProduct",
+          "start": 174,
+          "end": 533,
+          "lines": 360
+        },
+        {
+          "name": "removeFromDiscounts",
+          "start": 239,
+          "end": 332,
+          "lines": 94
+        },
+        {
+          "name": "runOneDaySkuRepairTask",
+          "start": 541,
+          "end": 688,
+          "lines": 148
+        }
+      ],
+      "exports": [
+        "RepairCheckpointSaveError",
+        "RepairOwnershipError",
+        "RepairStaleWriteError",
+        "describeConfirmedActions",
+        "RepairRunnerDeps",
+        "RunRepairOptions",
+        "buildInitialItems",
+        "resolveDiscountRate",
+        "runOneDaySkuRepairTask"
+      ],
+      "importedBy": [
+        "entrypoints/background.ts"
+      ]
+    },
+    {
+      "path": "entrypoints/popup/one-day-sku-task.ts",
+      "bytes": 19623,
+      "lines": 468,
+      "sha256": "46db0769e3abe1d0f94d31668d171abc5c0d3a4bd5e0c8940ed04c1b846ebed0",
+      "imports": [
+        {
+          "specifier": "./types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        },
+        {
+          "specifier": "./one-day-sku",
+          "target": "entrypoints/popup/one-day-sku.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [
+        "OneDayRepairDiagnostic",
+        "buildRepairDiagnostic",
+        "redactDiagnosticReason",
+        "isTerminalRepairStatus",
+        "isRepairTaskActive",
+        "fingerprintCredential",
+        "CreateRepairTaskInput",
+        "createRepairTask",
+        "RepairProgressPatch",
+        "RepairProgressInput",
+        "patchRepairTask",
+        "canAdvanceTask",
+        "itemsWithSentWrites",
+        "resolveOrphanedTask",
+        "RepairSummaryTone",
+        "RepairSummary",
+        "buildRepairSummary",
+        "ShouldApplyRepairResultInput",
+        "shouldApplyRepairResult",
+        "isRepairResultReady",
+        "nextFlowPhaseAfterApply",
+        "isFlowPhaseAdvanced",
+        "RepairOwnerVerdict",
+        "verifyRepairOwner",
+        "isSameOwner"
+      ],
+      "importedBy": [
+        "entrypoints/background.ts",
+        "entrypoints/popup/App.tsx",
+        "entrypoints/popup/one-day-sku-runner.ts",
+        "entrypoints/popup/store.ts"
+      ]
+    },
+    {
+      "path": "entrypoints/popup/one-day-sku.ts",
+      "bytes": 12725,
+      "lines": 334,
+      "sha256": "32c1f9ae2a27beb9ad79a4c7489d02443d3892fdfadb683565bfa1892346b6b5",
+      "imports": [
+        {
+          "specifier": "./types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "buildOneDaySkuProductInfo",
+          "start": 101,
+          "end": 251,
+          "lines": 151
+        }
+      ],
+      "exports": [
+        "ProductInfoModel",
+        "ProductInfoPayload",
+        "OneDaySkuBuildResult",
+        "getHighestModelPrice",
+        "hasDedicatedOneDaySku",
+        "hasAnyOneDayDeliverySku",
+        "buildOneDaySkuProductInfo",
+        "isFiveTimesPriceError",
+        "getDiscountRatio",
+        "buildDiscountRestoreList",
+        "extractSellerDiscounts"
+      ],
+      "importedBy": [
+        "entrypoints/popup/one-day-sku-runner.ts",
+        "entrypoints/popup/one-day-sku-task.ts"
+      ]
+    },
+    {
+      "path": "entrypoints/popup/popup-content.ts",
+      "bytes": 3032,
+      "lines": 82,
+      "sha256": "f3a272102b672c0b1172c92c0230e5bfd6e537c02fb3c01e8a813d99e0339f14",
+      "imports": [],
+      "functions": [
+        {
+          "name": "sanitizeElement",
+          "start": 25,
+          "end": 74,
+          "lines": 50
+        }
+      ],
+      "exports": [
+        "sanitizeForRender"
+      ],
+      "importedBy": [
+        "entrypoints/popup/PopupPolicyHost.tsx"
+      ]
+    },
+    {
+      "path": "entrypoints/popup/popup-policy.ts",
+      "bytes": 21878,
+      "lines": 551,
+      "sha256": "0ac4ef6341d205cf60470ce817ce0f5a8ef312a87fd9cc60e81c609922155fc1",
+      "imports": [],
+      "functions": [],
+      "exports": [
+        "PopupMode",
+        "PopupPolicyEntry",
+        "PopupPolicyPayload",
+        "PolicySource",
+        "PolicyResult",
+        "isValidRequiredVersion",
+        "isValidDownloadUrl",
+        "compareVersions",
+        "getActualVersion",
+        "isForcedUpdateHit",
+        "getAcknowledgedRevision",
+        "acknowledgeNotice",
+        "resetNoticeAck",
+        "PolicyErrorKind",
+        "PolicyErrorInfo",
+        "fetchPolicy",
+        "resolveBackendUrl",
+        "fallbackBackendUrl",
+        "ensureBackendUrl",
+        "PolicyDecision",
+        "checkPolicy",
+        "resolveAssetUrls"
+      ],
+      "importedBy": [
+        "entrypoints/popup/PopupPolicyHost.tsx"
+      ]
+    },
+    {
+      "path": "entrypoints/popup/popup-views.ts",
+      "bytes": 5117,
+      "lines": 124,
+      "sha256": "892f69e8b66ccb1df57e3b2a777fad2acb87076f1cf7924b3137c3e0e89c75f8",
+      "imports": [
+        {
+          "specifier": "./backend-api",
+          "target": "entrypoints/popup/backend-api.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [
+        "reportPopupView"
+      ],
+      "importedBy": [
+        "entrypoints/popup/PopupPolicyHost.tsx"
+      ]
+    },
+    {
+      "path": "entrypoints/popup/PopupPolicyHost.tsx",
+      "bytes": 10245,
+      "lines": 239,
+      "sha256": "1a3d1f79ce951888b79ce036e0bf8e4acdd406837dda01a3982c2b8a91ba7c16",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "./popup-policy",
+          "target": "entrypoints/popup/popup-policy.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./popup-views",
+          "target": "entrypoints/popup/popup-views.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./popup-content",
+          "target": "entrypoints/popup/popup-content.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "PopupPolicyHost",
+          "start": 104,
+          "end": 238,
+          "lines": 135
+        }
+      ],
+      "exports": [],
+      "importedBy": [
+        "entrypoints/popup/App.tsx"
+      ]
+    },
+    {
+      "path": "entrypoints/popup/store.ts",
+      "bytes": 155239,
+      "lines": 3664,
+      "sha256": "c6407fb29951e70c7cddc71eeb8a77d002e4c6a0ec95f1b2a05615bd95b612ef",
+      "imports": [
+        {
+          "specifier": "zustand",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "./types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        },
+        {
+          "specifier": "./backend-api",
+          "target": "entrypoints/popup/backend-api.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./one-day-sku-task",
+          "target": "entrypoints/popup/one-day-sku-task.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "injectedFetch",
+          "start": 26,
+          "end": 77,
+          "lines": 52
+        },
+        {
+          "name": "(anonymous)",
+          "start": 340,
+          "end": 3546,
+          "lines": 3207
+        },
+        {
+          "name": "extractSpcCds",
+          "start": 587,
+          "end": 657,
+          "lines": 71
+        },
+        {
+          "name": "fetchFlashSaleList",
+          "start": 696,
+          "end": 741,
+          "lines": 46
+        },
+        {
+          "name": "loadFlashSaleProducts",
+          "start": 778,
+          "end": 1249,
+          "lines": 472
+        },
+        {
+          "name": "enableFlashSaleItems",
+          "start": 1252,
+          "end": 1474,
+          "lines": 223
+        },
+        {
+          "name": "executeCopy",
+          "start": 1681,
+          "end": 1925,
+          "lines": 245
+        },
+        {
+          "name": "startAutoMode",
+          "start": 2075,
+          "end": 2175,
+          "lines": 101
+        },
+        {
+          "name": "exportAutoModeLogs",
+          "start": 2209,
+          "end": 2279,
+          "lines": 71
+        },
+        {
+          "name": "runOneDaySkuAndEnable",
+          "start": 2302,
+          "end": 2418,
+          "lines": 117
+        },
+        {
+          "name": "syncOneDayRepairTask",
+          "start": 2426,
+          "end": 2558,
+          "lines": 133
+        },
+        {
+          "name": "applyRepairResult",
+          "start": 2566,
+          "end": 2633,
+          "lines": 68
+        },
+        {
+          "name": "checkAuthOnStartup",
+          "start": 2693,
+          "end": 2762,
+          "lines": 70
+        },
+        {
+          "name": "runFirstUseFlow",
+          "start": 3028,
+          "end": 3081,
+          "lines": 54
+        },
+        {
+          "name": "addToExistingFlashSale",
+          "start": 3131,
+          "end": 3338,
+          "lines": 208
+        },
+        {
+          "name": "createNewFlashSaleAndAdd",
+          "start": 3340,
+          "end": 3458,
+          "lines": 119
+        },
+        {
+          "name": "scheduleEnableForFlashSale",
+          "start": 3460,
+          "end": 3544,
+          "lines": 85
+        },
+        {
+          "name": "setupBackgroundListener",
+          "start": 3550,
+          "end": 3663,
+          "lines": 114
+        },
+        {
+          "name": "(anonymous)",
+          "start": 3553,
+          "end": 3634,
+          "lines": 82
+        }
+      ],
+      "exports": [
+        "setupBackgroundListener"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx",
+        "components/product/AuthPanel.tsx",
+        "components/product/AutoModePanel.tsx",
+        "components/product/CopyConfirmPanel.tsx",
+        "components/product/FirstUseModal.tsx",
+        "components/product/FirstUseWarningModal.tsx",
+        "components/product/ProductCard.tsx",
+        "components/product/ProductViewModal.tsx",
+        "components/product/ScheduledTaskCard.tsx",
+        "components/product/SkuTable.tsx",
+        "components/product/SpcStatus.tsx",
+        "components/product/StoreStatus.tsx",
+        "components/product/TemplateEditDialog.tsx",
+        "components/product/TemplateManager.tsx",
+        "components/product/TimeSlotModal.tsx",
+        "components/product/UndiscountedSkuModal.tsx"
+      ]
+    },
+    {
+      "path": "entrypoints/popup/types.ts",
+      "bytes": 16179,
+      "lines": 551,
+      "sha256": "6944b896d846af498c2fd7b30bc965ca78dbc1321359a8b52ff6a9501f7aef2b",
+      "imports": [],
+      "functions": [],
+      "exports": [
+        "ShopeeModel",
+        "ShopeeProduct",
+        "ProductsQueryVariables",
+        "ProductsQueryResponse",
+        "ShopeeApiResponse",
+        "FlashSale",
+        "FlashSaleListData",
+        "FlashSaleItemIdListData",
+        "SkuOverride",
+        "EnableItem",
+        "EnableResult",
+        "EnableResponse",
+        "EnableProgress",
+        "MessagePayload",
+        "InjectionPayload",
+        "CacheData",
+        "TimeSlot",
+        "ScheduledCopyParams",
+        "CopyTaskStatus",
+        "ScheduledTaskStatus",
+        "ScheduledEnableSource",
+        "ScheduledEnableStatus",
+        "CopiedSaleData",
+        "TemplateProductInfo",
+        "FlashSaleTemplate",
+        "AutoModeConfig",
+        "AutoModePhase",
+        "AutoModeStatus",
+        "AutoModeLog",
+        "PendingFlashSaleData",
+        "CompletedCopyInfo",
+        "UndiscountedSku",
+        "OneDaySkuFlowPhase",
+        "OneDaySkuDiscountInfo",
+        "OneDaySkuItemStatus",
+        "OneDaySkuFlowState",
+        "OneDayRepairTaskStatus",
+        "OneDaySkuCheckpoint",
+        "OneDayRepairTask",
+        "OneDayRepairHeartbeat",
+        "OneDayRepairAppliedMarker",
+        "OneDayRepairRequest",
+        "ShopProductListItem",
+        "FirstUseState",
+        "BackendStoreBinding",
+        "BackendAuthState",
+        "BackendAnalyticsSummary"
+      ],
+      "importedBy": [
+        "entrypoints/background.ts",
+        "entrypoints/popup/api.ts",
+        "entrypoints/popup/App.tsx",
+        "entrypoints/popup/backend-api.ts",
+        "entrypoints/popup/one-day-sku-runner.ts",
+        "entrypoints/popup/one-day-sku-task.ts",
+        "entrypoints/popup/one-day-sku.ts",
+        "entrypoints/popup/store.ts",
+        "components/product/AutoModePanel.tsx",
+        "components/product/CopyConfirmPanel.tsx",
+        "components/product/CopyResultPanel.tsx",
+        "components/product/ProductCard.tsx",
+        "components/product/ProductList.tsx",
+        "components/product/ProductViewModal.tsx",
+        "components/product/SkuTable.tsx",
+        "components/product/TemplateEditDialog.tsx",
+        "components/product/TemplateManager.tsx",
+        "components/product/TimeSlotModal.tsx",
+        "components/product/UndiscountedSkuModal.tsx"
+      ]
+    },
+    {
+      "path": "components/lib/utils.ts",
+      "bytes": 169,
+      "lines": 7,
+      "sha256": "74e8fe9d0d680c442ed6adb13e7d119d6c210c19ae6c114313b2a72552be0883",
+      "imports": [
+        {
+          "specifier": "clsx",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "tailwind-merge",
+          "target": null,
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [
+        "cn"
+      ],
+      "importedBy": [
+        "components/ui/badge.tsx",
+        "components/ui/button.tsx",
+        "components/ui/card.tsx",
+        "components/ui/input.tsx",
+        "components/ui/scroll-area.tsx",
+        "components/ui/separator.tsx",
+        "components/ui/table.tsx"
+      ]
+    },
+    {
+      "path": "components/product/AuthPanel.tsx",
+      "bytes": 21374,
+      "lines": 436,
+      "sha256": "8e3388fbb94ed34b47b628c558363cccc3d4d7d68c4ce37264a69b642bfea52b",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/button",
+          "target": "components/ui/button.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/store",
+          "target": "entrypoints/popup/store.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/backend-api",
+          "target": "entrypoints/popup/backend-api.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "AuthPanel",
+          "start": 84,
+          "end": 435,
+          "lines": 352
+        }
+      ],
+      "exports": [
+        "AuthPanel"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx"
+      ]
+    },
+    {
+      "path": "components/product/AutoModePanel.tsx",
+      "bytes": 34530,
+      "lines": 725,
+      "sha256": "be9201a70d737dead79f8b45239bb1afa87dfd90123548cfcdde4d1f4b502964",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/card",
+          "target": "components/ui/card.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/button",
+          "target": "components/ui/button.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/separator",
+          "target": "components/ui/separator.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/SkuTable",
+          "target": "components/product/SkuTable.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/ProductViewModal",
+          "target": "components/product/ProductViewModal.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/TimeSlotModal",
+          "target": "components/product/TimeSlotModal.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/UndiscountedSkuModal",
+          "target": "components/product/UndiscountedSkuModal.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/store",
+          "target": "entrypoints/popup/store.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "AutoModePanel",
+          "start": 27,
+          "end": 724,
+          "lines": 698
+        },
+        {
+          "name": "(anonymous)",
+          "start": 353,
+          "end": 399,
+          "lines": 47
+        }
+      ],
+      "exports": [
+        "AutoModePanel"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx"
+      ]
+    },
+    {
+      "path": "components/product/CopyConfirmPanel.tsx",
+      "bytes": 13477,
+      "lines": 305,
+      "sha256": "de1b571eb96fd4252ad355ae19984e2244abc499599a20ce360059772b486961",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/card",
+          "target": "components/ui/card.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/button",
+          "target": "components/ui/button.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/store",
+          "target": "entrypoints/popup/store.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./ProductCard",
+          "target": "components/product/ProductCard.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./SkuTable",
+          "target": "components/product/SkuTable.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "CopyConfirmPanel",
+          "start": 20,
+          "end": 304,
+          "lines": 285
+        }
+      ],
+      "exports": [
+        "CopyConfirmPanel"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx"
+      ]
+    },
+    {
+      "path": "components/product/CopyResultPanel.tsx",
+      "bytes": 2994,
+      "lines": 83,
+      "sha256": "a422fd97f9e365de2c1b6eac3dbb6f1c4b614a3a0776a7a97eb59b6f1a614295",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/card",
+          "target": "components/ui/card.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/button",
+          "target": "components/ui/button.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "CopyResultPanel",
+          "start": 12,
+          "end": 82,
+          "lines": 71
+        }
+      ],
+      "exports": [
+        "CopyResultPanel"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx"
+      ]
+    },
+    {
+      "path": "components/product/feature-catalog.ts",
+      "bytes": 1994,
+      "lines": 60,
+      "sha256": "29dce842918847f5f216b04490f2aa3552fe1b2e00dfa053cfb4237e2b1670a5",
+      "imports": [
+        {
+          "specifier": "lucide-react",
+          "target": null,
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [
+        "FeatureDefinition",
+        "FeatureCategory",
+        "groupFeaturesByCategory"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx",
+        "components/product/FeatureHome.tsx"
+      ]
+    },
+    {
+      "path": "components/product/FeatureHome.tsx",
+      "bytes": 6012,
+      "lines": 144,
+      "sha256": "30cc848e4bf06dee620ecd35790b9aaa5875d5bd5a7821164dfe0d2db57d3ae9",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/card",
+          "target": "components/ui/card.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/button",
+          "target": "components/ui/button.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "lucide-react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "./feature-catalog",
+          "target": "components/product/feature-catalog.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./task-summary",
+          "target": "components/product/task-summary.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "FeatureHome",
+          "start": 28,
+          "end": 143,
+          "lines": 116
+        }
+      ],
+      "exports": [
+        "FeatureHome"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx"
+      ]
+    },
+    {
+      "path": "components/product/FirstUseModal.tsx",
+      "bytes": 7774,
+      "lines": 193,
+      "sha256": "17075f067eb2a52d8d2018fdccbfac509985f1ade87fb10fb91e64a5b7ff8231",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/button",
+          "target": "components/ui/button.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/store",
+          "target": "entrypoints/popup/store.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "FirstUseModal",
+          "start": 11,
+          "end": 192,
+          "lines": 182
+        }
+      ],
+      "exports": [
+        "FirstUseModal"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx"
+      ]
+    },
+    {
+      "path": "components/product/FirstUseWarningModal.tsx",
+      "bytes": 3837,
+      "lines": 78,
+      "sha256": "6541cf5de16da11996bdf581c7961b4e7b31d6d290cd225386b4a81fd2727102",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/button",
+          "target": "components/ui/button.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/store",
+          "target": "entrypoints/popup/store.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "FirstUseWarningModal",
+          "start": 5,
+          "end": 77,
+          "lines": 73
+        }
+      ],
+      "exports": [
+        "FirstUseWarningModal"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx"
+      ]
+    },
+    {
+      "path": "components/product/ProductCard.tsx",
+      "bytes": 3314,
+      "lines": 84,
+      "sha256": "e9e4b112548f37932e5447c587ddadd853390b178cb5df8aa95eee3e6ad34ded",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/card",
+          "target": "components/ui/card.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/badge",
+          "target": "components/ui/badge.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/store",
+          "target": "entrypoints/popup/store.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "ProductCard",
+          "start": 14,
+          "end": 83,
+          "lines": 70
+        }
+      ],
+      "exports": [
+        "ProductCard"
+      ],
+      "importedBy": [
+        "components/product/CopyConfirmPanel.tsx",
+        "components/product/ProductList.tsx"
+      ]
+    },
+    {
+      "path": "components/product/ProductList.tsx",
+      "bytes": 3002,
+      "lines": 74,
+      "sha256": "e3398018beb8b3c8ed0b4d5840f8cb2db68d5aecc0a90c36428de61a654ba930",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "./ProductCard",
+          "target": "components/product/ProductCard.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./SkuTable",
+          "target": "components/product/SkuTable.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "ProductList",
+          "start": 13,
+          "end": 73,
+          "lines": 61
+        }
+      ],
+      "exports": [
+        "ProductList"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx"
+      ]
+    },
+    {
+      "path": "components/product/ProductViewModal.tsx",
+      "bytes": 4240,
+      "lines": 96,
+      "sha256": "e25a737762522c78aca612e0b237fcbbe0eb0f72cece87d2291e6fb6e63f17f5",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/button",
+          "target": "components/ui/button.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/SkuTable",
+          "target": "components/product/SkuTable.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/store",
+          "target": "entrypoints/popup/store.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "ProductViewModal",
+          "start": 12,
+          "end": 95,
+          "lines": 84
+        }
+      ],
+      "exports": [
+        "ProductViewModal"
+      ],
+      "importedBy": [
+        "components/product/AutoModePanel.tsx"
+      ]
+    },
+    {
+      "path": "components/product/ScheduledTaskCard.tsx",
+      "bytes": 6782,
+      "lines": 160,
+      "sha256": "4073d6eab06b16d3e21094b838d26bcd4d6416d5f2db353169e9bd4804db707c",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/store",
+          "target": "entrypoints/popup/store.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "ScheduledTaskCard",
+          "start": 11,
+          "end": 159,
+          "lines": 149
+        }
+      ],
+      "exports": [
+        "ScheduledTaskCard"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx"
+      ]
+    },
+    {
+      "path": "components/product/SkuTable.tsx",
+      "bytes": 19215,
+      "lines": 455,
+      "sha256": "aeb6cd80da4be6e065365cb6e64bf3af01c8916c1d1d84008d4753b96185135f",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/table",
+          "target": "components/ui/table.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/store",
+          "target": "entrypoints/popup/store.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "SkuTable",
+          "start": 12,
+          "end": 454,
+          "lines": 443
+        },
+        {
+          "name": "(anonymous)",
+          "start": 296,
+          "end": 438,
+          "lines": 143
+        }
+      ],
+      "exports": [
+        "SkuTable"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx",
+        "components/product/AutoModePanel.tsx",
+        "components/product/CopyConfirmPanel.tsx",
+        "components/product/ProductList.tsx",
+        "components/product/ProductViewModal.tsx"
+      ]
+    },
+    {
+      "path": "components/product/SpcStatus.tsx",
+      "bytes": 1468,
+      "lines": 47,
+      "sha256": "883f29b63a06196d88a941bade4e692cfe0be3443f0272da08637e1cf319af33",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/badge",
+          "target": "components/ui/badge.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/store",
+          "target": "entrypoints/popup/store.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [
+        "SpcStatus"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx"
+      ]
+    },
+    {
+      "path": "components/product/StoreStatus.tsx",
+      "bytes": 4065,
+      "lines": 106,
+      "sha256": "7c69468053e99d007152499fdce62f82be0113c45ab90833cefadb108e41d2c8",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/button",
+          "target": "components/ui/button.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/store",
+          "target": "entrypoints/popup/store.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "StoreStatus",
+          "start": 5,
+          "end": 105,
+          "lines": 101
+        }
+      ],
+      "exports": [
+        "StoreStatus"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx"
+      ]
+    },
+    {
+      "path": "components/product/task-summary.ts",
+      "bytes": 4299,
+      "lines": 129,
+      "sha256": "c5936da8fd787fb383bd0fa5f2561157f82675339563928dc4ec0d87b41bb4fa",
+      "imports": [],
+      "functions": [
+        {
+          "name": "buildTaskSummaries",
+          "start": 61,
+          "end": 128,
+          "lines": 68
+        }
+      ],
+      "exports": [
+        "TaskSummaryKind",
+        "TaskSummary",
+        "TaskSummaryInput",
+        "formatTaskTime",
+        "buildTaskSummaries"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx",
+        "components/product/FeatureHome.tsx"
+      ]
+    },
+    {
+      "path": "components/product/TemplateEditDialog.tsx",
+      "bytes": 22207,
+      "lines": 529,
+      "sha256": "25c3682781a3dd272644c610f20fa2f65ce53ce7ba85103ff6f2a11c09b40ac8",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/table",
+          "target": "components/ui/table.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/button",
+          "target": "components/ui/button.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/store",
+          "target": "entrypoints/popup/store.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "TemplateEditDialog",
+          "start": 38,
+          "end": 528,
+          "lines": 491
+        },
+        {
+          "name": "(anonymous)",
+          "start": 316,
+          "end": 428,
+          "lines": 113
+        },
+        {
+          "name": "(anonymous)",
+          "start": 365,
+          "end": 425,
+          "lines": 61
+        }
+      ],
+      "exports": [
+        "TemplateEditDialog"
+      ],
+      "importedBy": [
+        "components/product/TemplateManager.tsx"
+      ]
+    },
+    {
+      "path": "components/product/TemplateManager.tsx",
+      "bytes": 15964,
+      "lines": 442,
+      "sha256": "3d4aa2fff28784da7cd78eec0f73dead1f0955667393b8a3e507d52ae652ad93",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/store",
+          "target": "entrypoints/popup/store.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/separator",
+          "target": "components/ui/separator.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/button",
+          "target": "components/ui/button.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/product/TemplateEditDialog",
+          "target": "components/product/TemplateEditDialog.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "TemplateManager",
+          "start": 10,
+          "end": 363,
+          "lines": 354
+        },
+        {
+          "name": "TemplateRow",
+          "start": 365,
+          "end": 441,
+          "lines": 77
+        }
+      ],
+      "exports": [
+        "TemplateManager"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx"
+      ]
+    },
+    {
+      "path": "components/product/TimeSlotModal.tsx",
+      "bytes": 4040,
+      "lines": 98,
+      "sha256": "a641282139513dbf37fd4367701cabe07afd9530d29a6e48f6785b2444e16b86",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/store",
+          "target": "entrypoints/popup/store.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "TimeSlotModal",
+          "start": 10,
+          "end": 97,
+          "lines": 88
+        }
+      ],
+      "exports": [
+        "TimeSlotModal"
+      ],
+      "importedBy": [
+        "components/product/AutoModePanel.tsx"
+      ]
+    },
+    {
+      "path": "components/product/UndiscountedSkuModal.tsx",
+      "bytes": 10697,
+      "lines": 259,
+      "sha256": "09c5690c3a5a52cde2c74af2373b6cbe9bd15bc5870c11418b797c7b64f13674",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/ui/button",
+          "target": "components/ui/button.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/store",
+          "target": "entrypoints/popup/store.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/entrypoints/popup/types",
+          "target": "entrypoints/popup/types.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "UndiscountedSkuModal",
+          "start": 19,
+          "end": 258,
+          "lines": 240
+        },
+        {
+          "name": "(anonymous)",
+          "start": 164,
+          "end": 225,
+          "lines": 62
+        }
+      ],
+      "exports": [
+        "UndiscountedSkuModal"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx",
+        "components/product/AutoModePanel.tsx"
+      ]
+    },
+    {
+      "path": "components/ui/badge.tsx",
+      "bytes": 1099,
+      "lines": 30,
+      "sha256": "3d6ab9a9cc5bca88403c6e0e2651c26c54e37b74a5731387ea1ecb215de91d13",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "class-variance-authority",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/lib/utils",
+          "target": "components/lib/utils.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [
+        "BadgeProps"
+      ],
+      "importedBy": [
+        "components/product/ProductCard.tsx",
+        "components/product/SpcStatus.tsx"
+      ]
+    },
+    {
+      "path": "components/ui/button.tsx",
+      "bytes": 1881,
+      "lines": 47,
+      "sha256": "c430572fd431fb2d79c8112f75e674a077a03764c56c38be1a425c2262cafeee",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@radix-ui/react-slot",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "class-variance-authority",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/lib/utils",
+          "target": "components/lib/utils.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [
+        "ButtonProps"
+      ],
+      "importedBy": [
+        "entrypoints/popup/App.tsx",
+        "components/product/AuthPanel.tsx",
+        "components/product/AutoModePanel.tsx",
+        "components/product/CopyConfirmPanel.tsx",
+        "components/product/CopyResultPanel.tsx",
+        "components/product/FeatureHome.tsx",
+        "components/product/FirstUseModal.tsx",
+        "components/product/FirstUseWarningModal.tsx",
+        "components/product/ProductViewModal.tsx",
+        "components/product/StoreStatus.tsx",
+        "components/product/TemplateEditDialog.tsx",
+        "components/product/TemplateManager.tsx",
+        "components/product/UndiscountedSkuModal.tsx"
+      ]
+    },
+    {
+      "path": "components/ui/card.tsx",
+      "bytes": 1762,
+      "lines": 42,
+      "sha256": "6287d887a4dd94a97f8af2b444351a60ff200f7422cb2610eff6770c766dd165",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/lib/utils",
+          "target": "components/lib/utils.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [],
+      "importedBy": [
+        "entrypoints/popup/App.tsx",
+        "components/product/AutoModePanel.tsx",
+        "components/product/CopyConfirmPanel.tsx",
+        "components/product/CopyResultPanel.tsx",
+        "components/product/FeatureHome.tsx",
+        "components/product/ProductCard.tsx"
+      ]
+    },
+    {
+      "path": "components/ui/input.tsx",
+      "bytes": 808,
+      "lines": 23,
+      "sha256": "50f683be444e42ba872d0ade3b1c569107fe596feee9909e10204058ac6181e7",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/lib/utils",
+          "target": "components/lib/utils.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [],
+      "importedBy": []
+    },
+    {
+      "path": "components/ui/scroll-area.tsx",
+      "bytes": 1618,
+      "lines": 39,
+      "sha256": "f71df6905001eff20f63149b051ccf457a8b9db703b76940e04f99b26df63182",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@radix-ui/react-scroll-area",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/lib/utils",
+          "target": "components/lib/utils.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [],
+      "importedBy": []
+    },
+    {
+      "path": "components/ui/separator.tsx",
+      "bytes": 709,
+      "lines": 21,
+      "sha256": "9bbd6fdf9ddabac0d17627bf3e6f8a58c20e377e5be980ed78dff83328e898c4",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@radix-ui/react-separator",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/lib/utils",
+          "target": "components/lib/utils.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [],
+      "importedBy": [
+        "entrypoints/popup/App.tsx",
+        "components/product/AutoModePanel.tsx",
+        "components/product/TemplateManager.tsx"
+      ]
+    },
+    {
+      "path": "components/ui/table.tsx",
+      "bytes": 2696,
+      "lines": 73,
+      "sha256": "de00d0c555cdf1dee867972a989411d102d1a5d9525f60057cbeb2a09340b960",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@/components/lib/utils",
+          "target": "components/lib/utils.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [],
+      "importedBy": [
+        "components/product/SkuTable.tsx",
+        "components/product/TemplateEditDialog.tsx"
+      ]
+    },
+    {
+      "path": "backend/src/db/index.ts",
+      "bytes": 11277,
+      "lines": 296,
+      "sha256": "3cd3e022fd557472c52fbf8c1018d67a6c75ea5747c93c069178ba585d7eb2f3",
+      "imports": [
+        {
+          "specifier": "@libsql/client",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "drizzle-orm/libsql",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "fs",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "path",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "./schema.js",
+          "target": "backend/src/db/schema.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "createTables",
+          "start": 47,
+          "end": 210,
+          "lines": 164
+        },
+        {
+          "name": "migrateLegacyPopupSlots",
+          "start": 226,
+          "end": 295,
+          "lines": 70
+        }
+      ],
+      "exports": [
+        "getDb",
+        "getClient",
+        "initializeDatabase"
+      ],
+      "importedBy": [
+        "backend/src/index.ts",
+        "backend/src/middleware/auth.ts",
+        "backend/src/routes/admin.ts",
+        "backend/src/routes/analytics.ts",
+        "backend/src/routes/auth.ts",
+        "backend/src/routes/popup.ts",
+        "backend/src/routes/stores.ts",
+        "backend/src/seed.ts",
+        "backend/src/utils/popup-views.ts"
+      ]
+    },
+    {
+      "path": "backend/src/db/schema.ts",
+      "bytes": 8030,
+      "lines": 154,
+      "sha256": "c61e5f1a7785a613bd40d93ccfab752fa79c3b3cd94eb5cc3a2c8919230fc5c4",
+      "imports": [
+        {
+          "specifier": "drizzle-orm",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "drizzle-orm/sqlite-core",
+          "target": null,
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [
+        "PopupPolicy",
+        "PopupActiveSlot",
+        "PopupAsset",
+        "PopupView",
+        "User",
+        "NewUser",
+        "VerificationCode",
+        "StoreBinding",
+        "InviteCode",
+        "AnalyticsEvent"
+      ],
+      "importedBy": [
+        "backend/src/db/index.ts",
+        "backend/src/middleware/auth.ts",
+        "backend/src/routes/admin.ts",
+        "backend/src/routes/analytics.ts",
+        "backend/src/routes/auth.ts",
+        "backend/src/routes/popup.ts",
+        "backend/src/routes/stores.ts",
+        "backend/src/seed.ts",
+        "backend/src/utils/popup-views.ts"
+      ]
+    },
+    {
+      "path": "backend/src/index.ts",
+      "bytes": 2459,
+      "lines": 66,
+      "sha256": "62b50232c0afc6f72693af6628661cbf651845efa0960b8b989305c6fed4bdf4",
+      "imports": [
+        {
+          "specifier": "dotenv/config",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@hono/node-server",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "hono",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "hono/cors",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "./db/index.js",
+          "target": "backend/src/db/index.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./routes/auth.js",
+          "target": "backend/src/routes/auth.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./routes/stores.js",
+          "target": "backend/src/routes/stores.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./routes/analytics.js",
+          "target": "backend/src/routes/analytics.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./routes/admin.js",
+          "target": "backend/src/routes/admin.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./routes/admin-site.js",
+          "target": "backend/src/routes/admin-site.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./routes/popup.js",
+          "target": "backend/src/routes/popup.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "main",
+          "start": 15,
+          "end": 60,
+          "lines": 46
+        }
+      ],
+      "exports": [],
+      "importedBy": []
+    },
+    {
+      "path": "backend/src/middleware/auth.ts",
+      "bytes": 1629,
+      "lines": 48,
+      "sha256": "16f5e854345375bcf82694a65f9faf771534e52ecb629b03d78c6726c935c980",
+      "imports": [
+        {
+          "specifier": "hono/factory",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "drizzle-orm",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "../utils/jwt.js",
+          "target": "backend/src/utils/jwt.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../db/index.js",
+          "target": "backend/src/db/index.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../db/schema.js",
+          "target": "backend/src/db/schema.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [],
+      "importedBy": [
+        "backend/src/routes/admin.ts",
+        "backend/src/routes/analytics.ts",
+        "backend/src/routes/auth.ts",
+        "backend/src/routes/popup.ts",
+        "backend/src/routes/stores.ts"
+      ]
+    },
+    {
+      "path": "backend/src/routes/admin-site.ts",
+      "bytes": 1720,
+      "lines": 50,
+      "sha256": "a0a831265c9549a842518a8deccefde953e0e9313a94a91f2c0f978850bae7f0",
+      "imports": [
+        {
+          "specifier": "hono",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@hono/node-server/serve-static",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "fs",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "path",
+          "target": null,
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [],
+      "importedBy": [
+        "backend/src/index.ts"
+      ]
+    },
+    {
+      "path": "backend/src/routes/admin.ts",
+      "bytes": 12953,
+      "lines": 379,
+      "sha256": "38babcff56356dd6e3d6643e39f8f8e171cfae500a737a4e70210539ff035cae",
+      "imports": [
+        {
+          "specifier": "hono",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "drizzle-orm",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "../db/index.js",
+          "target": "backend/src/db/index.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../db/schema.js",
+          "target": "backend/src/db/schema.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "crypto",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "../middleware/auth.js",
+          "target": "backend/src/middleware/auth.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [],
+      "importedBy": [
+        "backend/src/index.ts"
+      ]
+    },
+    {
+      "path": "backend/src/routes/analytics.ts",
+      "bytes": 1370,
+      "lines": 53,
+      "sha256": "28eb3fbcbc07ceb97a06f8993130ab1aa35e934a6f7d04c0b8de205388056978",
+      "imports": [
+        {
+          "specifier": "hono",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "drizzle-orm",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "../db/index.js",
+          "target": "backend/src/db/index.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../db/schema.js",
+          "target": "backend/src/db/schema.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../middleware/auth.js",
+          "target": "backend/src/middleware/auth.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [],
+      "importedBy": [
+        "backend/src/index.ts"
+      ]
+    },
+    {
+      "path": "backend/src/routes/auth.ts",
+      "bytes": 5982,
+      "lines": 204,
+      "sha256": "e927c00e4eb5b275f52637f35922d5288fe09b6676674f992638279dcdfef3bd",
+      "imports": [
+        {
+          "specifier": "hono",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "drizzle-orm",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "bcryptjs",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "../db/index.js",
+          "target": "backend/src/db/index.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../db/schema.js",
+          "target": "backend/src/db/schema.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../utils/jwt.js",
+          "target": "backend/src/utils/jwt.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../utils/code.js",
+          "target": "backend/src/utils/code.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../middleware/auth.js",
+          "target": "backend/src/middleware/auth.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "(anonymous)",
+          "start": 13,
+          "end": 85,
+          "lines": 73
+        }
+      ],
+      "exports": [],
+      "importedBy": [
+        "backend/src/index.ts"
+      ]
+    },
+    {
+      "path": "backend/src/routes/popup.ts",
+      "bytes": 26878,
+      "lines": 689,
+      "sha256": "b72b0daa2002a93e0687726ae1759cad75afacd7aebbcca2b6dee103d4e59afe",
+      "imports": [
+        {
+          "specifier": "hono",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "drizzle-orm",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "crypto",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "fs",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "fs/promises",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "path",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "../db/index.js",
+          "target": "backend/src/db/index.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../db/schema.js",
+          "target": "backend/src/db/schema.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../middleware/auth.js",
+          "target": "backend/src/middleware/auth.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../utils/jwt.js",
+          "target": "backend/src/utils/jwt.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../utils/popup-views.js",
+          "target": "backend/src/utils/popup-views.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../utils/popup-policy.js",
+          "target": "backend/src/utils/popup-policy.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "toAdminRecord",
+          "start": 127,
+          "end": 172,
+          "lines": 46
+        },
+        {
+          "name": "(anonymous)",
+          "start": 421,
+          "end": 473,
+          "lines": 53
+        },
+        {
+          "name": "(anonymous)",
+          "start": 527,
+          "end": 597,
+          "lines": 71
+        }
+      ],
+      "exports": [],
+      "importedBy": [
+        "backend/src/index.ts"
+      ]
+    },
+    {
+      "path": "backend/src/routes/stores.ts",
+      "bytes": 7260,
+      "lines": 252,
+      "sha256": "329ab129cd1dcd0c818b277bf096c24b61c6440e7ed7449b5561172d1aef9b81",
+      "imports": [
+        {
+          "specifier": "hono",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "drizzle-orm",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "../db/index.js",
+          "target": "backend/src/db/index.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../db/schema.js",
+          "target": "backend/src/db/schema.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../middleware/auth.js",
+          "target": "backend/src/middleware/auth.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "(anonymous)",
+          "start": 29,
+          "end": 103,
+          "lines": 75
+        },
+        {
+          "name": "(anonymous)",
+          "start": 136,
+          "end": 222,
+          "lines": 87
+        }
+      ],
+      "exports": [],
+      "importedBy": [
+        "backend/src/index.ts"
+      ]
+    },
+    {
+      "path": "backend/src/seed.ts",
+      "bytes": 1906,
+      "lines": 66,
+      "sha256": "f26aa1a6848a32833cd80633136fd91a20118d6731280868728e66bdeab6c9f2",
+      "imports": [
+        {
+          "specifier": "dotenv/config",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "./db/index.js",
+          "target": "backend/src/db/index.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./db/schema.js",
+          "target": "backend/src/db/schema.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "drizzle-orm",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "bcryptjs",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "crypto",
+          "target": null,
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "seed",
+          "start": 8,
+          "end": 60,
+          "lines": 53
+        }
+      ],
+      "exports": [],
+      "importedBy": []
+    },
+    {
+      "path": "backend/src/utils/code.ts",
+      "bytes": 502,
+      "lines": 16,
+      "sha256": "e493eb64a557c1865c900b61b16bfdc3af2a07c1065870e3d87032da3e9939fa",
+      "imports": [],
+      "functions": [],
+      "exports": [
+        "generateVerificationCode",
+        "getExpiresAt",
+        "isCodeExpired"
+      ],
+      "importedBy": [
+        "backend/src/routes/auth.ts"
+      ]
+    },
+    {
+      "path": "backend/src/utils/jwt.ts",
+      "bytes": 1040,
+      "lines": 33,
+      "sha256": "2de44f85988dc72db1c5c68bc330d5537aafbfe0f3898e49cac198b80a5014d7",
+      "imports": [
+        {
+          "specifier": "jose",
+          "target": null,
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [
+        "TokenPayload",
+        "signToken",
+        "verifyToken"
+      ],
+      "importedBy": [
+        "backend/src/middleware/auth.ts",
+        "backend/src/routes/auth.ts",
+        "backend/src/routes/popup.ts"
+      ]
+    },
+    {
+      "path": "backend/src/utils/popup-policy.ts",
+      "bytes": 6445,
+      "lines": 158,
+      "sha256": "7878a44ce682c82c44c98099e00c23418898f21a24cff24eb0a7e5cc0ef314a8",
+      "imports": [
+        {
+          "specifier": "sanitize-html",
+          "target": null,
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "sanitizeContentHtml",
+          "start": 72,
+          "end": 122,
+          "lines": 51
+        }
+      ],
+      "exports": [
+        "PopupMode",
+        "isPopupMode",
+        "AllowedImageMime",
+        "validateVersion",
+        "validateDownloadUrl",
+        "sanitizeContentHtml",
+        "utf8ByteLength",
+        "countOwnAssets",
+        "detectImageMime"
+      ],
+      "importedBy": [
+        "backend/src/routes/popup.ts"
+      ]
+    },
+    {
+      "path": "backend/src/utils/popup-views.ts",
+      "bytes": 8105,
+      "lines": 172,
+      "sha256": "c7eeea691ecff23d83ad1a2a366afea2828311dbb770f22093f502ff0a8f8480",
+      "imports": [
+        {
+          "specifier": "drizzle-orm",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "../db/index.js",
+          "target": "backend/src/db/index.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../db/schema.js",
+          "target": "backend/src/db/schema.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [
+        "ViewReportOutcome",
+        "validateViewTarget",
+        "recordView",
+        "isActiveAccount",
+        "viewCountsByRecord",
+        "viewCountFor",
+        "listViewers"
+      ],
+      "importedBy": [
+        "backend/src/routes/popup.ts"
+      ]
+    },
+    {
+      "path": "admin-web/src/api/admin.ts",
+      "bytes": 6743,
+      "lines": 240,
+      "sha256": "22f2e431cc9344375c0421bb0a931545d8effe514d7631d55ad717a000232477",
+      "imports": [],
+      "functions": [],
+      "exports": [
+        "setUnauthorizedHandler",
+        "ApiError",
+        "AdminUser",
+        "AdminBinding",
+        "AdminInviteCode",
+        "AdminAnalytics",
+        "AdminAnalyticsEvent",
+        "LoginResult",
+        "login",
+        "checkAdmin",
+        "getUsers",
+        "updateStoreLimit",
+        "toggleAutoMode",
+        "setTrialUsed",
+        "setTrialEnabled",
+        "deleteUser",
+        "getBindings",
+        "unbindStore",
+        "getInviteCodes",
+        "createInviteCodes",
+        "deleteInviteCode",
+        "getAnalytics",
+        "getAnalyticsEvents"
+      ],
+      "importedBy": [
+        "admin-web/src/auth/AuthContext.tsx",
+        "admin-web/src/pages/AnalyticsPage.tsx",
+        "admin-web/src/pages/BindingsPage.tsx",
+        "admin-web/src/pages/InviteCodesPage.tsx",
+        "admin-web/src/pages/UsersPage.tsx"
+      ]
+    },
+    {
+      "path": "admin-web/src/api/popup.ts",
+      "bytes": 6013,
+      "lines": 189,
+      "sha256": "5ed8f42e2469c2e48cff520b0e3d7e840103ffd92622da6ca051480c2d9dfd64",
+      "imports": [],
+      "functions": [],
+      "exports": [
+        "setPopupUnauthorizedHandler",
+        "PopupMode",
+        "PopupRecordStatus",
+        "PopupDraft",
+        "PopupPublishedSnapshot",
+        "PopupRecord",
+        "PopupSlot",
+        "PopupListResult",
+        "PopupAssetResult",
+        "listPopupRecords",
+        "getPopupRecord",
+        "DraftInput",
+        "createPopupRecord",
+        "savePopupDraft",
+        "publishPopup",
+        "withdrawPopup",
+        "PopupViewer",
+        "PopupViewersResult",
+        "listPopupViewers",
+        "uploadPopupAsset"
+      ],
+      "importedBy": [
+        "admin-web/src/auth/AuthContext.tsx",
+        "admin-web/src/components/PopupEditorModal.tsx",
+        "admin-web/src/components/PopupViewersModal.tsx",
+        "admin-web/src/pages/PopupPage.tsx"
+      ]
+    },
+    {
+      "path": "admin-web/src/App.tsx",
+      "bytes": 3571,
+      "lines": 114,
+      "sha256": "13ce027b252fb5bc50c4114e76f7b851ff64ec2fe0553cb5718f96bc9ccc68b9",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "antd",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@ant-design/icons",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "./auth/AuthContext",
+          "target": "admin-web/src/auth/AuthContext.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./pages/LoginPage",
+          "target": "admin-web/src/pages/LoginPage.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./pages/UsersPage",
+          "target": "admin-web/src/pages/UsersPage.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./pages/BindingsPage",
+          "target": "admin-web/src/pages/BindingsPage.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./pages/InviteCodesPage",
+          "target": "admin-web/src/pages/InviteCodesPage.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./pages/AnalyticsPage",
+          "target": "admin-web/src/pages/AnalyticsPage.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./pages/PopupPage",
+          "target": "admin-web/src/pages/PopupPage.tsx",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "App",
+          "start": 30,
+          "end": 113,
+          "lines": 84
+        }
+      ],
+      "exports": [
+        "App"
+      ],
+      "importedBy": [
+        "admin-web/src/main.tsx"
+      ]
+    },
+    {
+      "path": "admin-web/src/auth/AuthContext.tsx",
+      "bytes": 2819,
+      "lines": 86,
+      "sha256": "c5935e074c7cddaa2b6cd19d33fa555362fdb77b347965434bc18e7048efe7f2",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": true
+        },
+        {
+          "specifier": "../api/admin",
+          "target": "admin-web/src/api/admin.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../api/popup",
+          "target": "admin-web/src/api/popup.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./session",
+          "target": "admin-web/src/auth/session.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./session",
+          "target": "admin-web/src/auth/session.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "AuthProvider",
+          "start": 18,
+          "end": 68,
+          "lines": 51
+        }
+      ],
+      "exports": [
+        "AuthProvider",
+        "useAuth",
+        "useToken"
+      ],
+      "importedBy": [
+        "admin-web/src/App.tsx",
+        "admin-web/src/main.tsx",
+        "admin-web/src/pages/AnalyticsPage.tsx",
+        "admin-web/src/pages/BindingsPage.tsx",
+        "admin-web/src/pages/InviteCodesPage.tsx",
+        "admin-web/src/pages/LoginPage.tsx",
+        "admin-web/src/pages/PopupPage.tsx",
+        "admin-web/src/pages/UsersPage.tsx"
+      ]
+    },
+    {
+      "path": "admin-web/src/auth/session.ts",
+      "bytes": 763,
+      "lines": 35,
+      "sha256": "87f1be53d09e62482f334bc742982595e17eeaab8aefb994d121702b466649c4",
+      "imports": [],
+      "functions": [],
+      "exports": [
+        "SessionUser",
+        "getToken",
+        "getUser",
+        "setSession",
+        "clearSession"
+      ],
+      "importedBy": [
+        "admin-web/src/auth/AuthContext.tsx"
+      ]
+    },
+    {
+      "path": "admin-web/src/components/PopupEditorModal.tsx",
+      "bytes": 8991,
+      "lines": 248,
+      "sha256": "19238eb379e1cae54aca8787b538585ce979d99d15b97371bdc7a41dff9adf93",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "antd",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "../api/popup",
+          "target": "admin-web/src/api/popup.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../api/popup",
+          "target": "admin-web/src/api/popup.ts",
+          "typeOnly": true
+        },
+        {
+          "specifier": "./RichTextEditor",
+          "target": "admin-web/src/components/RichTextEditor.tsx",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "PopupEditorModal",
+          "start": 49,
+          "end": 247,
+          "lines": 199
+        }
+      ],
+      "exports": [
+        "PopupEditorSubmit",
+        "PopupEditorModal"
+      ],
+      "importedBy": [
+        "admin-web/src/pages/PopupPage.tsx"
+      ]
+    },
+    {
+      "path": "admin-web/src/components/PopupVersionGuide.tsx",
+      "bytes": 5588,
+      "lines": 116,
+      "sha256": "1421737ec132fb059d5d5c649d43552eb70865fc79c426fcdf54951e3b658d72",
+      "imports": [
+        {
+          "specifier": "antd",
+          "target": null,
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [
+        "PopupVersionGuide"
+      ],
+      "importedBy": [
+        "admin-web/src/pages/PopupPage.tsx"
+      ]
+    },
+    {
+      "path": "admin-web/src/components/PopupViewersModal.tsx",
+      "bytes": 3794,
+      "lines": 123,
+      "sha256": "f879458f175b192e1fa0bbbbf007b42864965b7f9854c4c49d7874ab6d712639",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "antd",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "../api/popup",
+          "target": "admin-web/src/api/popup.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../api/popup",
+          "target": "admin-web/src/api/popup.ts",
+          "typeOnly": true
+        }
+      ],
+      "functions": [
+        {
+          "name": "PopupViewersModal",
+          "start": 27,
+          "end": 122,
+          "lines": 96
+        }
+      ],
+      "exports": [
+        "PopupViewersModal"
+      ],
+      "importedBy": [
+        "admin-web/src/pages/PopupPage.tsx"
+      ]
+    },
+    {
+      "path": "admin-web/src/components/RichTextEditor.tsx",
+      "bytes": 6039,
+      "lines": 154,
+      "sha256": "e6333a942d5a2f837e87cea8daa3726a2b6570b099b8b7d27017eb8cc7a17cbf",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@tiptap/react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@tiptap/starter-kit",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@tiptap/extension-underline",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@tiptap/extension-link",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@tiptap/extension-image",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@tiptap/extension-text-style",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@tiptap/extension-color",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "antd",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@ant-design/icons",
+          "target": null,
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "RichTextEditor",
+          "start": 41,
+          "end": 153,
+          "lines": 113
+        }
+      ],
+      "exports": [
+        "RichTextEditor"
+      ],
+      "importedBy": [
+        "admin-web/src/components/PopupEditorModal.tsx"
+      ]
+    },
+    {
+      "path": "admin-web/src/main.tsx",
+      "bytes": 669,
+      "lines": 26,
+      "sha256": "e4f3f35fa15fbece21115a06eae0e10dec96cd81c0893d9027dff78c6f2b39ce",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "react-dom/client",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "antd",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "antd/locale/zh_CN",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "dayjs",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "dayjs/locale/zh-cn",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "./auth/AuthContext",
+          "target": "admin-web/src/auth/AuthContext.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "./App",
+          "target": "admin-web/src/App.tsx",
+          "typeOnly": false
+        }
+      ],
+      "functions": [],
+      "exports": [],
+      "importedBy": []
+    },
+    {
+      "path": "admin-web/src/pages/AnalyticsPage.tsx",
+      "bytes": 11852,
+      "lines": 337,
+      "sha256": "b0ab5c8e4ad0b02af95e3b2f121a30aa2c226d2a0c06596b91a30486f2586b12",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "antd",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "antd/es/table",
+          "target": null,
+          "typeOnly": true
+        },
+        {
+          "specifier": "@ant-design/icons",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "../api/admin",
+          "target": "admin-web/src/api/admin.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../api/admin",
+          "target": "admin-web/src/api/admin.ts",
+          "typeOnly": true
+        },
+        {
+          "specifier": "../auth/AuthContext",
+          "target": "admin-web/src/auth/AuthContext.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../utils/format",
+          "target": "admin-web/src/utils/format.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "AnalyticsPage",
+          "start": 70,
+          "end": 336,
+          "lines": 267
+        }
+      ],
+      "exports": [
+        "AnalyticsPage"
+      ],
+      "importedBy": [
+        "admin-web/src/App.tsx"
+      ]
+    },
+    {
+      "path": "admin-web/src/pages/BindingsPage.tsx",
+      "bytes": 6318,
+      "lines": 205,
+      "sha256": "5bf0ea02464ac525e8f07561d33c1cad18d0eb8a631190969e2779902a9550e8",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "antd",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "antd/es/table",
+          "target": null,
+          "typeOnly": true
+        },
+        {
+          "specifier": "@ant-design/icons",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "../api/admin",
+          "target": "admin-web/src/api/admin.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../api/admin",
+          "target": "admin-web/src/api/admin.ts",
+          "typeOnly": true
+        },
+        {
+          "specifier": "../auth/AuthContext",
+          "target": "admin-web/src/auth/AuthContext.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../utils/format",
+          "target": "admin-web/src/utils/format.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "BindingsPage",
+          "start": 21,
+          "end": 204,
+          "lines": 184
+        }
+      ],
+      "exports": [
+        "BindingsPage"
+      ],
+      "importedBy": [
+        "admin-web/src/App.tsx"
+      ]
+    },
+    {
+      "path": "admin-web/src/pages/InviteCodesPage.tsx",
+      "bytes": 5546,
+      "lines": 192,
+      "sha256": "a8cc6fc89ac1f64227e53c38984770df72a33ac4f993a70a7d86164491cac312",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "antd",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "antd/es/table",
+          "target": null,
+          "typeOnly": true
+        },
+        {
+          "specifier": "@ant-design/icons",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "../api/admin",
+          "target": "admin-web/src/api/admin.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../api/admin",
+          "target": "admin-web/src/api/admin.ts",
+          "typeOnly": true
+        },
+        {
+          "specifier": "../auth/AuthContext",
+          "target": "admin-web/src/auth/AuthContext.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../utils/format",
+          "target": "admin-web/src/utils/format.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "InviteCodesPage",
+          "start": 24,
+          "end": 191,
+          "lines": 168
+        }
+      ],
+      "exports": [
+        "InviteCodesPage"
+      ],
+      "importedBy": [
+        "admin-web/src/App.tsx"
+      ]
+    },
+    {
+      "path": "admin-web/src/pages/LoginPage.tsx",
+      "bytes": 2830,
+      "lines": 86,
+      "sha256": "ac9dd59ee3bf5ef6429c5c590d368968a957f79198e5df5556ce77c8fd79e08d",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "antd",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@ant-design/icons",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "../auth/AuthContext",
+          "target": "admin-web/src/auth/AuthContext.tsx",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "LoginPage",
+          "start": 8,
+          "end": 85,
+          "lines": 78
+        }
+      ],
+      "exports": [
+        "LoginPage"
+      ],
+      "importedBy": [
+        "admin-web/src/App.tsx"
+      ]
+    },
+    {
+      "path": "admin-web/src/pages/PopupPage.tsx",
+      "bytes": 11389,
+      "lines": 304,
+      "sha256": "cad8848ee767d183950393f753149964a82c61a5967684e776f28d3810fe5a34",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "antd",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "@ant-design/icons",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "../api/popup",
+          "target": "admin-web/src/api/popup.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../api/popup",
+          "target": "admin-web/src/api/popup.ts",
+          "typeOnly": true
+        },
+        {
+          "specifier": "../auth/AuthContext",
+          "target": "admin-web/src/auth/AuthContext.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../components/PopupEditorModal",
+          "target": "admin-web/src/components/PopupEditorModal.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../components/PopupViewersModal",
+          "target": "admin-web/src/components/PopupViewersModal.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../components/PopupVersionGuide",
+          "target": "admin-web/src/components/PopupVersionGuide.tsx",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "PopupPage",
+          "start": 37,
+          "end": 303,
+          "lines": 267
+        }
+      ],
+      "exports": [
+        "PopupPage"
+      ],
+      "importedBy": [
+        "admin-web/src/App.tsx"
+      ]
+    },
+    {
+      "path": "admin-web/src/pages/UsersPage.tsx",
+      "bytes": 8852,
+      "lines": 296,
+      "sha256": "1c326ebb8d2524c284d8b3c96e3bbff4c39472e67e558e03027c37bcb0d9ac57",
+      "imports": [
+        {
+          "specifier": "react",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "antd",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "antd/es/table",
+          "target": null,
+          "typeOnly": true
+        },
+        {
+          "specifier": "@ant-design/icons",
+          "target": null,
+          "typeOnly": false
+        },
+        {
+          "specifier": "../api/admin",
+          "target": "admin-web/src/api/admin.ts",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../api/admin",
+          "target": "admin-web/src/api/admin.ts",
+          "typeOnly": true
+        },
+        {
+          "specifier": "../auth/AuthContext",
+          "target": "admin-web/src/auth/AuthContext.tsx",
+          "typeOnly": false
+        },
+        {
+          "specifier": "../utils/format",
+          "target": "admin-web/src/utils/format.ts",
+          "typeOnly": false
+        }
+      ],
+      "functions": [
+        {
+          "name": "UsersPage",
+          "start": 32,
+          "end": 295,
+          "lines": 264
+        }
+      ],
+      "exports": [
+        "UsersPage"
+      ],
+      "importedBy": [
+        "admin-web/src/App.tsx"
+      ]
+    },
+    {
+      "path": "admin-web/src/utils/format.ts",
+      "bytes": 739,
+      "lines": 14,
+      "sha256": "df453e85efc478e30835b6b291249e4acfe95332fa36917d17047b73bdc2a4e2",
+      "imports": [],
+      "functions": [],
+      "exports": [
+        "formatDateTime"
+      ],
+      "importedBy": [
+        "admin-web/src/pages/AnalyticsPage.tsx",
+        "admin-web/src/pages/BindingsPage.tsx",
+        "admin-web/src/pages/InviteCodesPage.tsx",
+        "admin-web/src/pages/UsersPage.tsx"
+      ]
+    },
+    {
+      "path": "admin-web/src/vite-env.d.ts",
+      "bytes": 39,
+      "lines": 2,
+      "sha256": "424faf9241dd699dda995b367ed36665732da1e6ec1f33b2fd40394488ecac92",
+      "imports": [],
+      "functions": [],
+      "exports": [],
+      "importedBy": []
+    }
+  ],
+  "cycles": []
+}

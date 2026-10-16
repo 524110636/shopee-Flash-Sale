@@ -1,0 +1,125 @@
+{
+  "kind": "native chrome.action popup; real local backend; all Shopee HTTP synthetic",
+  "checks": [
+    {
+      "name": "native-home-width",
+      "passed": true,
+      "observed": {
+        "innerWidth": 500,
+        "innerHeight": 500,
+        "docWidth": 500,
+        "scrollWidth": 500,
+        "rootWidth": 500,
+        "css": "w-[500px] min-w-[500px] min-h-[500px] max-h-[600px] overflow-y-auto bg-background"
+      }
+    },
+    {
+      "name": "native-workpage-width",
+      "passed": true,
+      "observed": {
+        "innerWidth": 500,
+        "innerHeight": 600,
+        "docWidth": 500,
+        "scrollWidth": 500,
+        "rootWidth": 500,
+        "css": "w-[500px] min-w-[500px] min-h-[500px] max-h-[600px] overflow-y-auto bg-background"
+      }
+    },
+    {
+      "name": "native-default-pair",
+      "passed": true,
+      "observed": {
+        "startDate": "2026-10-16",
+        "startTime": "23:30",
+        "restoreDate": "2026-10-17",
+        "restoreTime": "01:30",
+        "tablist": false,
+        "manual": false
+      }
+    },
+    {
+      "name": "native-no-manual-tab",
+      "passed": true,
+      "observed": {
+        "startDate": "2026-10-16",
+        "startTime": "23:30",
+        "restoreDate": "2026-10-17",
+        "restoreTime": "01:30",
+        "tablist": false,
+        "manual": false
+      }
+    },
+    {
+      "name": "native-date-follows-while-custom-time-kept",
+      "passed": false,
+      "observed": {
+        "date": "2100-01-01",
+        "time": "04:15",
+        "startDate": "2100-01-02"
+      }
+    },
+    {
+      "name": "native-modal-fits",
+      "passed": true,
+      "observed": {
+        "x": 40,
+        "width": 420,
+        "right": 460,
+        "viewport": 500,
+        "rows": 12
+      }
+    },
+    {
+      "name": "native-modal-actual-confirm",
+      "passed": true,
+      "observed": {
+        "excluded": 1
+      }
+    },
+    {
+      "name": "native-modal-cancel-keeps-confirmed",
+      "passed": true,
+      "observed": {
+        "expectedExcluded": 1
+      }
+    },
+    {
+      "name": "native-no-new-single-phase-plan-form",
+      "passed": false,
+      "observed": {
+        "editors": 2,
+        "saveButtons": 2
+      }
+    }
+  ],
+  "metrics": {
+    "home": {
+      "innerWidth": 500,
+      "innerHeight": 500,
+      "docWidth": 500,
+      "scrollWidth": 500,
+      "rootWidth": 500,
+      "css": "w-[500px] min-w-[500px] min-h-[500px] max-h-[600px] overflow-y-auto bg-background"
+    },
+    "shipping": {
+      "innerWidth": 500,
+      "innerHeight": 600,
+      "docWidth": 500,
+      "scrollWidth": 500,
+      "rootWidth": 500,
+      "css": "w-[500px] min-w-[500px] min-h-[500px] max-h-[600px] overflow-y-auto bg-background"
+    }
+  },
+  "target": {
+    "type": "page",
+    "url": "chrome-extension://pgnemiifhpihjjphafeienacddicleej/popup.html"
+  },
+  "legacyUI": {
+    "body": "全部功能\n限时特卖助手\n已连接\n管理\niso-admin@shipping-once.local\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\n????\n当前\n使用建议 · 优先安排在周末\n\n建议尽量在周末使用，避免安排在其他时段。执行期间请保持设备开机、浏览器运行并联网，以减少任务中断。\n\n关机或断网时如何处理\n1\n设置常规备货天数\n\n恢复时，参与商品统一改为所选天数\n\n备货天数\n2 天\n3 天\n4 天\n5 天\n6 天\n7 天\n8 天\n9 天\n10 天\n\n支持 2–10 天；切现货固定为 1 天。\n\n2\n安排切换时间\n\n日期和时间由你决定，支持跨天\n\n切换为现货\n1 天\n开始日期\n开始时间\n恢复常规备货\n7 天\n恢复日期\n恢复时间\n执行方式\n单次执行\n固定\n\n切到 1 天后按时恢复常规天数，完成这一组操作即结束，不会自动安排下一次。\n\n3\n确认本次安排\n\n确认两次操作的日期、时间和恢复天数\n\n1月2日 23:30，范围内商品切换为 1 天（排除 1 个）\n\n↓\n\n1月1日 04:15，恢复为 7 天\n\n台湾时间（Asia/Taipei）\n\n排除商品\n\n已排除 1 个商品\n\n设定排除商品\n修改范围\n全部商品\n在线商品\n下架商品\n自动管理店铺物流（默认关闭）\n\n修改前保存渠道状态，完成本次修改后立刻恢复本次影响的渠道；两次修改之间不会一直关闭物流。\n\n恢复时间必须严格晚于开始时间\n\n确认并安排任务\n旧版定时计划（已停用重复）\n\n旧的「每日重复」已停用，请改用上方「定时切换」安排单次执行（可指定开始与恢复时间）。 下面只保留历史记录与暂停状态；需要按时间执行请到「定时切换」。\n\n计划 1\n启用\n单次（不支持每日重复）\n现货（1 天）\n自动管理物流\n下一次：未启用\n保存\n关闭\n\n需处理：计划未绑定店铺与账号归属，请重新保存\n\n计划 2\n启用\n单次（不支持每日重复）\n现货（1 天）\n自动管理物流\n下一次：未启用\n保存\n关闭\n\n需处理：计划未绑定店铺与账号归属，请重新保存",
+    "saves": 2,
+    "legacyEditors": 2
+  },
+  "error": "Error: worker.evaluate: Error: Failed to open popup.",
+  "lastBody": null,
+  "profileRemoved": true
+}

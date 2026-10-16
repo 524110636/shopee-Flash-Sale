@@ -1,0 +1,843 @@
+{
+  "mode": "normal",
+  "diagnostic": {
+    "diagnostics": [
+      {
+        "access": "denied",
+        "actualShopId": 77,
+        "actualUserId": 2,
+        "at": 1792026787488,
+        "blockedBy": "access-denied",
+        "contextChange": "blocked-write",
+        "expectedShopId": 77,
+        "expectedUserId": 2,
+        "reason": "fixture permission revoked",
+        "stage": "first-batch",
+        "taskId": "ship-1792026787462-ifrotr",
+        "writeSent": false
+      },
+      {
+        "access": "allowed",
+        "actualShopId": 77,
+        "actualUserId": 2,
+        "at": 1792026787615,
+        "blockedBy": "settings-mismatch",
+        "contentDiffs": [
+          {
+            "detail": "天数 7 → 3",
+            "kind": "settings-days"
+          }
+        ],
+        "contentValues": [
+          {
+            "field": "days",
+            "normalized": "3",
+            "rawType": "number"
+          },
+          {
+            "field": "range",
+            "normalized": "all",
+            "rawType": "string"
+          },
+          {
+            "field": "excludeIds",
+            "normalized": "",
+            "rawType": "string"
+          },
+          {
+            "field": "toggleLogistics",
+            "normalized": "false",
+            "rawType": "boolean"
+          }
+        ],
+        "expectedShopId": 77,
+        "expectedUserId": 2,
+        "reason": "确认内容与预览不一致：天数 7 → 3",
+        "requestId": "review-0.393550257809297",
+        "stage": "start-content-check",
+        "writeSent": false
+      },
+      {
+        "access": "allowed",
+        "actualShopId": 77,
+        "actualUserId": 2,
+        "at": 1792026787708,
+        "blockedBy": "settings-mismatch",
+        "contentDiffs": [
+          {
+            "detail": "多了 1 个预览外商品（如 202）",
+            "kind": "items-extra"
+          }
+        ],
+        "contentValues": [
+          {
+            "field": "days",
+            "normalized": "7",
+            "rawType": "number"
+          },
+          {
+            "field": "range",
+            "normalized": "all",
+            "rawType": "string"
+          },
+          {
+            "field": "excludeIds",
+            "normalized": "",
+            "rawType": "string"
+          },
+          {
+            "field": "toggleLogistics",
+            "normalized": "false",
+            "rawType": "boolean"
+          }
+        ],
+        "expectedShopId": 77,
+        "expectedUserId": 2,
+        "reason": "确认内容与预览不一致：多了 1 个预览外商品（如 202）",
+        "requestId": "review-0.13671322342188708",
+        "stage": "start-content-check",
+        "writeSent": false
+      },
+      {
+        "access": "allowed",
+        "actualShopId": 77,
+        "actualUserId": 2,
+        "at": 1792026787813,
+        "blockedBy": "logistics-flag-type",
+        "contentValues": [
+          {
+            "field": "days",
+            "normalized": "7",
+            "rawType": "number"
+          },
+          {
+            "field": "range",
+            "normalized": "all",
+            "rawType": "string"
+          },
+          {
+            "field": "excludeIds",
+            "normalized": "",
+            "rawType": "string"
+          },
+          {
+            "field": "toggleLogistics",
+            "normalized": "(非boolean)",
+            "rawType": "string"
+          }
+        ],
+        "expectedShopId": 77,
+        "expectedUserId": 2,
+        "reason": "「自动管理店铺物流」不是 boolean（实际 string），已拒绝",
+        "requestId": "review-0.09063141173005707",
+        "stage": "start-logistics-flag-type",
+        "writeSent": false
+      },
+      {
+        "access": "not-checked",
+        "actualShopId": 77,
+        "actualUserId": 3,
+        "at": 1792026788059,
+        "blockedBy": "account-changed",
+        "contextChange": "blocked-write",
+        "credentialChanged": false,
+        "expectedShopId": 77,
+        "expectedUserId": 2,
+        "reason": "发送前账号已变化（2 → 3），已停止该请求",
+        "stage": "first-batch",
+        "taskId": "ship-1792026788000-wpz4f6",
+        "writeSent": false
+      },
+      {
+        "access": "denied",
+        "actualShopId": 77,
+        "actualUserId": 3,
+        "at": 1792026788345,
+        "blockedBy": "access-denied",
+        "contextChange": "blocked-write",
+        "credentialChanged": true,
+        "expectedShopId": 77,
+        "expectedUserId": 3,
+        "reason": "刷新后的上下文已无权限：fixture permission revoked",
+        "stage": "first-batch",
+        "taskId": "ship-1792026788236-rbel6b",
+        "writeSent": false
+      },
+      {
+        "access": "denied",
+        "actualShopId": 77,
+        "actualUserId": 3,
+        "at": 1792026788575,
+        "blockedBy": "access-denied",
+        "contextChange": "blocked-write",
+        "credentialChanged": true,
+        "expectedShopId": 77,
+        "expectedUserId": 3,
+        "reason": "刷新后的上下文已无权限：无法连接后端服务: fixture refreshed access network unavailable",
+        "stage": "first-batch",
+        "taskId": "ship-1792026788515-6cpxb7",
+        "writeSent": false
+      },
+      {
+        "access": "allowed",
+        "actualShopId": 77,
+        "actualUserId": 3,
+        "at": 1792026788791,
+        "contextChange": "same-owner-refresh",
+        "credentialChanged": true,
+        "expectedShopId": 77,
+        "expectedUserId": 3,
+        "reason": "仅凭据刷新，归属未变且新上下文权限已核验通过",
+        "stage": "first-batch",
+        "taskId": "ship-1792026788729-wlgrzy",
+        "writeSent": false
+      },
+      {
+        "access": "denied",
+        "actualShopId": 77,
+        "actualUserId": 3,
+        "at": 1792026789043,
+        "blockedBy": "access-denied",
+        "contextChange": "blocked-write",
+        "expectedShopId": 77,
+        "expectedUserId": 3,
+        "reason": "fixture permission revoked",
+        "stage": "close-channel",
+        "taskId": "ship-1792026788977-vbaco1",
+        "writeSent": false
+      },
+      {
+        "access": "denied",
+        "actualShopId": 77,
+        "actualUserId": 3,
+        "at": 1792026789296,
+        "blockedBy": "access-denied",
+        "contextChange": "blocked-write",
+        "expectedShopId": 77,
+        "expectedUserId": 3,
+        "reason": "无法连接后端服务: fixture refreshed access network unavailable",
+        "stage": "close-channel",
+        "taskId": "ship-1792026789226-e15l6e",
+        "writeSent": false
+      },
+      {
+        "access": "denied",
+        "actualShopId": 77,
+        "actualUserId": 3,
+        "at": 1792026789786,
+        "blockedBy": "access-denied",
+        "contextChange": "blocked-write",
+        "credentialChanged": true,
+        "expectedShopId": 77,
+        "expectedUserId": 3,
+        "reason": "刷新后的上下文已无权限：fixture permission revoked",
+        "stage": "restore-channel",
+        "taskId": "review-restore-matrix",
+        "writeSent": false
+      }
+    ],
+    "waiting": false,
+    "flag": false,
+    "validations": [
+      {
+        "credentialTag": "old",
+        "keys": [
+          "spcCds",
+          "action",
+          "shopId"
+        ]
+      },
+      {
+        "credentialTag": "fresh",
+        "keys": [
+          "spcCds",
+          "action",
+          "shopId"
+        ]
+      }
+    ]
+  },
+  "writes": [
+    {
+      "kind": "product",
+      "items": [
+        {
+          "id": 101,
+          "category_path": "1/2",
+          "pre_order": true,
+          "days_to_ship": 7
+        }
+      ]
+    },
+    {
+      "kind": "product",
+      "items": [
+        {
+          "id": 101,
+          "category_path": "1/2",
+          "pre_order": true,
+          "days_to_ship": 7
+        }
+      ]
+    },
+    {
+      "kind": "channel",
+      "channelId": 9,
+      "enabled": false
+    },
+    {
+      "kind": "product",
+      "items": [
+        {
+          "id": 101,
+          "category_path": "1/2",
+          "pre_order": true,
+          "days_to_ship": 7
+        }
+      ]
+    },
+    {
+      "kind": "channel",
+      "channelId": 9,
+      "enabled": true
+    }
+  ],
+  "requests": [
+    {
+      "path": "/portal/product/list/live/all",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/update_product/",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/update_product/",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/logistics/get_channel_list",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/settings/update_channel_toggle",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/update_product/",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/settings/update_channel_toggle",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    }
+  ]
+}

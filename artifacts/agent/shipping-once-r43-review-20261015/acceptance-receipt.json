@@ -1,0 +1,28 @@
+{
+  "conclusion": "not accepted; one P2 R7 local modal draft remains; section46 only",
+  "actualMV3UI": {
+    "total": 3,
+    "passed": 3
+  },
+  "specStoreModal": {
+    "total": 12,
+    "passed": 9,
+    "sameRootFailures": 3
+  },
+  "R8": "passed original source AST and live identity read-only; developer lifecycle not independently rerun",
+  "units": {
+    "command": "npx vitest run tests/unit/shipping-rules.test.ts tests/unit/shipping-store-isolation.test.ts tests/unit/shipping-exclude-modal.test.ts tests/unit/feature-navigation.test.ts tests/unit/popup-policy-host.test.ts",
+    "filesPassed": 5,
+    "testsPassed": 96,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "profileRemoved": true,
+  "coreHashesUnchanged": 5,
+  "productSourcesAndPackageUnchanged": true,
+  "oldEvidenceWritten": false,
+  "realShopeeRequests": 0,
+  "servicesStartedOrStopped": false,
+  "temporaryBytes": 63461,
+  "evidenceBytesExcludingReceipt": 96609
+}

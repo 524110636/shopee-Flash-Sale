@@ -1,0 +1,10 @@
+﻿{
+    "mode":  "source switch with process/network operations mocked; no service operations",
+    "expectedLaunchedProcess":  999,
+    "actualFixtureListener":  777,
+    "actualFixtureCommandLine":  "node C:\\foreign\\backend\\src\\index.ts",
+    "recordedPid":  777,
+    "recordedWorkDir":  "D:\\shopee_xm\\虾皮限时特卖-更新迭代\\.agent-tmp\\shipping-once-r40-review-20261015\\standards",
+    "recordedDbPath":  "D:\\shopee_xm\\虾皮限时特卖-更新迭代\\.agent-tmp\\shipping-once-r40-review-20261015\\standards\\data\\fixture.db",
+    "adoptedUnrelatedListener":  true
+}

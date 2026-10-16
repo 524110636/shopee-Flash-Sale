@@ -1,0 +1,717 @@
+{
+  "scope": "actual static MV3 and synthetic fixtures; all HTTP intercepted; no backend/DB/live store",
+  "package": ".agent-tmp\\shipping-m02-20261014\\iso-output\\chrome-mv3",
+  "backgroundSha256": "1a4529c3bf8ac1f86d3e51f1b527824c9b259fca37fb07247ed2e115bca219f0",
+  "results": [
+    {
+      "name": "actual homepage opens shipping interface",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "normal fixture preview contains one target",
+      "expected": 1,
+      "observed": 1,
+      "meetsContract": true
+    },
+    {
+      "name": "normal actual worker completes product write",
+      "expected": "completed",
+      "observed": "completed",
+      "meetsContract": true
+    },
+    {
+      "name": "actual request sets pre_order and days_to_ship",
+      "expected": {
+        "pre_order": true,
+        "days_to_ship": 7
+      },
+      "observed": {
+        "pre_order": true,
+        "days_to_ship": 7
+      },
+      "meetsContract": true
+    },
+    {
+      "name": "switching shop invalidates original preview with zero writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "same-shop account switch invalidates original preview with zero writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "actual HTTP 403 before submission prevents product writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "different valid days with original preview are rejected",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "extra product outside original preview is rejected",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "runtime logistics string cannot turn confirmed false into channel writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "runtime logistics actual worker observation",
+      "observed": {
+        "channelWrites": []
+      }
+    },
+    {
+      "name": "same seller Cookie with backend user changed before send prevents product writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "account switch at validation window",
+      "observed": {
+        "taskOwnerUserId": 2,
+        "currentBackendUser": 3,
+        "taskStatus": "failed",
+        "diagnostics": [
+          {
+            "access": "denied",
+            "actualShopId": 77,
+            "actualUserId": 2,
+            "at": 1792021574064,
+            "blockedBy": "access-denied",
+            "contextChange": "blocked-write",
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "fixture permission revoked",
+            "stage": "first-batch",
+            "taskId": "ship-1792021574043-19e0in",
+            "writeSent": false
+          },
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 2,
+            "at": 1792021574200,
+            "blockedBy": "settings-mismatch",
+            "contentDiffs": [
+              {
+                "detail": "天数 7 → 3",
+                "kind": "settings-days"
+              }
+            ],
+            "contentValues": [
+              {
+                "field": "days",
+                "normalized": "3",
+                "rawType": "number"
+              },
+              {
+                "field": "range",
+                "normalized": "all",
+                "rawType": "string"
+              },
+              {
+                "field": "excludeIds",
+                "normalized": "",
+                "rawType": "string"
+              },
+              {
+                "field": "toggleLogistics",
+                "normalized": "false",
+                "rawType": "boolean"
+              }
+            ],
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "确认内容与预览不一致：天数 7 → 3",
+            "requestId": "review-0.09344227892989765",
+            "stage": "start-content-check",
+            "writeSent": false
+          },
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 2,
+            "at": 1792021574290,
+            "blockedBy": "settings-mismatch",
+            "contentDiffs": [
+              {
+                "detail": "多了 1 个预览外商品（如 202）",
+                "kind": "items-extra"
+              }
+            ],
+            "contentValues": [
+              {
+                "field": "days",
+                "normalized": "7",
+                "rawType": "number"
+              },
+              {
+                "field": "range",
+                "normalized": "all",
+                "rawType": "string"
+              },
+              {
+                "field": "excludeIds",
+                "normalized": "",
+                "rawType": "string"
+              },
+              {
+                "field": "toggleLogistics",
+                "normalized": "false",
+                "rawType": "boolean"
+              }
+            ],
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "确认内容与预览不一致：多了 1 个预览外商品（如 202）",
+            "requestId": "review-0.41572139291339216",
+            "stage": "start-content-check",
+            "writeSent": false
+          },
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 2,
+            "at": 1792021574369,
+            "blockedBy": "logistics-flag-type",
+            "contentValues": [
+              {
+                "field": "days",
+                "normalized": "7",
+                "rawType": "number"
+              },
+              {
+                "field": "range",
+                "normalized": "all",
+                "rawType": "string"
+              },
+              {
+                "field": "excludeIds",
+                "normalized": "",
+                "rawType": "string"
+              },
+              {
+                "field": "toggleLogistics",
+                "normalized": "(非boolean)",
+                "rawType": "string"
+              }
+            ],
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "「自动管理店铺物流」不是 boolean（实际 string），已拒绝",
+            "requestId": "review-0.8553235189045207",
+            "stage": "start-logistics-flag-type",
+            "writeSent": false
+          },
+          {
+            "access": "not-checked",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792021574483,
+            "blockedBy": "account-changed",
+            "contextChange": "blocked-write",
+            "credentialChanged": false,
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "发送前账号已变化（2 → 3），已停止该请求",
+            "stage": "first-batch",
+            "taskId": "ship-1792021574462-vxmof1",
+            "writeSent": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "refreshed same-owner context denied by current server policy sends no product writes",
+      "expected": 0,
+      "observed": 1,
+      "meetsContract": false
+    },
+    {
+      "name": "same-owner refreshed context actual worker observation",
+      "observed": {
+        "taskOwner": 3,
+        "currentBackendUser": 3,
+        "permissionRevoked": true,
+        "taskStatus": "completed",
+        "productWrites": 1,
+        "diagnostics": [
+          {
+            "access": "denied",
+            "actualShopId": 77,
+            "actualUserId": 2,
+            "at": 1792021574064,
+            "blockedBy": "access-denied",
+            "contextChange": "blocked-write",
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "fixture permission revoked",
+            "stage": "first-batch",
+            "taskId": "ship-1792021574043-19e0in",
+            "writeSent": false
+          },
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 2,
+            "at": 1792021574200,
+            "blockedBy": "settings-mismatch",
+            "contentDiffs": [
+              {
+                "detail": "天数 7 → 3",
+                "kind": "settings-days"
+              }
+            ],
+            "contentValues": [
+              {
+                "field": "days",
+                "normalized": "3",
+                "rawType": "number"
+              },
+              {
+                "field": "range",
+                "normalized": "all",
+                "rawType": "string"
+              },
+              {
+                "field": "excludeIds",
+                "normalized": "",
+                "rawType": "string"
+              },
+              {
+                "field": "toggleLogistics",
+                "normalized": "false",
+                "rawType": "boolean"
+              }
+            ],
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "确认内容与预览不一致：天数 7 → 3",
+            "requestId": "review-0.09344227892989765",
+            "stage": "start-content-check",
+            "writeSent": false
+          },
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 2,
+            "at": 1792021574290,
+            "blockedBy": "settings-mismatch",
+            "contentDiffs": [
+              {
+                "detail": "多了 1 个预览外商品（如 202）",
+                "kind": "items-extra"
+              }
+            ],
+            "contentValues": [
+              {
+                "field": "days",
+                "normalized": "7",
+                "rawType": "number"
+              },
+              {
+                "field": "range",
+                "normalized": "all",
+                "rawType": "string"
+              },
+              {
+                "field": "excludeIds",
+                "normalized": "",
+                "rawType": "string"
+              },
+              {
+                "field": "toggleLogistics",
+                "normalized": "false",
+                "rawType": "boolean"
+              }
+            ],
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "确认内容与预览不一致：多了 1 个预览外商品（如 202）",
+            "requestId": "review-0.41572139291339216",
+            "stage": "start-content-check",
+            "writeSent": false
+          },
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 2,
+            "at": 1792021574369,
+            "blockedBy": "logistics-flag-type",
+            "contentValues": [
+              {
+                "field": "days",
+                "normalized": "7",
+                "rawType": "number"
+              },
+              {
+                "field": "range",
+                "normalized": "all",
+                "rawType": "string"
+              },
+              {
+                "field": "excludeIds",
+                "normalized": "",
+                "rawType": "string"
+              },
+              {
+                "field": "toggleLogistics",
+                "normalized": "(非boolean)",
+                "rawType": "string"
+              }
+            ],
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "「自动管理店铺物流」不是 boolean（实际 string），已拒绝",
+            "requestId": "review-0.8553235189045207",
+            "stage": "start-logistics-flag-type",
+            "writeSent": false
+          },
+          {
+            "access": "not-checked",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792021574483,
+            "blockedBy": "account-changed",
+            "contextChange": "blocked-write",
+            "credentialChanged": false,
+            "expectedShopId": 77,
+            "expectedUserId": 2,
+            "reason": "发送前账号已变化（2 → 3），已停止该请求",
+            "stage": "first-batch",
+            "taskId": "ship-1792021574462-vxmof1",
+            "writeSent": false
+          },
+          {
+            "access": "allowed",
+            "actualShopId": 77,
+            "actualUserId": 3,
+            "at": 1792021574622,
+            "contextChange": "same-owner-refresh",
+            "credentialChanged": true,
+            "expectedShopId": 77,
+            "expectedUserId": 3,
+            "reason": "仅凭据刷新，归属未变",
+            "stage": "first-batch",
+            "taskId": "ship-1792021574604-romfeh",
+            "writeSent": false
+          }
+        ]
+      }
+    }
+  ],
+  "requests": [
+    {
+      "path": "/portal/product/list/live/all",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/update_product/",
+      "method": "POST"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/search_product_list_v2/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/marketing/v4/shop_flash_sale/get_shop_flash_sale_list/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v2/login/",
+      "method": "GET"
+    },
+    {
+      "path": "/api/v3/product/update_product/",
+      "method": "POST"
+    }
+  ],
+  "writes": [
+    {
+      "kind": "product",
+      "items": [
+        {
+          "id": 101,
+          "category_path": "1/2",
+          "pre_order": true,
+          "days_to_ship": 7
+        }
+      ]
+    },
+    {
+      "kind": "product",
+      "items": [
+        {
+          "id": 101,
+          "category_path": "1/2",
+          "pre_order": true,
+          "days_to_ship": 7
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,257 @@
+{
+  "mode": "restore-resume",
+  "before": {
+    "_shippingGroups": {
+      "active": {
+        "groupId": "g",
+        "revision": 3,
+        "executionMode": "once",
+        "ownerShopId": 1,
+        "ownerUserId": 1,
+        "schedule": {
+          "startAt": 1792555200000,
+          "restoreAt": 1792558800000,
+          "spotDays": 1,
+          "regularDays": 8
+        },
+        "config": {
+          "range": "all",
+          "excludeIds": "",
+          "toggleLogistics": false
+        },
+        "phase": "restoring",
+        "claimedStages": [
+          "spot",
+          "restore"
+        ],
+        "spotTaskId": null,
+        "restoreTaskId": "ship-1792558800001-g1uc52",
+        "reconciledTaskIds": [],
+        "confirmedSpotItemIds": [
+          "1"
+        ],
+        "items": [
+          {
+            "itemId": "1",
+            "name": "P1",
+            "spot": "success",
+            "restore": "pending"
+          }
+        ],
+        "pendingItemIds": [],
+        "message": "正在恢复常规备货天数",
+        "error": null,
+        "createdAt": 1792555199000,
+        "updatedAt": 1792558800001
+      },
+      "lastFinished": null,
+      "updatedAt": 1792558800001
+    },
+    "_shippingTask": {
+      "taskId": "ship-1792558800001-g1uc52",
+      "requestId": "g:restore:3",
+      "shopId": 1,
+      "ownerUserId": 1,
+      "source": "group",
+      "groupId": "g",
+      "groupPhase": "restore",
+      "mode": "preorder",
+      "days": 8,
+      "range": "all",
+      "excludeIds": [],
+      "status": "running",
+      "phase": "writing",
+      "total": 1,
+      "processed": 0,
+      "items": [],
+      "logistics": {
+        "requested": false,
+        "closeAttempted": false,
+        "closeCompleted": false,
+        "restoreAttempted": false,
+        "restoreCompleted": false,
+        "records": []
+      },
+      "checkpoints": [
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "1",
+          "at": 1792558800001
+        }
+      ],
+      "message": "开始修改 1 个商品的备货天数",
+      "error": null,
+      "startedAt": 1792558800001,
+      "updatedAt": 1792558800001,
+      "stopRequested": false
+    },
+    "_shippingDiagnostics": [
+      {
+        "stage": "verify-current-days",
+        "taskId": "ship-1792558800001-g1uc52",
+        "groupPhase": "restore",
+        "detail": "详情读取=1 次; 分类={}; 仍需恢复=1[1]",
+        "reason": "",
+        "at": 1792558800001
+      }
+    ]
+  },
+  "reconciled": true,
+  "after": {
+    "_shippingGroups": {
+      "active": {
+        "groupId": "g",
+        "revision": 10,
+        "executionMode": "once",
+        "ownerShopId": 1,
+        "ownerUserId": 1,
+        "schedule": {
+          "startAt": 1792555200000,
+          "restoreAt": 1792558800000,
+          "spotDays": 1,
+          "regularDays": 8
+        },
+        "config": {
+          "range": "all",
+          "excludeIds": "",
+          "toggleLogistics": false
+        },
+        "phase": "done",
+        "claimedStages": [
+          "spot",
+          "restore"
+        ],
+        "spotTaskId": null,
+        "restoreTaskId": null,
+        "reconciledTaskIds": [
+          "ship-1792558800001-g1uc52",
+          "ship-1792562400000-dwuse1"
+        ],
+        "confirmedSpotItemIds": [
+          "1"
+        ],
+        "items": [
+          {
+            "itemId": "1",
+            "name": "P1",
+            "spot": "success",
+            "restore": "success",
+            "alreadyAtTarget": true,
+            "reason": "回读确认当前已是目标 8 天，本次未发出写请求"
+          }
+        ],
+        "pendingItemIds": [],
+        "message": "需要恢复的商品都已确认恢复到常规天数",
+        "error": null,
+        "createdAt": 1792555199000,
+        "updatedAt": 1792562400000,
+        "finishedAt": 1792562400000
+      },
+      "lastFinished": null,
+      "updatedAt": 1792562400000
+    },
+    "_shippingTask": {
+      "taskId": "ship-1792562400000-dwuse1",
+      "requestId": "g:restore:6",
+      "shopId": 1,
+      "ownerUserId": 1,
+      "source": "group",
+      "groupId": "g",
+      "groupPhase": "restore",
+      "mode": "preorder",
+      "days": 8,
+      "range": "all",
+      "excludeIds": [],
+      "status": "completed",
+      "phase": "done",
+      "total": 1,
+      "processed": 0,
+      "items": [
+        {
+          "itemId": "1",
+          "name": "P1",
+          "days": 8,
+          "status": "success",
+          "verifiedAlreadyTarget": true,
+          "reason": "回读确认当前已是目标 8 天，本次未发出写请求"
+        }
+      ],
+      "logistics": {
+        "requested": false,
+        "closeAttempted": false,
+        "closeCompleted": false,
+        "restoreAttempted": false,
+        "restoreCompleted": false,
+        "records": []
+      },
+      "checkpoints": [],
+      "message": "恢复前核实：没有商品需要修改（已是目标天数或无法确认）",
+      "error": null,
+      "startedAt": 1792562400000,
+      "updatedAt": 1792562400000,
+      "stopRequested": false,
+      "finishedAt": 1792562400000
+    },
+    "_shippingDiagnostics": [
+      {
+        "stage": "verify-current-days",
+        "taskId": "ship-1792558800001-g1uc52",
+        "groupPhase": "restore",
+        "detail": "详情读取=1 次; 分类={}; 仍需恢复=1[1]",
+        "reason": "",
+        "at": 1792558800001
+      },
+      {
+        "stage": "group-reattach",
+        "taskId": "ship-1792558800001-g1uc52",
+        "reason": "[restore] group=g task.status=interrupted; 已发检查点=1; 已发商品[1]; 逐项结果=0; 分类={\"success/pending\":1}; 阶段 restoring → awaiting-restore; 义务=1; 待核实=1; 已消费任务=1",
+        "expectedShopId": null,
+        "expectedUserId": null,
+        "actualShopId": null,
+        "actualUserId": null,
+        "access": "not-checked",
+        "writeSent": false,
+        "at": 1792562400000
+      },
+      {
+        "stage": "verify-current-days",
+        "taskId": "ship-1792562400000-dwuse1",
+        "groupPhase": "restore",
+        "detail": "详情读取=1 次; 分类={\"already-target\":1}; 仍需恢复=0",
+        "reason": "",
+        "at": 1792562400000
+      },
+      {
+        "stage": "group-reattach",
+        "taskId": "ship-1792562400000-dwuse1",
+        "reason": "[restore] group=g task.status=completed; 已发检查点=0; 已发商品[]; 逐项结果=1; 分类={\"success/success\":1}; 阶段 restoring → awaiting-restore; 义务=1; 待核实=1; 已消费任务=2",
+        "expectedShopId": null,
+        "expectedUserId": null,
+        "actualShopId": null,
+        "actualUserId": null,
+        "access": "not-checked",
+        "writeSent": false,
+        "at": 1792562400000
+      }
+    ]
+  },
+  "days": 8,
+  "channel": true,
+  "detailReads": 1,
+  "validationCalls": 2,
+  "writes": [],
+  "logs": [
+    "[shipping-group] g 已从关联任务接回（restoring → awaiting-restore），义务 1 个、待核实 1 个，不重放未确认写",
+    "[shipping-group] g 阶段=awaiting-restore 决定=start-restore 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：started-restore",
+    "[shipping-group] g 阶段=restoring 决定=nothing 身份=ok 任务在跑=true 冲突=无",
+    "[shipping] 单次安排补检：idle",
+    "[shipping] 任务结束：completed 成功 1 / 失败 0 / 待核对 0",
+    "[shipping-group] g 已从关联任务接回（restoring → awaiting-restore），义务 1 个、待核实 1 个，不重放未确认写",
+    "[shipping-group] g 阶段=awaiting-restore 决定=start-restore 身份=ok 任务在跑=false 冲突=无",
+    "[shipping-group] g 阶段=awaiting-restore 决定=start-restore 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：done（需要恢复的商品都已确认恢复到常规天数）",
+    "[shipping] 单次安排补检：done（需要恢复的商品都已确认恢复到常规天数）"
+  ]
+}

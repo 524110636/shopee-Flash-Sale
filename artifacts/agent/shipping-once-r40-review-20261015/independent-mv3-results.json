@@ -1,0 +1,168 @@
+{
+  "scope": "delivered MV3, real local backend; all Shopee HTTP fixtures; independent boundary scenarios",
+  "extensionPath": "D:\\shopee_xm\\虾皮限时特卖-更新迭代\\.agent-tmp\\shipping-once-ui-20261015\\iso-output\\chrome-mv3",
+  "backendPort": 5791,
+  "observations": [
+    {
+      "id": "UI",
+      "expected": "single execution and three-step entry",
+      "actual": {
+        "single": true,
+        "overflow": false
+      },
+      "passed": true
+    },
+    {
+      "id": "legacy-daily-paused",
+      "expected": "zero product writes; archived/paused legacy plan",
+      "actual": {
+        "writes": 0,
+        "enabled": false,
+        "lastRunId": null
+      },
+      "passed": true
+    },
+    {
+      "id": "first-write-deadline",
+      "expected": "no first cut after start+5min",
+      "actual": {
+        "deadline": 1792069577447,
+        "writes": []
+      },
+      "passed": true
+    },
+    {
+      "id": "stop-cut-at-restore",
+      "expected": "no new 1-day batch at/after restoreAt",
+      "actual": {
+        "restoreAt": 1792069586837,
+        "writes": [
+          {
+            "at": 1792069581057,
+            "days": 1,
+            "count": 50,
+            "late": false
+          },
+          {
+            "at": 1792069581069,
+            "days": 1,
+            "count": 50,
+            "late": false
+          },
+          {
+            "at": 1792069589691,
+            "days": 8,
+            "count": 50,
+            "late": false
+          },
+          {
+            "at": 1792069589716,
+            "days": 8,
+            "count": 50,
+            "late": false
+          }
+        ]
+      },
+      "passed": true
+    },
+    {
+      "id": "restore-state-conflict",
+      "expected": "current 4-day conflict must not be blindly overwritten",
+      "actual": {
+        "writes": [],
+        "actualDays": 4,
+        "phase": "needs-attention"
+      },
+      "passed": true
+    },
+    {
+      "id": "actual-browser-crash-recovery",
+      "expected": "read back sent results and restore confirmed 1-day items after restart",
+      "actual": {
+        "before": {
+          "groupPhase": "cutting",
+          "confirmed": [],
+          "taskStatus": "running",
+          "checkpoints": [
+            {
+              "step": "update-product-batch",
+              "target": "2001",
+              "writeSent": true
+            },
+            {
+              "step": "update-product-batch",
+              "target": "2002",
+              "writeSent": true
+            },
+            {
+              "step": "update-product-batch",
+              "target": "2003",
+              "writeSent": true
+            },
+            {
+              "step": "update-product-batch",
+              "target": "2004",
+              "writeSent": true
+            },
+            {
+              "step": "update-product-batch",
+              "target": "2005",
+              "writeSent": true
+            },
+            {
+              "step": "update-product-batch",
+              "target": "2006",
+              "writeSent": true
+            },
+            {
+              "step": "update-product-batch",
+              "target": "2007",
+              "writeSent": true
+            },
+            {
+              "step": "update-product-batch",
+              "target": "2008",
+              "writeSent": true
+            },
+            {
+              "step": "update-product-batch",
+              "target": "2009",
+              "writeSent": true
+            },
+            {
+              "step": "update-product-batch",
+              "target": "2010",
+              "writeSent": true
+            },
+            {
+              "step": "update-product-batch",
+              "target": "2011",
+              "writeSent": true
+            },
+            {
+              "step": "update-product-batch",
+              "target": "2012",
+              "writeSent": true
+            }
+          ]
+        },
+        "after": {
+          "taskStatus": "completed"
+        },
+        "writes": [
+          {
+            "days": 1,
+            "count": 12
+          },
+          {
+            "days": 8,
+            "count": 12
+          }
+        ],
+        "actualDays": 8
+      },
+      "passed": true
+    }
+  ],
+  "profileRemoved": true
+}

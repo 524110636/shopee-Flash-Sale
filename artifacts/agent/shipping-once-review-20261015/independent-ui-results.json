@@ -1,0 +1,40 @@
+{
+  "extensionPath": "D:\\shopee_xm\\虾皮限时特卖-更新迭代\\.agent-tmp\\shipping-once-ui-20261015\\iso-output\\chrome-mv3",
+  "scope": "actual delivered UI, local backend, synthetic shop",
+  "observations": [
+    {
+      "id": "ui-live-progress",
+      "expected": "view follows persisted awaiting-restore",
+      "actual": {
+        "persisted": "awaiting-restore",
+        "status": [
+          "待开始单次执行将在 10-15 14:54 切换为现货 1 天"
+        ]
+      },
+      "passed": false
+    },
+    {
+      "id": "ui-live-completion",
+      "expected": "view shows completed group and allows next arrangement",
+      "actual": {
+        "persisted": "done",
+        "status": [
+          "待开始单次执行将在 10-15 14:54 切换为现货 1 天"
+        ],
+        "reuseButton": 0
+      },
+      "passed": false
+    },
+    {
+      "id": "stop-after-send",
+      "expected": "stop signal persisted while restoration remains",
+      "actual": {
+        "taskStopRequested": false,
+        "phase": "cutting",
+        "errorVisible": false
+      },
+      "passed": false
+    }
+  ],
+  "profileRemoved": true
+}

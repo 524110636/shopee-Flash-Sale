@@ -1,0 +1,107 @@
+[
+  {
+    "name": "absent_plans_key_has_no_fake_history_slots",
+    "pass": false,
+    "observed": {
+      "storageHasKey": false,
+      "hydratedPlans": [
+        {
+          "id": "plan1",
+          "date": "",
+          "enabled": false,
+          "lastRunAt": null,
+          "ownerShopId": null,
+          "ownerUserId": null
+        },
+        {
+          "id": "plan2",
+          "date": "",
+          "enabled": false,
+          "lastRunAt": null,
+          "ownerShopId": null,
+          "ownerUserId": null
+        }
+      ],
+      "storageAfterRead": {}
+    }
+  },
+  {
+    "name": "explicit_empty_array_has_no_history",
+    "pass": true,
+    "observed": {
+      "hydratedCount": 0
+    }
+  },
+  {
+    "name": "time_edit_no_longer_locks_default_restore_date",
+    "pass": true,
+    "observed": {
+      "draft": {
+        "regularDays": 7,
+        "startDate": "2026-10-21",
+        "startTime": "23:30",
+        "restoreDate": "2026-10-22",
+        "restoreTime": "04:15",
+        "restoreDateTouched": false,
+        "excludeIds": "",
+        "range": "all",
+        "toggleLogistics": false
+      }
+    }
+  },
+  {
+    "name": "explicit_restore_date_remains_user_controlled",
+    "pass": true,
+    "observed": {
+      "draft": {
+        "regularDays": 7,
+        "startDate": "2026-10-22",
+        "startTime": "23:30",
+        "restoreDate": "2026-10-28",
+        "restoreTime": "04:15",
+        "restoreDateTouched": true,
+        "excludeIds": "",
+        "range": "all",
+        "toggleLogistics": false
+      }
+    }
+  },
+  {
+    "name": "legacy_enabled_save_is_refused_without_sync_or_mutation",
+    "pass": true,
+    "observed": {
+      "messages": [],
+      "storedDays": 3,
+      "errorPresent": true
+    }
+  },
+  {
+    "name": "existing_enabled_plan_can_be_disabled_without_deleting_history",
+    "pass": true,
+    "observed": {
+      "record": {
+        "id": "plan1",
+        "enabled": false,
+        "date": "2100-01-05",
+        "time": "09:00",
+        "days": 3,
+        "range": "all",
+        "loopDaily": false,
+        "excludeIds": "",
+        "toggleLogistics": false,
+        "ownerShopId": 101,
+        "ownerUserId": 1,
+        "lastRunId": null,
+        "lastRunAt": 1791000000000,
+        "lastResult": "completed",
+        "lastTaskId": "old-task",
+        "lastError": null,
+        "missed": false,
+        "updatedAt": 0
+      },
+      "messages": [
+        "SHIPPING_SYNC_ALARMS"
+      ]
+    }
+  }
+]

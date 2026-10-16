@@ -1,0 +1,36 @@
+{
+  "skippedRestore": {
+    "phase": "done",
+    "message": "两阶段与物流收尾均已完成，这一组结束",
+    "items": [
+      {
+        "itemId": "1",
+        "name": "P",
+        "spot": "pending",
+        "restore": "skipped",
+        "reason": "not editable"
+      }
+    ]
+  },
+  "failedTaskWithProductSuccess": {
+    "phase": "done",
+    "message": "两阶段与物流收尾均已完成，这一组结束"
+  },
+  "lateSpotCallback": {
+    "before": "done",
+    "after": "needs-attention"
+  },
+  "failedRestore": {
+    "phase": "needs-attention",
+    "items": [
+      {
+        "itemId": "1",
+        "name": "P",
+        "spot": "pending",
+        "restore": "failed"
+      }
+    ],
+    "restoreIds": [],
+    "holdsObligation": false
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "version": 3,
+  "scope": "user approved fixed single execution; formal task08 section31 issued for user forwarding; no product implementation",
+  "prototypeChecksPassed": 42,
+  "networkRequests": 0,
+  "htmlSha256": "0d25ad1cb24b8ea73e4b624d4089c8dc1ef88ed41cd0872eaca04be5eccedd19",
+  "artifacts": {
+    "prototype-checks.json": {
+      "bytes": 3869,
+      "sha256": "3efee1bb517214e41960c4ac9cbbb2f7d8c5ddf08c9c9185085b41181fd7a10f"
+    },
+    "参考草图.png": {
+      "bytes": 1264541,
+      "sha256": "d9bc78e7966537a7765a1c70a825263eb771babe24a09df72963f5c199c73ea3"
+    },
+    "备货循环界面原型.html": {
+      "bytes": 32972,
+      "sha256": "0d25ad1cb24b8ea73e4b624d4089c8dc1ef88ed41cd0872eaca04be5eccedd19"
+    },
+    "开发参阅说明.md": {
+      "bytes": 4931,
+      "sha256": "9565f36eda9c3a27a808247b3f8f8bf41d2d414976231b10d6bb538d09cdccfd"
+    },
+    "排除商品弹窗预览.png": {
+      "bytes": 91108,
+      "sha256": "942b0fefdcc9a1ffdfc26f94ebf168a153833a845c1ecfdf493e58c52b93068d"
+    },
+    "界面预览.png": {
+      "bytes": 115069,
+      "sha256": "53c01887ba26f32b63af431ace2b5eab44833fc4571eccbd11916f1991529435"
+    }
+  },
+  "artifactBytesIncludingHistory": 1886659
+}

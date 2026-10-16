@@ -1,0 +1,79 @@
+{
+  "scope": "standalone offline UI discussion artifact; no product implementation, backend or store operations",
+  "checks": [
+    {
+      "name": "dropdown includes every day 2 through 10",
+      "passed": true
+    },
+    {
+      "name": "days 2 updates restore and confirmation",
+      "passed": true
+    },
+    {
+      "name": "days 10 updates restore and confirmation",
+      "passed": true
+    },
+    {
+      "name": "500px has no horizontal scrolling",
+      "passed": true
+    },
+    {
+      "name": "390px has no horizontal scrolling",
+      "passed": true
+    },
+    {
+      "name": "weekday follows user-selected date",
+      "passed": true
+    },
+    {
+      "name": "cross-day is clearly labeled",
+      "passed": true
+    },
+    {
+      "name": "daily preview updates",
+      "passed": true
+    },
+    {
+      "name": "restore before start is prevented",
+      "passed": true
+    },
+    {
+      "name": "logistics choice has clear summary",
+      "passed": true
+    },
+    {
+      "name": "enable is explicitly a UI demonstration",
+      "passed": true
+    },
+    {
+      "name": "settings cannot silently change after demo enabling",
+      "passed": true
+    },
+    {
+      "name": "no fake execution record is created",
+      "passed": true
+    },
+    {
+      "name": "pause returns to editable settings",
+      "passed": true
+    },
+    {
+      "name": "secondary tab states its design boundary",
+      "passed": true
+    },
+    {
+      "name": "can return to main cycle panel",
+      "passed": true
+    },
+    {
+      "name": "prototype makes no network requests",
+      "passed": true
+    },
+    {
+      "name": "prototype has no script errors",
+      "passed": true
+    }
+  ],
+  "network": [],
+  "errors": []
+}

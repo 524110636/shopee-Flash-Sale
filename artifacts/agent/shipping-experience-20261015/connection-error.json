@@ -1,0 +1,60 @@
+{
+  "message": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '绑定当前店铺', exact: true })\u001b[22m\n",
+  "stack": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '绑定当前店铺', exact: true })\u001b[22m\n\n    at D:\\shopee_xm\\虾皮限时特卖-更新迭代\\.agent-tmp\\shipping-experience-20261015\\verify-connection.cjs:42:60",
+  "results": [
+    {
+      "name": "health responds from actual backend",
+      "pass": true
+    },
+    {
+      "name": "fresh profile path",
+      "pass": true
+    },
+    {
+      "name": "UI login uses seeded local test admin",
+      "pass": true
+    }
+  ],
+  "requests": [
+    {
+      "side": "intercepted-vendor-fixture",
+      "path": "/portal/product/list/live/all",
+      "method": "GET"
+    },
+    {
+      "side": "actual-local-backend",
+      "path": "/api/auth/login",
+      "method": "POST"
+    },
+    {
+      "side": "actual-local-backend",
+      "path": "/api/stores",
+      "method": "GET"
+    },
+    {
+      "side": "actual-local-backend",
+      "path": "/api/extension/popup-policy",
+      "method": "GET"
+    },
+    {
+      "side": "intercepted-vendor-fixture",
+      "path": "/api/v2/login/",
+      "method": "GET"
+    }
+  ],
+  "responses": [
+    {
+      "path": "/api/stores",
+      "status": 200,
+      "stores": [
+        {
+          "id": 1,
+          "shopId": null,
+          "isActive": 1
+        }
+      ]
+    }
+  ],
+  "debug": {},
+  "pageText": "全部功能\n限时特卖助手\n已连接\n管理\nshipping-test@local.test\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\nexperience-fixture-c...\n当前\n商品备货天数修改\n备货模式\n现货（1 天）\n预售（2–10 天）\n天（1 = 现货，2–10 = 预售）\n修改范围\n全部商品\n在线商品\n下架商品\n非热销商品\n手动排除的商品 ID\n从商品列表选择\n自动管理店铺物流\n开启后：先保存当前启用的物流渠道，再全部关闭，商品修改完成后恢复本任务影响过的渠道。 原本关闭的渠道不会被打开。关闭物流期间买家无法用这些渠道下单。\n预检并预览目标\n确认并开始修改\n定时计划（最多 2 项）\n\n时间按台湾时区（Asia/Taipei）解释。弹窗关闭后计划仍然有效；浏览器完全退出时不保证到点运行， 关闭期间错过的轮次不会补写历史（一次性计划显示「已错过」）。\n\n计划 1\n启用\n每日重复\n现货（1 天）\n自动管理物流\n下一次：未启用\n保存\n关闭\n\n需处理：计划未绑定店铺与账号归属，请重新保存\n\n计划 2\n启用\n每日重复\n现货（1 天）\n自动管理物流\n下一次：未启用\n保存\n关闭\n\n需处理：计划未绑定店铺与账号归属，请重新保存"
+}

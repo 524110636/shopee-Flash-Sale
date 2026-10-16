@@ -1,0 +1,336 @@
+{
+  "scope": "independent isolated execution of actual modules; no browser/server/store API/network requests",
+  "sourceHashes": {
+    "api.ts": "f99cb1d874b61d48f2b8ab1e436dc36aeefb157b25718e5ffa172386f8c64e42",
+    "runner.ts": "5e5c626ec38992a86e9292010a86dc1062d98da8336b813d8c418c0cbb830dc9",
+    "background.ts": "32c619aad6555d0f0a354d51a1f99dbf060705510f02fe0b7a63ac69ce59b35c",
+    "scheduler.ts": "3659af1f6bcff7eb38c7cde98aafcb585146bc8b738a85e306fc3fd357b3bb1b",
+    "rules.ts": "1a41bc422e27c95f88a1037f439f4cf9cf2aa07974fe7eaac3916f8f57c5e8d6",
+    "store.ts": "d6fa18263d10e0098dbf3a2391dbb7937abb636711f58378fe222f97aa953b99",
+    "task.ts": "56ab7ea9a6716fe9bde7ce6a6630ed8d99e420ab5f85897d3b2a65a2b126ad38",
+    "types.ts": "4b5b1d46de994e5d2fa105bd07cb2dc095a7dfb65d1883c1bf66096c8a5e1dab"
+  },
+  "observations": [
+    {
+      "name": "missing per-item result code is not confirmed as success",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "partial flash-sale exclusion must fail closed",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "flash-sale list continuation is read",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "execution preflight failure sends zero product writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "unknown transport result is not blindly resent",
+      "expected": 1,
+      "observed": 1,
+      "meetsContract": true
+    },
+    {
+      "name": "changed backend account sends zero product writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "unknown channel closure retains a restore obligation",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "unknown channel closure cannot be declared fully restored",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "fresh SKU-level change is excluded before writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "missing SKU-mode information is resolved before preview",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "SKU-level detail is excluded from preview",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "non-hot range without ranking data is blocked",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "persisted diagnostic removes credential values",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "identity read exception at submission prevents product writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "identity read exception observation",
+      "observed": {
+        "identityReads": 2,
+        "status": "failed"
+      }
+    },
+    {
+      "name": "requested logistics list failure stops all product writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "logistics preview and run semantics",
+      "observed": {
+        "previewOk": false,
+        "previewError": "物流渠道读取失败",
+        "runStatus": "failed"
+      },
+      "note": "Both preview and run now fail closed when requested logistics cannot be read."
+    },
+    {
+      "name": "additional daily start-date observation",
+      "observed": "2026-10-14",
+      "note": "not used as a blocker; daily UI disables date and this is outside the frozen matrix"
+    },
+    {
+      "name": "unbound legacy plan sends zero product writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "bound plan result reaches actual completed state",
+      "expected": "completed",
+      "observed": "completed",
+      "meetsContract": true
+    },
+    {
+      "name": "plan preserves original owner shop",
+      "expected": 88,
+      "observed": 88,
+      "meetsContract": true
+    },
+    {
+      "name": "preview owner shop cannot be rebound at manual start",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "manual preview and task owner observation",
+      "observed": {
+        "previewShopId": 88,
+        "started": false
+      }
+    },
+    {
+      "name": "revoked backend permission prevents product submission",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "permission validation call count before writes",
+      "observed": 2
+    },
+    {
+      "name": "start settings differing from authoritative preview are rejected",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "changed settings actual submitted payload",
+      "observed": []
+    },
+    {
+      "name": "items outside authoritative preview are not submitted",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "expanded target actual submitted payload",
+      "observed": []
+    },
+    {
+      "name": "non-boolean logistics input cannot enable unconfirmed channel writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "runtime logistics payload and task observation",
+      "observed": {
+        "confirmedLogistics": false,
+        "requestValueType": "string",
+        "channelActions": []
+      }
+    },
+    {
+      "name": "revoked backend permission prevents logistics restore write",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "restore server permission validation calls",
+      "observed": 1
+    },
+    {
+      "name": "restore uses the seller context verified before that write",
+      "expected": false,
+      "observed": false,
+      "meetsContract": true
+    },
+    {
+      "name": "seller context change during access validation",
+      "observed": {
+        "verifiedShopId": 77,
+        "sessionUsedAtWrite": null,
+        "restoreCompleted": false
+      }
+    },
+    {
+      "name": "same-cookie backend account switch expected logistics restore writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "same-cookie backend account switch runtime observation",
+      "observed": {
+        "anchorUser": 1,
+        "currentUser": 2,
+        "cookieRefreshed": false,
+        "completed": false,
+        "diagnosticContexts": [
+          {
+            "stage": "restore-channel",
+            "expectedUserId": 1,
+            "actualUserId": 2,
+            "contextChange": "blocked-write"
+          }
+        ]
+      }
+    },
+    {
+      "name": "refreshed-cookie missing backend account expected logistics restore writes",
+      "expected": 0,
+      "observed": 0,
+      "meetsContract": true
+    },
+    {
+      "name": "refreshed-cookie missing backend account runtime observation",
+      "observed": {
+        "anchorUser": 1,
+        "currentUser": null,
+        "cookieRefreshed": true,
+        "completed": false,
+        "diagnosticContexts": [
+          {
+            "stage": "restore-channel",
+            "expectedUserId": 1,
+            "actualUserId": null,
+            "contextChange": "blocked-write"
+          }
+        ]
+      }
+    },
+    {
+      "name": "same-owner credential refresh expected logistics restore writes",
+      "expected": 1,
+      "observed": 1,
+      "meetsContract": true
+    },
+    {
+      "name": "same-owner credential refresh completes restore",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "same-owner credential refresh runtime observation",
+      "observed": {
+        "anchorUser": 1,
+        "currentUser": 1,
+        "cookieRefreshed": true,
+        "completed": true,
+        "diagnosticContexts": [
+          {
+            "stage": "restore-channel",
+            "expectedUserId": 1,
+            "actualUserId": 1,
+            "contextChange": "same-owner-refresh"
+          }
+        ]
+      }
+    },
+    {
+      "name": "same-owner refreshed context with revoked permission sends no restore writes",
+      "expected": 0,
+      "observed": 1,
+      "meetsContract": false
+    },
+    {
+      "name": "same-owner refreshed context with revoked permission is not restored",
+      "expected": false,
+      "observed": true,
+      "meetsContract": false
+    },
+    {
+      "name": "refreshed-context permission observation",
+      "observed": {
+        "sameShop": true,
+        "sameUser": true,
+        "permissionAtSubmission": false,
+        "validations": [
+          {
+            "credentialTag": "before-refresh",
+            "allowed": true
+          }
+        ],
+        "restoreCompleted": true,
+        "diagnostics": [
+          {
+            "stage": "restore-channel",
+            "access": "allowed",
+            "contextChange": "same-owner-refresh",
+            "credentialChanged": true
+          }
+        ]
+      }
+    }
+  ],
+  "contractFailures": 2
+}

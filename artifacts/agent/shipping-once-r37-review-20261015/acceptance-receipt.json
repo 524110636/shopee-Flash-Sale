@@ -1,0 +1,22 @@
+{
+  "conclusion": "not accepted; section40 only remaining R5 R3 R2 R7 R8",
+  "backgroundSha256": "368d8109f1322a94bf7af6bc1908631dd2b2b21f8654b52a1a3be3b2e9f926ac",
+  "unitRegression": {
+    "command": "npx vitest run tests/unit/shipping-group.test.ts tests/unit/shipping-rules.test.ts tests/unit/shipping-task.test.ts tests/unit/shipping-runner.test.ts tests/unit/shipping-api.test.ts tests/unit/feature-navigation.test.ts tests/unit/one-day-repair-task.test.ts tests/unit/one-day-repair-runner.test.ts tests/unit/popup-policy-host.test.ts",
+    "filesPassed": 9,
+    "testsPassed": 386,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "actualMV3Observations": {
+    "total": 13,
+    "passed": 11,
+    "failed": 2
+  },
+  "profilesRemoved": true,
+  "productSourcesAndPackageUnchanged": true,
+  "realShopeeRequests": 0,
+  "servicesStartedOrStopped": false,
+  "temporaryBytes": 167285,
+  "evidenceBytesExcludingReceipt": 287091
+}

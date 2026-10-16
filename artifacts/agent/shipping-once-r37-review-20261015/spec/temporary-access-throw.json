@@ -1,0 +1,194 @@
+{
+  "mode": "temporary-access-throw",
+  "first": {
+    "error": "fixture HTTP 503"
+  },
+  "deniedState": {
+    "_shippingGroups": {
+      "active": {
+        "groupId": "g",
+        "revision": 3,
+        "executionMode": "once",
+        "ownerShopId": 1,
+        "ownerUserId": 1,
+        "schedule": {
+          "startAt": 1792555200000,
+          "restoreAt": 1792558800000,
+          "spotDays": 1,
+          "regularDays": 8
+        },
+        "config": {
+          "range": "all",
+          "excludeIds": "",
+          "toggleLogistics": false
+        },
+        "phase": "restoring",
+        "claimedStages": [
+          "spot",
+          "restore"
+        ],
+        "spotTaskId": "prior-spot",
+        "restoreTaskId": null,
+        "reconciledTaskIds": [],
+        "confirmedSpotItemIds": [
+          "1"
+        ],
+        "items": [
+          {
+            "itemId": "1",
+            "name": "P1",
+            "spot": "success",
+            "restore": "pending"
+          }
+        ],
+        "pendingItemIds": [],
+        "message": "正在恢复常规备货天数",
+        "error": null,
+        "createdAt": 1792555199000,
+        "updatedAt": 1792558800001
+      },
+      "lastFinished": null,
+      "updatedAt": 1792558800001
+    },
+    "_shippingTask": {
+      "taskId": "prior-spot",
+      "requestId": "prior",
+      "shopId": 1,
+      "ownerUserId": 1,
+      "source": "group",
+      "groupId": "g",
+      "groupPhase": "spot",
+      "mode": "spot",
+      "days": 1,
+      "range": "all",
+      "excludeIds": [],
+      "status": "completed",
+      "phase": "completed",
+      "total": 1,
+      "processed": 0,
+      "items": [
+        {
+          "itemId": "1",
+          "name": "P1",
+          "days": 1,
+          "status": "success"
+        }
+      ],
+      "logistics": {
+        "requested": false,
+        "closeAttempted": false,
+        "closeCompleted": false,
+        "restoreAttempted": false,
+        "restoreCompleted": false,
+        "records": []
+      },
+      "checkpoints": [],
+      "message": "任务已被后台接受",
+      "error": null,
+      "startedAt": 1792555200000,
+      "updatedAt": 1792555200000,
+      "stopRequested": false
+    }
+  },
+  "after": {
+    "_shippingGroups": {
+      "active": {
+        "groupId": "g",
+        "revision": 3,
+        "executionMode": "once",
+        "ownerShopId": 1,
+        "ownerUserId": 1,
+        "schedule": {
+          "startAt": 1792555200000,
+          "restoreAt": 1792558800000,
+          "spotDays": 1,
+          "regularDays": 8
+        },
+        "config": {
+          "range": "all",
+          "excludeIds": "",
+          "toggleLogistics": false
+        },
+        "phase": "restoring",
+        "claimedStages": [
+          "spot",
+          "restore"
+        ],
+        "spotTaskId": "prior-spot",
+        "restoreTaskId": null,
+        "reconciledTaskIds": [],
+        "confirmedSpotItemIds": [
+          "1"
+        ],
+        "items": [
+          {
+            "itemId": "1",
+            "name": "P1",
+            "spot": "success",
+            "restore": "pending"
+          }
+        ],
+        "pendingItemIds": [],
+        "message": "正在恢复常规备货天数",
+        "error": null,
+        "createdAt": 1792555199000,
+        "updatedAt": 1792558800001
+      },
+      "lastFinished": null,
+      "updatedAt": 1792558800001
+    },
+    "_shippingTask": {
+      "taskId": "prior-spot",
+      "requestId": "prior",
+      "shopId": 1,
+      "ownerUserId": 1,
+      "source": "group",
+      "groupId": "g",
+      "groupPhase": "spot",
+      "mode": "spot",
+      "days": 1,
+      "range": "all",
+      "excludeIds": [],
+      "status": "completed",
+      "phase": "completed",
+      "total": 1,
+      "processed": 0,
+      "items": [
+        {
+          "itemId": "1",
+          "name": "P1",
+          "days": 1,
+          "status": "success"
+        }
+      ],
+      "logistics": {
+        "requested": false,
+        "closeAttempted": false,
+        "closeCompleted": false,
+        "restoreAttempted": false,
+        "restoreCompleted": false,
+        "records": []
+      },
+      "checkpoints": [],
+      "message": "任务已被后台接受",
+      "error": null,
+      "startedAt": 1792555200000,
+      "updatedAt": 1792555200000,
+      "stopRequested": false
+    }
+  },
+  "days": 1,
+  "channel": true,
+  "detailReads": 0,
+  "validationCalls": 0,
+  "writes": [],
+  "logs": [
+    "[shipping-group] g 阶段=awaiting-restore 决定=start-restore 身份=ok 任务在跑=false 冲突=无",
+    "[shipping-group] g 阶段=restoring 决定=wait 原因=恢复阶段尚未落盘终态，等待补检 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：wait（恢复阶段尚未落盘终态，等待补检）",
+    "[shipping-group] g 阶段=restoring 决定=wait 原因=恢复阶段尚未落盘终态，等待补检 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：wait（恢复阶段尚未落盘终态，等待补检）",
+    "[shipping-group] g 阶段=restoring 决定=wait 原因=恢复阶段尚未落盘终态，等待补检 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：wait（恢复阶段尚未落盘终态，等待补检）"
+  ]
+}

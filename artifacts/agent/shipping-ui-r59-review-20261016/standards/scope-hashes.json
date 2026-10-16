@@ -1,0 +1,92 @@
+[
+  {
+    "path": "features/shipping/api.ts",
+    "changed": false,
+    "sha256": "f99cb1d874b61d48f2b8ab1e436dc36aeefb157b25718e5ffa172386f8c64e42"
+  },
+  {
+    "path": "features/shipping/background.ts",
+    "changed": false,
+    "sha256": "0a04fd639d231dc3a7eb82f8cc2092453468756bdc2a5c8aa19053db121929d8"
+  },
+  {
+    "path": "features/shipping/group-rules.ts",
+    "changed": false,
+    "sha256": "22a6a9cb92ed8ec574c01b4aa41e47163b69aafe42f4bbfdea0bc4b858d48181"
+  },
+  {
+    "path": "features/shipping/group.ts",
+    "changed": false,
+    "sha256": "c3a08b4fcb98787963f8d9e22c27c4bb970a1179bb2cda14310b11981b397042"
+  },
+  {
+    "path": "features/shipping/rules.ts",
+    "changed": true,
+    "sha256": "9d5a831c683aa53211e4bb2cc2609ff2b4e460c33e65192a514f4e5acefbb2fc"
+  },
+  {
+    "path": "features/shipping/runner-deps.ts",
+    "changed": false,
+    "sha256": "f4849383d975ff9bd073a1f34cebd8cf296cb7bfa77d3d99423fb6991e34aa22"
+  },
+  {
+    "path": "features/shipping/runner.ts",
+    "changed": false,
+    "sha256": "cde06bb242543ee4e7c8f4d703e43849019adbe6e9a69a601042ab3eb06261dc"
+  },
+  {
+    "path": "features/shipping/scheduler.ts",
+    "changed": false,
+    "sha256": "3659af1f6bcff7eb38c7cde98aafcb585146bc8b738a85e306fc3fd357b3bb1b"
+  },
+  {
+    "path": "features/shipping/store.ts",
+    "changed": true,
+    "sha256": "bade3192ea2063019362028d5b2cc2ebb8aa5c9b0afb74a5f27961349c4110bb"
+  },
+  {
+    "path": "features/shipping/task.ts",
+    "changed": false,
+    "sha256": "8e33e56bc5b74b4b33eaffe561655d52620d069e9193d5bf765254941374b2b8"
+  },
+  {
+    "path": "features/shipping/types.ts",
+    "changed": false,
+    "sha256": "edf799830a65e6c72640ee5210fe89e279ee6097a4d72081612cdac29b3baeeb"
+  },
+  {
+    "path": "components/product/shipping/ShippingExcludeModal.tsx",
+    "changed": false,
+    "sha256": "16c4325b9abfb4ba54c1f27c3c70aba12b951efa867bcb132ecf8537af09beef"
+  },
+  {
+    "path": "components/product/shipping/ShippingSchedulePanel.tsx",
+    "changed": false,
+    "sha256": "129e2edfb1ceb15ce64817c400481bae5dc679cd6ad022382271989c24913f36"
+  },
+  {
+    "path": "components/product/shipping/ShippingWorkPage.tsx",
+    "changed": true,
+    "sha256": "940dc082d0c59e911be5c684b11e4bff07a009f0ec47c5deb9b8f796e9b2f68a"
+  },
+  {
+    "path": ".agent-tmp/shipping-once-ui-20261015/iso-output/chrome-mv3/background.js",
+    "changed": false,
+    "sha256": "63361a1480f145e6bdab5f78065d71150d4e8e4e33b353ca891a1d2b3b52edb3"
+  },
+  {
+    "path": "entrypoints/popup/App.tsx",
+    "changed": false,
+    "sha256": "497e11571d1fcd5e8e3aa86f20000cf71f2c1d7f5743236ddcfaf6f2c28c8992"
+  },
+  {
+    "path": "components/product/feature-catalog.ts",
+    "changed": false,
+    "sha256": "d1efbc44557fdb69708322bbe2a452c1a0699f7dcb33e248d952fd881994385a"
+  },
+  {
+    "path": ".agent-tmp/shipping-once-ui-20261015/iso-env.ps1",
+    "changed": false,
+    "sha256": "465e32caa2e5b045017241669f1341752a20ef4e733d83c46fb08eb1c0832dea"
+  }
+]

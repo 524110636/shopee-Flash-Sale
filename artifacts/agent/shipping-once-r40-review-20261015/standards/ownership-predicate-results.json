@@ -1,0 +1,32 @@
+﻿[
+    {
+        "name":  "correct",
+        "pass":  true,
+        "accepted":  true
+    },
+    {
+        "name":  "wrong-pid",
+        "pass":  true,
+        "accepted":  false
+    },
+    {
+        "name":  "wrong-db",
+        "pass":  true,
+        "accepted":  false
+    },
+    {
+        "name":  "wrong-work-dir",
+        "pass":  true,
+        "accepted":  false
+    },
+    {
+        "name":  "wrong-creation",
+        "pass":  true,
+        "accepted":  false
+    },
+    {
+        "name":  "missing",
+        "pass":  true,
+        "accepted":  false
+    }
+]

@@ -1,0 +1,74 @@
+[
+  {
+    "currentDays": 5,
+    "detailAvailable": true,
+    "writes": [
+      [
+        {
+          "id": 1,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        }
+      ]
+    ],
+    "detailReads": 0,
+    "status": "completed",
+    "items": [
+      {
+        "itemId": "1",
+        "name": "P",
+        "days": 8,
+        "status": "success"
+      }
+    ]
+  },
+  {
+    "currentDays": 8,
+    "detailAvailable": true,
+    "writes": [
+      [
+        {
+          "id": 1,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        }
+      ]
+    ],
+    "detailReads": 0,
+    "status": "completed",
+    "items": [
+      {
+        "itemId": "1",
+        "name": "P",
+        "days": 8,
+        "status": "success"
+      }
+    ]
+  },
+  {
+    "currentDays": 5,
+    "detailAvailable": false,
+    "writes": [
+      [
+        {
+          "id": 1,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        }
+      ]
+    ],
+    "detailReads": 0,
+    "status": "completed",
+    "items": [
+      {
+        "itemId": "1",
+        "name": "P",
+        "days": 8,
+        "status": "success"
+      }
+    ]
+  }
+]

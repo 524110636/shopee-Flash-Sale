@@ -1,0 +1,63 @@
+{
+  "label": "reverse-u13",
+  "steps": [
+    "login ok, token 268 chars",
+    "injected backendAuth: ok",
+    "openPopup: ok",
+    "enter shipping: clicked",
+    "open exclude: clicked"
+  ],
+  "metrics": {
+    "before": {
+      "innerWidth": 25,
+      "innerHeight": 600,
+      "docClientWidth": 25,
+      "docScrollWidth": 25,
+      "bodyScrollWidth": 25,
+      "rootClass": "",
+      "rootClientWidth": 25,
+      "sizedFound": true,
+      "sizedClass": "w-[500px] max-w-[100vw] min-w-0 min-h-[500px] max-h-[600px] overflow-y-auto bg-background",
+      "sizedClientWidth": 10,
+      "sizedOffsetWidth": 25,
+      "sizedMaxWidth": "25px",
+      "sizedComputedWidth": "25px",
+      "maxWidth": "none",
+      "bodyText": "限时特卖助手\n未连接\n管理\n店铺运营\n限时特卖\n\n创建或复制限时特卖活动，也可用自动循环按轮数／天数持续抢占场次。\n\n商品备货与物流\n\n一次安排完成成对切换：到点把参与商品改为现货 1 天，随后按你选的常规备货天数（2–10 天）恢复；可选"
+    },
+    "shippingPage": {
+      "innerWidth": 25,
+      "innerHeight": 600,
+      "docClientWidth": 25,
+      "docScrollWidth": 25,
+      "bodyScrollWidth": 25,
+      "rootClass": "",
+      "rootClientWidth": 25,
+      "sizedFound": true,
+      "sizedClass": "w-[500px] max-w-[100vw] min-w-0 min-h-[500px] max-h-[600px] overflow-y-auto bg-background",
+      "sizedClientWidth": 10,
+      "sizedOffsetWidth": 25,
+      "sizedMaxWidth": "25px",
+      "sizedComputedWidth": "25px",
+      "maxWidth": "none",
+      "bodyText": "全部功能\n限时特卖助手\n未连接\n管理\niso-admin@shipping-once.local\n管理员\n设置\n退出\n店铺绑定\n1 / 1\n刷新\n●\n????\n使用建议 · 优先安排在周末\n\n建议尽量在周末使用，避免安排在其他时段。执行期间"
+    },
+    "excludeDialog": {
+      "innerWidth": 25,
+      "docClientWidth": 25,
+      "docScrollWidth": 25,
+      "dialogPresent": true,
+      "dialogRect": {
+        "x": 12,
+        "width": 2,
+        "right": 14
+      },
+      "dialogFitsViewport": true
+    }
+  },
+  "verdict": "NARROW/CLIPPED",
+  "extensionId": "pgnemiifhpihjjphafeienacddicleej",
+  "clipped": false,
+  "tooNarrow": true,
+  "sizedNarrow": true
+}

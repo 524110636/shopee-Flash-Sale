@@ -1,0 +1,20 @@
+{
+  "productAndCandidateInputsUnchanged": true,
+  "snapshotFiles": 32,
+  "planningFilesUpdated": [
+    ".claude/tasks/2026-10-14-07-全功能迁移书.md",
+    ".claude/tasks/2026-10-14-08-商品备货物流与定时修改-任务书.md",
+    "PROJECT_STATUS.md"
+  ],
+  "nativePassed": 10,
+  "nativeTotal": 10,
+  "specPassed": 29,
+  "specTotal": 30,
+  "remaining": "56.3 missing-key fresh user shows two synthetic default history slots",
+  "ownProfilesRemoved": true,
+  "realShopWrites": false,
+  "servicesStartedOrStopped": false,
+  "temporaryBytes": 151298,
+  "evidenceBytesExcludingReceipt": 71629,
+  "userManualTest": "not requested this round; candidate partial"
+}

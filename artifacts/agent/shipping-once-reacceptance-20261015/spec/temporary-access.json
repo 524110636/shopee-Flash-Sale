@@ -1,0 +1,125 @@
+{
+  "mode": "temporary-access",
+  "first": {
+    "action": "needs-attention",
+    "reason": "temporary backend unavailable",
+    "groupId": "g"
+  },
+  "deniedState": {
+    "_shippingGroups": {
+      "active": {
+        "groupId": "g",
+        "revision": 4,
+        "executionMode": "once",
+        "ownerShopId": 1,
+        "ownerUserId": 1,
+        "schedule": {
+          "startAt": 1792555200000,
+          "restoreAt": 1792558800000,
+          "spotDays": 1,
+          "regularDays": 8
+        },
+        "config": {
+          "range": "all",
+          "excludeIds": "",
+          "toggleLogistics": false
+        },
+        "phase": "needs-attention",
+        "claimedStages": [
+          "spot",
+          "restore"
+        ],
+        "spotTaskId": null,
+        "restoreTaskId": null,
+        "confirmedSpotItemIds": [
+          "1"
+        ],
+        "items": [
+          {
+            "itemId": "1",
+            "name": "P1",
+            "spot": "success",
+            "restore": "pending"
+          }
+        ],
+        "pendingItemIds": [],
+        "message": "temporary backend unavailable",
+        "error": "temporary backend unavailable",
+        "createdAt": 1792555199000,
+        "updatedAt": 1792558800001
+      },
+      "lastFinished": null,
+      "updatedAt": 1792558800001
+    },
+    "_shippingStartError": {
+      "error": "temporary backend unavailable",
+      "at": 1792558800001
+    }
+  },
+  "after": {
+    "_shippingGroups": {
+      "active": {
+        "groupId": "g",
+        "revision": 7,
+        "executionMode": "once",
+        "ownerShopId": 1,
+        "ownerUserId": 1,
+        "schedule": {
+          "startAt": 1792555200000,
+          "restoreAt": 1792558800000,
+          "spotDays": 1,
+          "regularDays": 8
+        },
+        "config": {
+          "range": "all",
+          "excludeIds": "",
+          "toggleLogistics": false
+        },
+        "phase": "needs-attention",
+        "claimedStages": [
+          "spot",
+          "restore"
+        ],
+        "spotTaskId": null,
+        "restoreTaskId": null,
+        "confirmedSpotItemIds": [
+          "1"
+        ],
+        "items": [
+          {
+            "itemId": "1",
+            "name": "P1",
+            "spot": "success",
+            "restore": "pending"
+          }
+        ],
+        "pendingItemIds": [],
+        "message": "temporary backend unavailable",
+        "error": "temporary backend unavailable",
+        "createdAt": 1792555199000,
+        "updatedAt": 1792558800001
+      },
+      "lastFinished": null,
+      "updatedAt": 1792558800001
+    },
+    "_shippingStartError": {
+      "error": "temporary backend unavailable",
+      "at": 1792558800001
+    }
+  },
+  "days": 1,
+  "channel": true,
+  "detailReads": 0,
+  "validationCalls": 1,
+  "writes": [],
+  "logs": [
+    "[shipping-group] g 阶段=awaiting-restore 决定=start-restore 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：needs-attention（temporary backend unavailable）",
+    "[shipping-group] g 阶段=needs-attention 决定=needs-attention 原因=temporary backend unavailable 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：needs-attention（temporary backend unavailable）",
+    "[shipping-group] g 阶段=needs-attention 决定=needs-attention 原因=temporary backend unavailable 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：needs-attention（temporary backend unavailable）",
+    "[shipping-group] g 阶段=needs-attention 决定=needs-attention 原因=temporary backend unavailable 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：needs-attention（temporary backend unavailable）"
+  ]
+}

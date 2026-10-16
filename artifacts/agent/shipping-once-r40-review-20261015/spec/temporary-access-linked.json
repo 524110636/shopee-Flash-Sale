@@ -1,0 +1,235 @@
+{
+  "mode": "temporary-access-linked",
+  "first": {
+    "action": "wait",
+    "reason": "temporary backend unavailable",
+    "groupId": "g"
+  },
+  "deniedState": {
+    "_shippingGroups": {
+      "active": {
+        "groupId": "g",
+        "revision": 4,
+        "executionMode": "once",
+        "ownerShopId": 1,
+        "ownerUserId": 1,
+        "schedule": {
+          "startAt": 1792555200000,
+          "restoreAt": 1792558800000,
+          "spotDays": 1,
+          "regularDays": 8
+        },
+        "config": {
+          "range": "all",
+          "excludeIds": "",
+          "toggleLogistics": false
+        },
+        "phase": "awaiting-restore",
+        "claimedStages": [
+          "spot"
+        ],
+        "spotTaskId": "prior-spot",
+        "restoreTaskId": null,
+        "reconciledTaskIds": [],
+        "confirmedSpotItemIds": [
+          "1"
+        ],
+        "items": [
+          {
+            "itemId": "1",
+            "name": "P1",
+            "spot": "success",
+            "restore": "pending"
+          }
+        ],
+        "pendingItemIds": [],
+        "message": "temporary backend unavailable",
+        "error": "temporary backend unavailable",
+        "createdAt": 1792555199000,
+        "updatedAt": 1792558800001
+      },
+      "lastFinished": null,
+      "updatedAt": 1792558800001
+    },
+    "_shippingTask": {
+      "taskId": "prior-spot",
+      "requestId": "prior",
+      "shopId": 1,
+      "ownerUserId": 1,
+      "source": "group",
+      "groupId": "g",
+      "groupPhase": "spot",
+      "mode": "spot",
+      "days": 1,
+      "range": "all",
+      "excludeIds": [],
+      "status": "completed",
+      "phase": "completed",
+      "total": 1,
+      "processed": 0,
+      "items": [
+        {
+          "itemId": "1",
+          "name": "P1",
+          "days": 1,
+          "status": "success"
+        }
+      ],
+      "logistics": {
+        "requested": false,
+        "closeAttempted": false,
+        "closeCompleted": false,
+        "restoreAttempted": false,
+        "restoreCompleted": false,
+        "records": []
+      },
+      "checkpoints": [],
+      "message": "任务已被后台接受",
+      "error": null,
+      "startedAt": 1792555200000,
+      "updatedAt": 1792555200000,
+      "stopRequested": false
+    },
+    "_shippingStartError": {
+      "error": "temporary backend unavailable",
+      "at": 1792558800001
+    }
+  },
+  "after": {
+    "_shippingGroups": {
+      "active": null,
+      "lastFinished": {
+        "groupId": "g",
+        "revision": 7,
+        "executionMode": "once",
+        "ownerShopId": 1,
+        "ownerUserId": 1,
+        "schedule": {
+          "startAt": 1792555200000,
+          "restoreAt": 1792558800000,
+          "spotDays": 1,
+          "regularDays": 8
+        },
+        "config": {
+          "range": "all",
+          "excludeIds": "",
+          "toggleLogistics": false
+        },
+        "phase": "done",
+        "claimedStages": [
+          "spot",
+          "restore"
+        ],
+        "spotTaskId": "prior-spot",
+        "restoreTaskId": "ship-1792558800001-hhuxij",
+        "reconciledTaskIds": [],
+        "confirmedSpotItemIds": [
+          "1"
+        ],
+        "items": [
+          {
+            "itemId": "1",
+            "name": "P1",
+            "spot": "success",
+            "restore": "success"
+          }
+        ],
+        "pendingItemIds": [],
+        "message": "商品已恢复常规备货，物流收尾已完成，这一组结束",
+        "error": null,
+        "createdAt": 1792555199000,
+        "updatedAt": 1792558800001,
+        "finishedAt": 1792558800001
+      },
+      "updatedAt": 1792558800001
+    },
+    "_shippingTask": {
+      "taskId": "ship-1792558800001-hhuxij",
+      "requestId": "g:restore:6",
+      "shopId": 1,
+      "ownerUserId": 1,
+      "source": "group",
+      "groupId": "g",
+      "groupPhase": "restore",
+      "mode": "preorder",
+      "days": 8,
+      "range": "all",
+      "excludeIds": [],
+      "status": "completed",
+      "phase": "completed",
+      "total": 1,
+      "processed": 1,
+      "items": [
+        {
+          "itemId": "1",
+          "name": "P1",
+          "days": 8,
+          "status": "success"
+        }
+      ],
+      "logistics": {
+        "requested": false,
+        "closeAttempted": false,
+        "closeCompleted": false,
+        "restoreAttempted": false,
+        "restoreCompleted": false,
+        "records": []
+      },
+      "checkpoints": [
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "1",
+          "at": 1792558800001
+        }
+      ],
+      "message": "任务完成",
+      "error": null,
+      "startedAt": 1792558800001,
+      "updatedAt": 1792558800001,
+      "stopRequested": false,
+      "finishedAt": 1792558800001
+    },
+    "_shippingDiagnostics": [
+      {
+        "stage": "verify-current-days",
+        "taskId": "ship-1792558800001-hhuxij",
+        "groupPhase": "restore",
+        "detail": "详情读取=1 次; 分类={}; 仍需恢复=1[1]",
+        "reason": "",
+        "at": 1792558800001
+      }
+    ]
+  },
+  "days": 8,
+  "channel": true,
+  "detailReads": 1,
+  "validationCalls": 4,
+  "writes": [
+    {
+      "kind": "product",
+      "body": [
+        {
+          "id": 1,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        }
+      ],
+      "at": 1792558800001
+    }
+  ],
+  "logs": [
+    "[shipping-group] g 阶段=awaiting-restore 决定=start-restore 身份=ok 任务在跑=false 冲突=无",
+    "[shipping-group] g restore 段启动被拒，已释放认领等待补检：temporary backend unavailable",
+    "[shipping] 单次安排补检：wait（temporary backend unavailable）",
+    "[shipping-group] g 阶段=awaiting-restore 决定=start-restore 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：started-restore",
+    "[shipping-group] g 阶段=restoring 决定=nothing 身份=ok 任务在跑=true 冲突=无",
+    "[shipping] 单次安排补检：idle",
+    "[shipping-group] g 阶段=restoring 决定=nothing 身份=ok 任务在跑=true 冲突=无",
+    "[shipping] 单次安排补检：idle",
+    "[shipping] 任务结束：completed 成功 1 / 失败 0 / 待核对 0",
+    "[shipping] 单次安排补检：idle"
+  ]
+}

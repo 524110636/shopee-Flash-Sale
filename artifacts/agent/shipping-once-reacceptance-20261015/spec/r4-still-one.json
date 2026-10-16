@@ -1,0 +1,122 @@
+{
+  "mode": "r4-still-one",
+  "after": {
+    "_shippingGroups": {
+      "active": null,
+      "lastFinished": {
+        "groupId": "g",
+        "revision": 4,
+        "executionMode": "once",
+        "ownerShopId": 1,
+        "ownerUserId": 1,
+        "schedule": {
+          "startAt": 1792555200000,
+          "restoreAt": 1792558800000,
+          "spotDays": 1,
+          "regularDays": 8
+        },
+        "config": {
+          "range": "all",
+          "excludeIds": "",
+          "toggleLogistics": false
+        },
+        "phase": "done",
+        "claimedStages": [
+          "spot",
+          "restore"
+        ],
+        "spotTaskId": null,
+        "restoreTaskId": "ship-1792558800001-rwt8gc",
+        "confirmedSpotItemIds": [
+          "1"
+        ],
+        "items": [
+          {
+            "itemId": "1",
+            "name": "P1",
+            "spot": "success",
+            "restore": "success"
+          }
+        ],
+        "pendingItemIds": [],
+        "message": "商品已恢复常规备货，物流收尾已完成，这一组结束",
+        "error": null,
+        "createdAt": 1792555199000,
+        "updatedAt": 1792558800001,
+        "finishedAt": 1792558800001
+      },
+      "updatedAt": 1792558800001
+    },
+    "_shippingTask": {
+      "taskId": "ship-1792558800001-rwt8gc",
+      "requestId": "g:restore:3",
+      "shopId": 1,
+      "ownerUserId": 1,
+      "source": "group",
+      "groupId": "g",
+      "groupPhase": "restore",
+      "mode": "preorder",
+      "days": 8,
+      "range": "all",
+      "excludeIds": [],
+      "status": "completed",
+      "phase": "completed",
+      "total": 1,
+      "processed": 1,
+      "items": [
+        {
+          "itemId": "1",
+          "name": "P1",
+          "days": 8,
+          "status": "success"
+        }
+      ],
+      "logistics": {
+        "requested": false,
+        "closeAttempted": false,
+        "closeCompleted": false,
+        "restoreAttempted": false,
+        "restoreCompleted": false,
+        "records": []
+      },
+      "checkpoints": [
+        {
+          "step": "update-product-batch",
+          "writeSent": true,
+          "target": "1",
+          "at": 1792558800001
+        }
+      ],
+      "message": "任务完成",
+      "error": null,
+      "startedAt": 1792558800001,
+      "updatedAt": 1792558800001,
+      "stopRequested": false,
+      "finishedAt": 1792558800001
+    }
+  },
+  "days": 8,
+  "channel": true,
+  "detailReads": 1,
+  "validationCalls": 3,
+  "writes": [
+    {
+      "kind": "product",
+      "body": [
+        {
+          "id": 1,
+          "category_path": "a/b",
+          "pre_order": true,
+          "days_to_ship": 8
+        }
+      ],
+      "at": 1792558800001
+    }
+  ],
+  "logs": [
+    "[shipping-group] g 阶段=awaiting-restore 决定=start-restore 身份=ok 任务在跑=false 冲突=无",
+    "[shipping] 单次安排补检：started-restore",
+    "[shipping] 任务结束：completed 成功 1 / 失败 0 / 待核对 0",
+    "[shipping] 单次安排补检：idle"
+  ]
+}

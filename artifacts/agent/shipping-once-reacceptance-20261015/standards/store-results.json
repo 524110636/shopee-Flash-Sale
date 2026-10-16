@@ -1,0 +1,70 @@
+[
+  {
+    "name": "direct_setOwner_clears_cross_shop",
+    "pass": true,
+    "observed": {
+      "pickCount": 0,
+      "excludeIds": ""
+    }
+  },
+  {
+    "name": "same_owner_reuse_preserves_configuration_and_clears_dates",
+    "pass": true,
+    "observed": {
+      "regularDays": 8,
+      "startDate": "",
+      "startTime": "16:00",
+      "restoreDate": "",
+      "restoreTime": "18:00",
+      "excludeIds": "111",
+      "range": "all",
+      "toggleLogistics": false
+    }
+  },
+  {
+    "name": "direct_setOwner_null_clears_selection_and_rejects_reuse",
+    "pass": true,
+    "observed": {
+      "pickCount": 0,
+      "excludeIds": "",
+      "errorPresent": true
+    }
+  },
+  {
+    "name": "refreshOwner_cross_shop_clears_selection",
+    "pass": false,
+    "observed": {
+      "currentShop": 202,
+      "cachedShop": 101,
+      "excludeIds": "111"
+    }
+  },
+  {
+    "name": "refreshOwner_null_clears_selection",
+    "pass": false,
+    "observed": {
+      "currentUser": null,
+      "pickCount": 1,
+      "excludeIds": "111"
+    }
+  },
+  {
+    "name": "saveGroup_rejects_cross_shop_selected_draft",
+    "pass": false,
+    "observed": {
+      "saveResult": {
+        "success": true
+      },
+      "submittedExcludeIds": "111",
+      "persistedShop": 202
+    }
+  },
+  {
+    "name": "terminal_sync_has_only_lastFinished",
+    "pass": true,
+    "observed": {
+      "active": null,
+      "lastFinishedPhase": "done"
+    }
+  }
+]

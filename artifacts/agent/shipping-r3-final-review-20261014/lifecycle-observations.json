@@ -1,0 +1,152 @@
+{
+  "scope": "real full isolated Chrome shutdown/restart with OWN persistent profile; no live store or backend; held synthetic write never receives success",
+  "results": [
+    {
+      "name": "actual homepage opens shipping interface",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "actual browser shutdown/restart preserves interrupted task",
+      "expected": "ship-1791989682000-vtqn6t",
+      "observed": "ship-1791989682000-vtqn6t",
+      "meetsContract": true
+    },
+    {
+      "name": "actual browser shutdown/restart does not replay unknown write",
+      "expected": 1,
+      "observed": 1,
+      "meetsContract": true
+    },
+    {
+      "name": "actual browser shutdown/restart preserves write-sent checkpoint",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    }
+  ],
+  "lifecycleTrace": [
+    {
+      "step": "before-browser-shutdown",
+      "status": "running",
+      "taskId": "ship-1791989682000-vtqn6t",
+      "workerUrls": [
+        "chrome-extension://pkjcdbameopchhcjkkgdfjeobggbpjfe/background.js"
+      ]
+    },
+    {
+      "step": "old-browser-fully-closed"
+    },
+    {
+      "step": "new-browser-new-worker",
+      "status": "interrupted",
+      "taskId": "ship-1791989682000-vtqn6t",
+      "workerUrls": [
+        "chrome-extension://pkjcdbameopchhcjkkgdfjeobggbpjfe/background.js"
+      ]
+    }
+  ],
+  "beforeTask": {
+    "checkpoints": [
+      {
+        "at": 1791989682022,
+        "step": "update-product-batch",
+        "target": "101",
+        "writeSent": true
+      }
+    ],
+    "days": 7,
+    "error": null,
+    "excludeIds": [],
+    "items": [],
+    "logistics": {
+      "closeAttempted": false,
+      "closeCompleted": false,
+      "records": [],
+      "requested": false,
+      "restoreAttempted": false,
+      "restoreCompleted": false
+    },
+    "message": "开始修改 1 个商品的备货天数",
+    "mode": "preorder",
+    "ownerUserId": 1,
+    "phase": "writing",
+    "processed": 0,
+    "range": "all",
+    "requestId": "real-browser-interruption",
+    "shopId": 77,
+    "source": "manual",
+    "startedAt": 1791989682000,
+    "status": "running",
+    "stopRequested": false,
+    "taskId": "ship-1791989682000-vtqn6t",
+    "total": 1,
+    "updatedAt": 1791989682023
+  },
+  "afterTask": {
+    "checkpoints": [
+      {
+        "at": 1791989682022,
+        "step": "update-product-batch",
+        "target": "101",
+        "writeSent": true
+      }
+    ],
+    "days": 7,
+    "error": null,
+    "excludeIds": [],
+    "finishedAt": 1791989683050,
+    "items": [],
+    "logistics": {
+      "closeAttempted": false,
+      "closeCompleted": false,
+      "records": [],
+      "requested": false,
+      "restoreAttempted": false,
+      "restoreCompleted": false
+    },
+    "message": "执行者已中断，已完成 0 个商品；未确认的写请求不会被自动重放",
+    "mode": "preorder",
+    "ownerUserId": 1,
+    "phase": "interrupted",
+    "processed": 0,
+    "range": "all",
+    "requestId": "real-browser-interruption",
+    "shopId": 77,
+    "source": "manual",
+    "startedAt": 1791989682000,
+    "status": "interrupted",
+    "stopRequested": false,
+    "taskId": "ship-1791989682000-vtqn6t",
+    "total": 1,
+    "updatedAt": 1791989683050
+  },
+  "originalAssertionResults": [
+    {
+      "name": "actual homepage opens shipping interface",
+      "expected": true,
+      "observed": true,
+      "meetsContract": true
+    },
+    {
+      "name": "actual browser shutdown/restart preserves interrupted task",
+      "expected": "ship-1791989682000-vtqn6t",
+      "observed": "ship-1791989682000-vtqn6t",
+      "meetsContract": true
+    },
+    {
+      "name": "actual browser shutdown/restart does not replay unknown write",
+      "expected": 1,
+      "observed": 1,
+      "meetsContract": true
+    },
+    {
+      "name": "actual browser shutdown/restart preserves write-sent checkpoint",
+      "expected": true,
+      "observed": false,
+      "meetsContract": false
+    }
+  ],
+  "assertionCorrection": "Reviewer initially read singular checkpoint; actual contract is checkpoints[]. Corrected using already captured beforeTask/afterTask, no rerun and no source modification."
+}

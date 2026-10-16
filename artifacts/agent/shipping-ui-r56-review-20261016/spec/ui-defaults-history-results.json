@@ -1,0 +1,495 @@
+{
+  "method": "Actual store / rules and WorkPage mounted in jsdom, fixed Taipei clocks, synthetic browser storage/messages. No platform requests.",
+  "cases": [
+    {
+      "name": "U14 default at 2026-10-16T12:00:00+08:00",
+      "pass": true,
+      "observed": {
+        "startDate": "2026-10-16",
+        "startTime": "23:30",
+        "restoreDate": "2026-10-17",
+        "restoreTime": "01:30"
+      }
+    },
+    {
+      "name": "U14 default at 2026-10-31T12:00:00+08:00",
+      "pass": true,
+      "observed": {
+        "startDate": "2026-10-31",
+        "startTime": "23:30",
+        "restoreDate": "2026-11-01",
+        "restoreTime": "01:30"
+      }
+    },
+    {
+      "name": "U14 default at 2026-12-31T12:00:00+08:00",
+      "pass": true,
+      "observed": {
+        "startDate": "2026-12-31",
+        "startTime": "23:30",
+        "restoreDate": "2027-01-01",
+        "restoreTime": "01:30"
+      }
+    },
+    {
+      "name": "U14 default at 2026-10-15T15:59:59Z",
+      "pass": true,
+      "observed": {
+        "startDate": "2026-10-15",
+        "startTime": "23:30",
+        "restoreDate": "2026-10-16",
+        "restoreTime": "01:30"
+      }
+    },
+    {
+      "name": "U14 default at 2026-10-15T16:00:00Z",
+      "pass": true,
+      "observed": {
+        "startDate": "2026-10-16",
+        "startTime": "23:30",
+        "restoreDate": "2026-10-17",
+        "restoreTime": "01:30"
+      }
+    },
+    {
+      "name": "U14 changing start date links next calendar day",
+      "pass": true,
+      "observed": {
+        "regularDays": 7,
+        "startDate": "2026-10-31",
+        "startTime": "23:30",
+        "restoreDate": "2026-11-01",
+        "restoreTime": "01:30",
+        "restoreDateTouched": false,
+        "excludeIds": "",
+        "range": "all",
+        "toggleLogistics": false
+      }
+    },
+    {
+      "name": "U14 time-only recovery edit retains custom time but unedited date still links",
+      "pass": true,
+      "observed": {
+        "draft": {
+          "regularDays": 7,
+          "startDate": "2026-11-02",
+          "startTime": "23:30",
+          "restoreDate": "2026-11-03",
+          "restoreTime": "04:15",
+          "restoreDateTouched": false,
+          "excludeIds": "",
+          "range": "all",
+          "toggleLogistics": false
+        },
+        "expectedRestoreDate": "2026-11-03",
+        "expectedRestoreTime": "04:15"
+      }
+    },
+    {
+      "name": "U14 existing edited draft survives seed identity refresh and remount",
+      "pass": true,
+      "observed": {
+        "before": {
+          "regularDays": 7,
+          "startDate": "2026-11-03",
+          "startTime": "23:30",
+          "restoreDate": "2026-11-05",
+          "restoreTime": "04:15",
+          "restoreDateTouched": true,
+          "excludeIds": "",
+          "range": "all",
+          "toggleLogistics": false
+        },
+        "after": {
+          "regularDays": 7,
+          "startDate": "2026-11-03",
+          "startTime": "23:30",
+          "restoreDate": "2026-11-05",
+          "restoreTime": "04:15",
+          "restoreDateTouched": true,
+          "excludeIds": "",
+          "range": "all",
+          "toggleLogistics": false
+        }
+      }
+    },
+    {
+      "name": "U14 existing draft not rolled forward across midnight",
+      "pass": true,
+      "observed": {
+        "regularDays": 7,
+        "startDate": "2026-10-16",
+        "startTime": "23:30",
+        "restoreDate": "2026-10-17",
+        "restoreTime": "01:30",
+        "restoreDateTouched": false,
+        "excludeIds": "",
+        "range": "all",
+        "toggleLogistics": false
+      }
+    },
+    {
+      "name": "U14 genuinely new blank draft uses current runtime day",
+      "pass": true,
+      "observed": {
+        "regularDays": 7,
+        "startDate": "2026-10-17",
+        "startTime": "23:30",
+        "restoreDate": "2026-10-18",
+        "restoreTime": "01:30",
+        "restoreDateTouched": false,
+        "excludeIds": "",
+        "range": "all",
+        "toggleLogistics": false
+      }
+    },
+    {
+      "name": "U14 explicit reuse leaves dates unconfirmed after seed and mount",
+      "pass": true,
+      "observed": {
+        "before": {
+          "regularDays": 9,
+          "startDate": "",
+          "startTime": "22:45",
+          "restoreDate": "",
+          "restoreTime": "02:15",
+          "excludeIds": "111",
+          "range": "all",
+          "toggleLogistics": true,
+          "restoreDateTouched": false
+        },
+        "after": {
+          "regularDays": 9,
+          "startDate": "",
+          "startTime": "22:45",
+          "restoreDate": "",
+          "restoreTime": "02:15",
+          "excludeIds": "111",
+          "range": "all",
+          "toggleLogistics": true,
+          "restoreDateTouched": false
+        }
+      }
+    },
+    {
+      "name": "U14 active persisted arrangement not rewritten by defaults",
+      "pass": true,
+      "observed": {
+        "schedule": {
+          "startAt": 1792075500000,
+          "restoreAt": 1792088100000,
+          "spotDays": 1,
+          "regularDays": 9
+        },
+        "draft": {
+          "regularDays": 7,
+          "startDate": "2026-10-20",
+          "startTime": "22:00",
+          "restoreDate": "2026-10-21",
+          "restoreTime": "03:00",
+          "restoreDateTouched": true,
+          "excludeIds": "",
+          "range": "all",
+          "toggleLogistics": false
+        }
+      }
+    },
+    {
+      "name": "U14 passed 2330 remains today and save refused with visible guidance",
+      "pass": true,
+      "observed": {
+        "draft": {
+          "regularDays": 7,
+          "startDate": "2026-10-16",
+          "startTime": "23:30",
+          "restoreDate": "2026-10-17",
+          "restoreTime": "01:30",
+          "restoreDateTouched": false,
+          "excludeIds": "",
+          "range": "all",
+          "toggleLogistics": false
+        },
+        "disabled": true,
+        "saves": 0
+      }
+    },
+    {
+      "name": "U14 before 2330 default accepted as future group",
+      "pass": true,
+      "observed": {
+        "result": {
+          "success": true
+        },
+        "draft": {
+          "regularDays": 7,
+          "startDate": "2026-10-16",
+          "startTime": "23:30",
+          "restoreDate": "2026-10-17",
+          "restoreTime": "01:30",
+          "restoreDateTouched": false,
+          "excludeIds": "",
+          "range": "all",
+          "toggleLogistics": false
+        }
+      }
+    },
+    {
+      "name": "U15 no manual tabs or immediate write entry",
+      "pass": true,
+      "observed": {
+        "tablists": 0,
+        "legacyDateEditors": 0
+      }
+    },
+    {
+      "name": "U15 empty page has no editable independent legacy-plan creation form",
+      "pass": true,
+      "observed": {
+        "legacyDateEditors": 0,
+        "planForms": [
+          {
+            "id": "plan1",
+            "enabled": false
+          },
+          {
+            "id": "plan2",
+            "enabled": false
+          }
+        ]
+      }
+    },
+    {
+      "name": "U15 blank storage does not render default empty plan slots",
+      "pass": false,
+      "observed": {
+        "storedPlans": null,
+        "loadedPlans": [
+          {
+            "id": "plan1",
+            "enabled": false,
+            "date": "",
+            "time": "09:00",
+            "days": 1,
+            "range": "all",
+            "loopDaily": false,
+            "excludeIds": "",
+            "toggleLogistics": false,
+            "ownerShopId": null,
+            "ownerUserId": null,
+            "lastRunId": null,
+            "lastRunAt": null,
+            "lastResult": null,
+            "lastTaskId": null,
+            "lastError": null,
+            "missed": false,
+            "updatedAt": 0
+          },
+          {
+            "id": "plan2",
+            "enabled": false,
+            "date": "",
+            "time": "09:00",
+            "days": 1,
+            "range": "all",
+            "loopDaily": false,
+            "excludeIds": "",
+            "toggleLogistics": false,
+            "ownerShopId": null,
+            "ownerUserId": null,
+            "lastRunId": null,
+            "lastRunAt": null,
+            "lastResult": null,
+            "lastTaskId": null,
+            "lastError": null,
+            "missed": false,
+            "updatedAt": 0
+          }
+        ],
+        "historyVisible": true
+      }
+    },
+    {
+      "name": "U15 persisted disabled history is readable and not editable",
+      "pass": true,
+      "observed": {
+        "historyVisible": true,
+        "numberEditors": 0,
+        "saveButton": false,
+        "recordsUnchanged": true
+      }
+    },
+    {
+      "name": "U15 enabled legacy plan shows truthful state and existing disable exit",
+      "pass": true,
+      "observed": {
+        "disableButton": true
+      }
+    },
+    {
+      "name": "U15 actual disable DOM persists false retains history and syncs alarms",
+      "pass": true,
+      "observed": {
+        "before": {
+          "id": "plan1",
+          "enabled": true,
+          "date": "2026-10-17",
+          "time": "09:00",
+          "days": 3,
+          "range": "all",
+          "loopDaily": false,
+          "excludeIds": "111",
+          "toggleLogistics": false,
+          "ownerShopId": 101,
+          "ownerUserId": 1,
+          "lastRunId": null,
+          "lastRunAt": 1792036800000,
+          "lastResult": "completed",
+          "lastTaskId": "old-history",
+          "lastError": null,
+          "missed": false,
+          "updatedAt": 1792036800000
+        },
+        "after": {
+          "id": "plan1",
+          "enabled": false,
+          "date": "2026-10-17",
+          "time": "09:00",
+          "days": 3,
+          "range": "all",
+          "loopDaily": false,
+          "excludeIds": "111",
+          "toggleLogistics": false,
+          "ownerShopId": 101,
+          "ownerUserId": 1,
+          "lastRunId": null,
+          "lastRunAt": 1792036800000,
+          "lastResult": "completed",
+          "lastTaskId": "old-history",
+          "lastError": null,
+          "missed": false,
+          "updatedAt": 1792036800000
+        },
+        "syncMessages": 1,
+        "disableButtonAfter": false
+      }
+    },
+    {
+      "name": "U15 savePlan refuses enabled new or edited one-way plans without changes",
+      "pass": true,
+      "observed": {
+        "error": "旧版计划入口已下线，不能再启用；请用上方「定时切换」安排单次执行（切 1 天后会按你选的天数恢复）",
+        "recordsUnchanged": true,
+        "syncMessages": 0
+      }
+    },
+    {
+      "name": "U15 disabled valid history remains saveable through existing store",
+      "pass": true,
+      "observed": {
+        "record": {
+          "id": "plan1",
+          "enabled": false,
+          "date": "2026-10-17",
+          "time": "09:00",
+          "days": 4,
+          "range": "all",
+          "loopDaily": false,
+          "excludeIds": "111",
+          "toggleLogistics": false,
+          "ownerShopId": 101,
+          "ownerUserId": 1,
+          "lastRunId": null,
+          "lastRunAt": 1792036800000,
+          "lastResult": "completed",
+          "lastTaskId": "old-history",
+          "lastError": null,
+          "missed": false,
+          "updatedAt": 1792123200000,
+          "retired": false
+        },
+        "syncMessages": 1
+      }
+    },
+    {
+      "name": "U15 completed historical results visible in current page",
+      "pass": true,
+      "observed": {
+        "itemVisible": true
+      }
+    },
+    {
+      "name": "U15 interrupted result and logistics recovery reachable before acknowledgement",
+      "pass": true,
+      "observed": {
+        "recover": true,
+        "ack": true,
+        "ackDisabled": true,
+        "itemVisible": true
+      }
+    },
+    {
+      "name": "U15 actual recovery and acknowledgement buttons dispatch old completion actions",
+      "pass": true,
+      "observed": {
+        "types": [
+          "SHIPPING_IDENTITY",
+          "SHIPPING_RESTORE_LOGISTICS",
+          "SHIPPING_ACK_INTERRUPTED"
+        ],
+        "taskStatus": "stopped"
+      }
+    },
+    {
+      "name": "U15 existing running manual task retains reachable stop action",
+      "pass": true,
+      "observed": {
+        "stopPresent": true,
+        "itemVisible": true
+      }
+    },
+    {
+      "name": "U15 actual legacy stop sends one message and syncs persisted response",
+      "pass": true,
+      "observed": {
+        "stopMessages": 1,
+        "stored": {
+          "stopRequested": true,
+          "phase": "stopping"
+        },
+        "synced": {
+          "stopRequested": true,
+          "phase": "stopping"
+        }
+      }
+    },
+    {
+      "name": "U15 group task has no old task stop but retains group stop",
+      "pass": true,
+      "observed": {
+        "oldStop": false,
+        "groupStop": true,
+        "legacyStopMessages": 0
+      }
+    },
+    {
+      "name": "U15 completed task does not show stop",
+      "pass": true,
+      "observed": {
+        "stopPresent": false
+      }
+    },
+    {
+      "name": "U15 stopped task does not show stop",
+      "pass": true,
+      "observed": {
+        "stopPresent": false
+      }
+    }
+  ],
+  "sources": {
+    "features/shipping/store.ts": "ceb220d813674816c223dd316effd2edfbdc85e1dd96bcd839f59f92594d4896",
+    "features/shipping/rules.ts": "8f30d9152099df6206ded6692a0dbc28dde3f684ace26a4a91e08d6df8da92eb",
+    "components/product/shipping/ShippingWorkPage.tsx": "6bef7663e0f0c3059345da80d5bb107427f648d0ca02045b1ab12dd5f7d40efb",
+    "components/product/shipping/ShippingSchedulePanel.tsx": "129e2edfb1ceb15ce64817c400481bae5dc679cd6ad022382271989c24913f36"
+  }
+}

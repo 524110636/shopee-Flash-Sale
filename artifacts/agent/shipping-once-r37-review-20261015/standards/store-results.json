@@ -1,0 +1,103 @@
+[
+  {
+    "name": "direct_setOwner_clears_cross_shop",
+    "pass": true,
+    "observed": {
+      "pickCount": 0,
+      "excludeIds": ""
+    }
+  },
+  {
+    "name": "same_owner_reuse_preserves_configuration_and_clears_dates",
+    "pass": true,
+    "observed": {
+      "regularDays": 8,
+      "startDate": "",
+      "startTime": "16:00",
+      "restoreDate": "",
+      "restoreTime": "18:00",
+      "excludeIds": "111",
+      "range": "all",
+      "toggleLogistics": false
+    }
+  },
+  {
+    "name": "direct_setOwner_null_clears_selection_and_rejects_reuse",
+    "pass": true,
+    "observed": {
+      "pickCount": 0,
+      "excludeIds": "",
+      "errorPresent": true
+    }
+  },
+  {
+    "name": "refreshOwner_cross_shop_clears_selection",
+    "pass": true,
+    "observed": {
+      "currentShop": 202,
+      "cachedShop": null,
+      "excludeIds": ""
+    }
+  },
+  {
+    "name": "refreshOwner_null_clears_selection",
+    "pass": true,
+    "observed": {
+      "currentUser": null,
+      "pickCount": 0,
+      "excludeIds": ""
+    }
+  },
+  {
+    "name": "saveGroup_rejects_cross_shop_selected_draft",
+    "pass": false,
+    "observed": {
+      "saveResult": {
+        "success": true
+      },
+      "submittedExcludeIds": "111",
+      "persistedShop": 202
+    }
+  },
+  {
+    "name": "terminal_sync_has_only_lastFinished",
+    "pass": true,
+    "observed": {
+      "active": null,
+      "lastFinishedPhase": "done"
+    }
+  },
+  {
+    "name": "same_owner_save_preserves_configuration",
+    "pass": true,
+    "observed": {
+      "saveResult": {
+        "success": true
+      },
+      "excludeIds": "111",
+      "shopId": 101
+    }
+  },
+  {
+    "name": "null_account_save_rejected",
+    "pass": true,
+    "observed": {
+      "saveResult": {
+        "success": false,
+        "error": "无法核实当前账号，请先确认已登录"
+      },
+      "submitted": false
+    }
+  },
+  {
+    "name": "late_A_list_rejected_after_switch_to_B",
+    "pass": false,
+    "observed": {
+      "currentShop": 202,
+      "loadedShop": 101,
+      "productIds": [
+        "111"
+      ]
+    }
+  }
+]

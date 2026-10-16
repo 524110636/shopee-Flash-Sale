@@ -1,0 +1,28 @@
+{
+  "extensionPath": "D:\\shopee_xm\\虾皮限时特卖-更新迭代\\.agent-tmp\\shipping-once-ui-20261015\\iso-output\\chrome-mv3",
+  "scope": "actual MV3 and local backend, stateful synthetic product/channel API",
+  "observations": [
+    {
+      "id": "spot-logistics-must-keep-restore-obligation",
+      "expected": "repairing spot-stage logistics before restoreAt must retain regular-days restoration",
+      "passed": false,
+      "actual": {
+        "beforeGroupPhase": "awaiting-restore",
+        "linkedTaskStage": "spot",
+        "linkedTaskStatus": "failed",
+        "afterActivePhase": null,
+        "afterLastFinished": "done",
+        "days": 1,
+        "channelEnabled": true,
+        "restoreStillInFuture": true,
+        "productWrites": [
+          {
+            "days": 1,
+            "count": 12
+          }
+        ]
+      }
+    }
+  ],
+  "profileRemoved": true
+}

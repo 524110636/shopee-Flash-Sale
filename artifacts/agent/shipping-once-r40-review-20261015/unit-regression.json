@@ -1,0 +1,7 @@
+{
+  "command": "npx vitest run tests/unit/shipping-group.test.ts tests/unit/shipping-rules.test.ts tests/unit/shipping-task.test.ts tests/unit/shipping-runner.test.ts tests/unit/shipping-api.test.ts tests/unit/shipping-store-isolation.test.ts tests/unit/feature-navigation.test.ts tests/unit/one-day-repair-task.test.ts tests/unit/one-day-repair-runner.test.ts tests/unit/popup-policy-host.test.ts",
+  "filesPassed": 10,
+  "testsPassed": 393,
+  "failed": 0,
+  "exitCode": 0
+}

@@ -1,0 +1,313 @@
+{
+  "method": "Actual Zustand store, actual modal and actual WorkPage / SchedulePanel mounted in jsdom, synthetic browser storage/messages, no network",
+  "cases": [
+    {
+      "name": "late same-shop old-account response discarded",
+      "pass": true,
+      "observed": {
+        "ids": [],
+        "trusted": false,
+        "shop": 101,
+        "user": 2
+      }
+    },
+    {
+      "name": "late cross-shop response discarded",
+      "pass": true,
+      "observed": {
+        "ids": [],
+        "trusted": false
+      }
+    },
+    {
+      "name": "null account late response and save rejected",
+      "pass": true,
+      "observed": {
+        "ids": [],
+        "save": {
+          "success": false,
+          "error": "尚未核实当前店铺与账号，请先打开卖家中心页面并确认已登录后再保存"
+        },
+        "submitted": false
+      }
+    },
+    {
+      "name": "old account response cannot erase new account response",
+      "pass": true,
+      "observed": {
+        "ids": [
+          "222"
+        ],
+        "trusted": true,
+        "error": null
+      }
+    },
+    {
+      "name": "same-account old response cannot replace refreshed response",
+      "pass": true,
+      "observed": {
+        "ids": [
+          "222"
+        ],
+        "trusted": true
+      }
+    },
+    {
+      "name": "same ownership refresh retains confirmed selection",
+      "pass": true,
+      "observed": {
+        "ids": [
+          "222"
+        ],
+        "exclude": "222"
+      }
+    },
+    {
+      "name": "first identity refresh drift blocks whole save",
+      "pass": true,
+      "observed": {
+        "save": {
+          "success": false,
+          "error": "保存前核实到的店铺／账号与设置排除商品时不同，请确认当前店铺后重新设置排除商品并再次保存"
+        },
+        "submitted": false
+      }
+    },
+    {
+      "name": "current account modal selects 222 and saves exact exclusion",
+      "pass": true,
+      "observed": {
+        "save": {
+          "success": true
+        },
+        "exclude": "222",
+        "user": 2
+      }
+    },
+    {
+      "name": "actual modal hides mismatched account rows",
+      "pass": true,
+      "observed": {
+        "rows": 0
+      }
+    },
+    {
+      "name": "open modal local draft cannot confirm old account selection",
+      "pass": false,
+      "observed": {
+        "rowsAfterSwitch": 0,
+        "confirmed": [
+          "111"
+        ],
+        "save": {
+          "success": true
+        },
+        "exclude": "111",
+        "user": 2
+      }
+    },
+    {
+      "name": "actual WorkPage initial identity return 101/2 cannot transfer modal draft",
+      "pass": false,
+      "observed": {
+        "sameModalNode": true,
+        "rowsAfterIdentity": 0,
+        "currentShop": 101,
+        "currentUser": 2,
+        "save": {
+          "success": true
+        },
+        "exclude": "111",
+        "persistedShop": 101,
+        "persistedUser": 2
+      }
+    },
+    {
+      "name": "actual WorkPage initial identity return 202/1 cannot transfer modal draft",
+      "pass": false,
+      "observed": {
+        "sameModalNode": true,
+        "rowsAfterIdentity": 0,
+        "currentShop": 202,
+        "currentUser": 1,
+        "save": {
+          "success": true
+        },
+        "exclude": "111",
+        "persistedShop": 202,
+        "persistedUser": 1
+      }
+    }
+  ],
+  "requestLog": [
+    {
+      "requestId": "pick-1792078771182-dboftd",
+      "issued": {
+        "shopId": 101,
+        "userId": 1
+      }
+    },
+    {
+      "requestId": "pick-1792078771182-dboftd",
+      "returnedFor": {
+        "shopId": 101,
+        "userId": 1
+      },
+      "current": {
+        "shopId": 101,
+        "userId": 2
+      }
+    },
+    {
+      "requestId": "pick-1792078771183-yd78hi",
+      "issued": {
+        "shopId": 101,
+        "userId": 1
+      }
+    },
+    {
+      "requestId": "pick-1792078771183-yd78hi",
+      "returnedFor": {
+        "shopId": 101,
+        "userId": 1
+      },
+      "current": {
+        "shopId": 202,
+        "userId": 2
+      }
+    },
+    {
+      "requestId": "pick-1792078771183-c7nr9d",
+      "issued": {
+        "shopId": 101,
+        "userId": 1
+      }
+    },
+    {
+      "requestId": "pick-1792078771183-c7nr9d",
+      "returnedFor": {
+        "shopId": 101,
+        "userId": 1
+      },
+      "current": {
+        "shopId": 101,
+        "userId": null
+      }
+    },
+    {
+      "requestId": "pick-1792078771183-k8ehd0",
+      "issued": {
+        "shopId": 101,
+        "userId": 1
+      }
+    },
+    {
+      "requestId": "pick-1792078771183-xe1lwj",
+      "issued": {
+        "shopId": 101,
+        "userId": 2
+      }
+    },
+    {
+      "requestId": "pick-1792078771183-xe1lwj",
+      "returnedFor": {
+        "shopId": 101,
+        "userId": 2
+      },
+      "current": {
+        "shopId": 101,
+        "userId": 2
+      }
+    },
+    {
+      "requestId": "pick-1792078771183-k8ehd0",
+      "returnedFor": {
+        "shopId": 101,
+        "userId": 1
+      },
+      "current": {
+        "shopId": 101,
+        "userId": 2
+      }
+    },
+    {
+      "requestId": "pick-1792078771184-3jxi3h",
+      "issued": {
+        "shopId": 101,
+        "userId": 1
+      }
+    },
+    {
+      "requestId": "pick-1792078771184-aw7vnu",
+      "issued": {
+        "shopId": 101,
+        "userId": 1
+      }
+    },
+    {
+      "requestId": "pick-1792078771184-aw7vnu",
+      "returnedFor": {
+        "shopId": 101,
+        "userId": 1
+      },
+      "current": {
+        "shopId": 101,
+        "userId": 1
+      }
+    },
+    {
+      "requestId": "pick-1792078771184-3jxi3h",
+      "returnedFor": {
+        "shopId": 101,
+        "userId": 1
+      },
+      "current": {
+        "shopId": 101,
+        "userId": 1
+      }
+    },
+    {
+      "requestId": "pick-1792078771184-9j88q5",
+      "issued": {
+        "shopId": 101,
+        "userId": 1
+      }
+    },
+    {
+      "requestId": "pick-1792078771184-9j88q5",
+      "returnedFor": {
+        "shopId": 101,
+        "userId": 1
+      },
+      "current": {
+        "shopId": 101,
+        "userId": 1
+      }
+    },
+    {
+      "requestId": "pick-1792078771185-4vngl7",
+      "issued": {
+        "shopId": 101,
+        "userId": 2
+      }
+    },
+    {
+      "requestId": "pick-1792078771185-4vngl7",
+      "returnedFor": {
+        "shopId": 101,
+        "userId": 2
+      },
+      "current": {
+        "shopId": 101,
+        "userId": 2
+      }
+    }
+  ],
+  "sources": {
+    "features/shipping/store.ts": "af0b1e38588d21906c1119ed821bfe8f4924a009a4cf03277a99d325bd1a1ed1",
+    "features/shipping/rules.ts": "f795d33a48d120e6ca4793fae363751ab78822d7e77f4e579c482a2533071f33",
+    "components/product/shipping/ShippingExcludeModal.tsx": "fe8479ea6db4d7d5adfb4322c5ad0bfa08d26d0f1746d7c43b9bcda17fd5807d",
+    "components/product/shipping/ShippingSchedulePanel.tsx": "6e6f924cfd85666d08f40286c852deb16429429d0e4e9fefd4dd6cf00fbd4f20",
+    "components/product/shipping/ShippingWorkPage.tsx": "b13485dc604ce120aa0d91c7324263bf7c43afefc7568cd0fa3ed5ce64f53e10"
+  }
+}
